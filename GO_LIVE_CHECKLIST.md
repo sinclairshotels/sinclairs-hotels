@@ -292,13 +292,28 @@ header records that `cca_status` was "missed in the first migration pass and
 added later", so a second omission is plausible rather than unlikely.
 
 - [ ] **`ipay_entries` — 6,651 rows**, in `sinclairsltd_hdfcmpgs`. More rows than
-      the entire Payment table we did import. **i-Pay is ICICI's product — the
-      gateway the new site uses** — while the `cca_status` we imported is
-      CCAvenue, the gateway that was retired. There is a real possibility we
-      imported the old gateway's history and skipped the current one's. If it
-      holds real transactions, the Payments dashboard is showing an incomplete
-      financial history, which matters for disputes, refunds on older payments,
-      and bank reconciliation.
+      the entire Payment table we did import. Most likely the attempt/initiation
+      log to `cca_status`'s response record — the same relationship the new
+      `Payment` table has with its `INITIATED` rows that never settle — which
+      would make it wanted only for the abandonment metrics in
+      `docs/analytics-events.md`, not for money actually taken. Still unconfirmed:
+      it needs the table's date range and whether its order IDs are the same
+      orders as `cca_status`'s.
+
+      **Do not reason from the gateway names here — three brands attach to one
+      payment flow.** The table is called `cca_status` and its columns are
+      verbatim CCAvenue response fields (`tracking_id`, `bank_ref_no`,
+      `failure_message`, `billing_name`), it lives in a database named
+      `sinclairsltd_hdfcmpgs` (HDFC MPGS), and the daily ops report
+      (`utility/sinclairs-booking-cron.php`) prints its `order_id` under the
+      heading **"iPay Order No."**. So `ipay_entries` being "the i-Pay table" is
+      no evidence that it is a different gateway from the one we imported.
+
+      **`cca_status` is not dead history.** Its dump runs to `2026-09-12
+      11:42:02` — it is the actively written payment record, and the daily
+      report reads it (filtered to `order_status = 'Success'`) as *the* record of
+      money taken. The worry that we imported a retired gateway's history and
+      skipped the live one's is therefore not supported: we imported the live one.
 - [ ] **`hdfc_itsbook` — 13,404 rows**, in `sinclairsltd_official`. Close in size
       to `voucher_detail` (13,560), which could mean it is the booking records
       vouchers were issued against — already represented — or a parallel ledger
@@ -319,7 +334,19 @@ ssh -p 5822 root@<legacy-host> 'for t in sinclairsltd_hdfcmpgs.ipay_entries sinc
 Three likely outcomes: duplicates under different gateway names (nothing to do);
 genuinely missing payment history (extend `scripts/migrate-legacy-data.ts`, same
 idempotent pattern); or attempt logs rather than settled records (import only if
-the abandonment metrics are wanted).
+the abandonment metrics are wanted). The local evidence points at the third for
+`ipay_entries`.
+
+- [ ] **Rotate the legacy MySQL credentials, and keep them out of any backup we
+      retain.** `legacy-php-site/utility/sinclairs-booking-cron.php` carries a
+      live `sinclairsltd_root` username and password in plaintext, for both
+      `sinclairsltd_official` and `sinclairsltd_hdfcmpgs` — the databases holding
+      every enquiry, every guest name and email, and the payment records. The
+      same file also hardcodes a personal Gmail address as the daily report's
+      recipient. Those credentials are still valid on the legacy host, and this
+      rebuild exists partly because that host was found compromised. Rotate them
+      (or decommission the databases) at cutover, and scrub the file before this
+      backup is archived anywhere but the local disk.
 
 ## Cutover
 
