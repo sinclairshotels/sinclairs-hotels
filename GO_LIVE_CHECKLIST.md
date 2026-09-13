@@ -230,7 +230,9 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
       legacy payments (`cca_status`, the old CCAvenue/HDFC gateway log, added
       in a second pass). Re-running inserts 0 rows. Skips are small and
       reasoned in `dumps/migration-report.json` — 53 enquiries, 3 vouchers, 40
-      payments, all unmapped-property or unparseable-date.
+      payments, all unmapped-property or unparseable-date. That file is outside
+      the repo and overwritten every run, so the durable summary now lives in
+      `docs/legacy-import-report.md`; keep it as the record once the dumps go.
 - [ ] Confirm those counts in **production**. The figures above were checked
       against local dev; the production import ran on 2026-09-08 and hasn't
       been re-counted since.
@@ -271,9 +273,12 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
       ever writes `unsubscribedAt` — so this is latent, not live. It becomes real
       the first time anyone sends a campaign: some unknown share of those 26,258
       addresses asked to be removed and were silently kept, and there is still no
-      way for a recipient to opt out. Decide before any bulk send: re-permission
-      the list (one opt-in mail, keep only those who confirm) rather than
-      treating it as consented, and build an unsubscribe route first.
+      way for a recipient to opt out.
+      **Decided 2026-09-13: no unsubscribe route is being built.** That is fine
+      while nothing sends to the list. It stops being fine the moment a campaign
+      goes out — every bulk sender (and India's DPDP consent rules) requires a
+      working opt-out — so treat an unsubscribe route plus re-permissioning the
+      list as prerequisites of the first send, not as work owed now.
 - [ ] **Verify the voucher sequence in production before cutover, and again
       after the catch-up import.** The 2026-09-12 fix was a one-time manual
       `setval`; `scripts/migrate-legacy-data.ts`'s `syncVoucherSequence()` only
