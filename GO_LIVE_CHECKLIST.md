@@ -120,6 +120,7 @@ office copy → guest view page. It works; what's open below is scope, not bugs.
       issued came out as #3. Both databases corrected with `setval` to 35001 on
       2026-09-12 (next voucher is #35002), and `scripts/migrate-legacy-data.ts`
       now advances the sequence itself so a re-import cannot reintroduce it.
+      Fixed, but **not self-verifying** — see the sequence check in `## Data`.
 
 ## Analytics
 
@@ -256,6 +257,45 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
 - [ ] *(Phase 2)* Decide what "Sinclairs Yangang" is (1,043 enquiries + 58 vouchers,
       confirmed in the local DB) — imported verbatim rather than folded into
       `gangtok`, pending a call on whether it's a separate property.
+- [ ] **The newsletter list has no opt-out state, and the app has no unsubscribe
+      flow.** All 26,258 imported subscribers have `unsubscribedAt = NULL`, going
+      back to 2014-06-04. That is faithful to the source, not an import bug: the
+      legacy `newsletter_signup.date_unsubscribe` column is `NULL` on 16,434 rows
+      and MySQL's zero-date `0000-00-00 00:00:00` on the other 10,034 — **zero
+      real unsubscribes in twelve years**. The reason is in
+      `legacy-php-site/newsletter_unsubscribe.php`: its only database write is
+      **commented out**, so the old unsubscribe page told people they were
+      unsubscribed and never recorded it.
+      Nothing mails this list today — the only newsletter email
+      (`newsletter-notification`) goes to staff, and nothing in `app/` or `lib/`
+      ever writes `unsubscribedAt` — so this is latent, not live. It becomes real
+      the first time anyone sends a campaign: some unknown share of those 26,258
+      addresses asked to be removed and were silently kept, and there is still no
+      way for a recipient to opt out. Decide before any bulk send: re-permission
+      the list (one opt-in mail, keep only those who confirm) rather than
+      treating it as consented, and build an unsubscribe route first.
+- [ ] **Verify the voucher sequence in production before cutover, and again
+      after the catch-up import.** The 2026-09-12 fix was a one-time manual
+      `setval`; `scripts/migrate-legacy-data.ts`'s `syncVoucherSequence()` only
+      re-runs as the last step of a full import, and **nothing else asserts the
+      invariant**. The local dev database currently violates it — its sequence
+      sits at 509 against imported vouchers numbered 21455-35001, so the next
+      voucher issued locally would be #510 (the test suite creates and deletes
+      vouchers, consuming the sequence from a low base; `pnpm seed:dev` resets it
+      to 35001). Production was fixed separately and should be fine, but "should
+      be" is the problem. One query settles it:
+
+      ```sql
+      SELECT (SELECT last_value FROM "Voucher_voucherNo_seq") AS seq,
+             (SELECT max("voucherNo") FROM "Voucher") AS max_voucher;
+      -- seq must be >= max_voucher
+      ```
+- [ ] *(cosmetic, public URLs)* 11 imported vouchers have `checkOut` **before**
+      `checkIn` (e.g. #22026 Kalimpong, 2020-12-30 → 2020-01-01), and 23 have
+      `rate = 0`. Bad data in the legacy free-text date fields, not a parsing
+      bug. Nothing crashes — `lib/voucher-view.ts` prints both dates and never
+      computes nights — but each is reachable at its own `/v/<token>` URL and
+      reads as broken. Either correct the 11 by hand or accept them as historical.
 
 Note: legacy free text carries attack payloads — `migration-report.json` shows
 enquiry rows containing PHP object-injection probes submitted to the old form.
