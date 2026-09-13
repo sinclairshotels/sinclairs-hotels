@@ -430,12 +430,14 @@ the abandonment metrics are wanted). The local evidence points at the third for
       `staff.`, `dev.` and `staff.dev.`. The apex currently answering `200`
       without redirecting is the *old* stack's behaviour and disappears when DNS
       moves — nothing to do here.
-- [ ] **`staff.sinclairshotels.com` has no DNS record yet.** The domain is
-      attached in Vercel and `proxy.ts` routes it, but nothing resolves, so the
-      admin/voucher tool will be unreachable on the production domain until an
-      A/CNAME record is added alongside the apex and `www` ones.
-      `staff.dev.sinclairshotels.com` already resolves and works, so this is the
-      prod record only.
+- [x] **`staff.sinclairshotels.com` DNS — done.** Verified 2026-09-13: it CNAMEs
+      to `cname.vercel-dns.com` and serves the staff sign-in; the Payments page was
+      checked through it. Note the asymmetry this creates — the staff tool is live
+      on the production domain **while the apex and `www` still resolve to the
+      legacy box (68.178.172.70)**. That is intended (it is how staff reach the
+      tool pre-cutover) but it means the admin is publicly reachable on a
+      production hostname today, behind nothing but the shared `ADMIN_PASSWORD`.
+      `robots.txt` disallows `/admin` on every host.
 - [ ] **Remove `SITE_BASE_URL` from Vercel production**, so absolute links in
       emails and vouchers point at the real domain rather than the Vercel one
       (`lib/site-url.ts`). This no longer affects `robots.txt`: that is decided
@@ -454,8 +456,10 @@ the abandonment metrics are wanted). The local evidence points at the third for
       card payments through ICICI, so these pages need to exist before cutover —
       redirecting a legal page to home is both an SEO soft-404 and the wrong
       answer to a guest looking for it.
-- [ ] Connect the GitHub repo in Vercel for auto-deploy-on-push (currently
-      blocked on a one-time manual GitHub login connection in the Vercel
-      dashboard) — until then, ship via `vercel deploy --prod`.
+- [x] **GitHub repo connected — done.** Confirmed 2026-09-13: pushing `379a288`
+      produced a Preview build cloned straight from the commit. Consequence worth
+      remembering: the build command is `prisma migrate deploy && next build`, so
+      **a push to `main` migrates the dev database on its own**. Production still
+      only moves on `vercel deploy --prod`, so the two drift after every push.
 - [ ] *(Phase 2)* Decommission the GoDaddy hosting once DNS has fully cut over and the
       final catch-up import (above) is confirmed complete.
