@@ -339,10 +339,20 @@ in CI's leaner environment, which the quicker loop above cannot.
 
 Deployed via `vercel deploy` (add `--prod` for production) from
 `subham-5497`'s Vercel account, project `sinclairs-hotels` — live at
-https://sinclairs-hotels.vercel.app. The GitHub repo (`subhamsncl/sinclairs-hotels`)
-is not yet connected for auto-deploy-on-push (`vercel git connect` fails until the
-Vercel account has a GitHub login connection — a one-time manual step in the Vercel
-dashboard); until then, ship by running `vercel deploy` after pushing.
+https://sinclairs-hotels.vercel.app.
+
+**The GitHub repo (`subhamsncl/sinclairs-hotels`) is now connected**, so a push to
+`main` triggers a Preview deployment on its own — and because the build command is
+`prisma migrate deploy && next build`, **a push migrates the dev database whether
+or not you then run `vercel deploy`**. Confirmed 2026-09-13: pushing `379a288`
+produced a Preview build that applied a migration one minute before the manual
+`vercel deploy` ran, which then reported "No pending migrations to apply".
+
+Production is *not* auto-deployed — `sinclairshotels.com`, `www`,
+`staff.sinclairshotels.com` and `sinclairs-hotels.vercel.app` only move when you
+run `vercel deploy --prod`. So the two halves can drift: after a push, dev is
+already on the new code and prod is not. `vercel alias ls` shows which deployment
+each domain points at, and is the quickest way to tell them apart.
 
 ## Source content
 
