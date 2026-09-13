@@ -723,6 +723,10 @@ async function migratePayment(): Promise<Report> {
       trackingId: get('tracking_id'),
       bankRefNo: get('bank_ref_no'),
       failureMessage,
+      // Blocks the admin Refund button on these: they were taken by the old
+      // gateway, so ICICI has no such transaction to reverse. The migration
+      // that added this column backfilled the rows imported before it existed.
+      legacySource: 'cca_status',
       createdAt,
       updatedAt: createdAt,
     });

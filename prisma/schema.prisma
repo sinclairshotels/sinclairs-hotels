@@ -132,6 +132,13 @@ model Payment {
   paymentMode    String?
   paymentInstId  String?
   failureMessage String?
+  // Which legacy table this row was imported from, null for payments this app
+  // took itself. Enquiry has legacyTicket and Voucher has legacyId for the same
+  // purpose; Payment had no equivalent, so an imported CCAvenue-era transaction
+  // was indistinguishable from a live i-Pay one and offered staff a Refund
+  // button that ICICI can only reject. Refunds are blocked on any non-null
+  // value: those predate this gateway and have to be settled with the bank.
+  legacySource   String?
   userIp         String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
