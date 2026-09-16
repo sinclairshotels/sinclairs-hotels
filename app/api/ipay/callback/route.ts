@@ -1,7 +1,7 @@
 import { getHotelBySlug } from '@/content/hotels';
 import { roomOffer } from '@/lib/availability';
 import { HOLD_MINUTES } from '@/lib/booking';
-import { prisma } from '@/lib/db';
+import { SERIALIZABLE, isWriteConflict, prisma } from '@/lib/db';
 import {
   bookingConfirmationHtml,
   bookingOversoldHtml,
@@ -14,9 +14,10 @@ import {
   rawFormFields,
   verifyHashV1,
 } from '@/lib/icici';
-import { log } from '@/lib/log';
+import { errorFields, log } from '@/lib/log';
 import { STAFF_NOTIFY_EMAIL, sendMail } from '@/lib/mail';
 import { publicSiteUrl } from '@/lib/site-url';
+import type { Booking } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 // A payment taken for a direct booking belongs to that booking, so the guest
@@ -33,18 +34,23 @@ async function settlementUrl(baseUrl: string, paymentId: string, orderId: string
     : `${baseUrl}/ipay/result?order=${orderId}`;
 }
 
+// Two late callbacks can be settling their way into the same last room at the
+// same instant. Reading availability and writing the confirmation in one
+// Serializable transaction is what makes them exclusive: Postgres sees that
+// each read a set the other wrote into and aborts one, which comes back as a
+// write conflict and is retried against the winner's committed state.
+const SETTLE_ATTEMPTS = 3;
+
 // Re-checks that the room this booking was made for can still be sold,
 // ignoring the booking itself — its own expired hold must not count against
-// it.
-async function hasRoomsLeftFor(booking: {
-  id: string;
-  hotelSlug: string;
-  roomName: string;
-  checkIn: Date;
-  checkOut: Date;
-  rooms: number;
-}): Promise<boolean> {
-  const offer = await roomOffer(prisma, {
+// it. Takes the transaction client so the read is part of the transaction's
+// conflict footprint; against `prisma` it would be a separate snapshot and
+// serializing the write around it would guarantee nothing.
+async function hasRoomsLeftFor(
+  db: Parameters<typeof roomOffer>[0],
+  booking: Pick<Booking, 'id' | 'hotelSlug' | 'roomName' | 'checkIn' | 'checkOut' | 'rooms'>,
+): Promise<boolean> {
+  const offer = await roomOffer(db, {
     hotelSlug: booking.hotelSlug,
     roomName: booking.roomName,
     checkIn: booking.checkIn,
@@ -53,6 +59,49 @@ async function hasRoomsLeftFor(booking: {
     excludeBookingId: booking.id,
   });
   return Boolean(offer && offer.roomsLeft >= booking.rooms);
+}
+
+// Confirms a paid booking, or marks it for refund if its room is gone. Only
+// ever called once per payment — the replay guard upstream sees to that — so
+// the retries here are for lost races, not for redelivery.
+async function confirmPaidBooking(bookingId: string): Promise<Booking> {
+  for (let attempt = 1; attempt <= SETTLE_ATTEMPTS; attempt++) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const booking = await tx.booking.findUniqueOrThrow({ where: { id: bookingId } });
+
+        // A booking only holds its rooms for HOLD_MINUTES. Past that the
+        // availability query has stopped counting it, so another guest may
+        // have taken the same room while this one was still on the bank's
+        // page — confirming blindly is how a paid guest arrives to no room.
+        // Inside the window the rooms were genuinely reserved for this
+        // booking, so there is nothing to re-check.
+        const holdExpired = booking.createdAt.getTime() <= Date.now() - HOLD_MINUTES * 60_000;
+        const available = !holdExpired || (await hasRoomsLeftFor(tx, booking));
+
+        return tx.booking.update({
+          where: { id: bookingId },
+          data: { status: available ? 'CONFIRMED' : 'REFUND_DUE' },
+        });
+      }, SERIALIZABLE);
+    } catch (err) {
+      if (!isWriteConflict(err)) throw err;
+
+      if (attempt === SETTLE_ATTEMPTS) {
+        // Every attempt lost its race, so what is actually left in the room
+        // is unknown. Fail safe: refunding a guest who might have had a room
+        // is recoverable, sending two guests to one room is not.
+        log.error('booking.settle_conflict', { booking_id: bookingId, ...errorFields(err) });
+        return prisma.booking.update({
+          where: { id: bookingId },
+          data: { status: 'REFUND_DUE' },
+        });
+      }
+    }
+  }
+
+  // Unreachable: the loop either returns or throws on its last attempt.
+  throw new Error('confirmPaidBooking exhausted its attempts without settling');
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -165,22 +214,17 @@ export async function POST(request: Request): Promise<NextResponse> {
   // room, exactly as it is the only thing that confirms the money.
   const booking = await prisma.booking.findUnique({ where: { paymentId: updated.id } });
   if (booking) {
-    // A booking only holds its rooms for HOLD_MINUTES. Past that the
-    // availability query has stopped counting it, so another guest may have
-    // taken the same room while this one was still on the bank's page —
-    // confirming blindly here is how a paid guest arrives to no room.
-    // Inside the window the rooms were genuinely reserved for this booking,
-    // so there is nothing to re-check.
-    const holdExpired = booking.createdAt.getTime() <= Date.now() - HOLD_MINUTES * 60_000;
-    const stillAvailable = status !== 'SUCCESS' || !holdExpired || (await hasRoomsLeftFor(booking));
+    // A failed payment needs no availability check — the booking is over
+    // either way — so only the confirming path pays for a transaction.
+    const settled =
+      status === 'SUCCESS'
+        ? await confirmPaidBooking(booking.id)
+        : await prisma.booking.update({
+            where: { id: booking.id },
+            data: { status: 'PAYMENT_FAILED' },
+          });
 
-    const settled = await prisma.booking.update({
-      where: { id: booking.id },
-      data: {
-        status:
-          status !== 'SUCCESS' ? 'PAYMENT_FAILED' : stillAvailable ? 'CONFIRMED' : 'REFUND_DUE',
-      },
-    });
+    const stillAvailable = settled.status !== 'REFUND_DUE';
 
     log.info('booking.settled', {
       reference: settled.reference,

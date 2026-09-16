@@ -266,6 +266,45 @@ describe('i-Pay callback settling a booking', () => {
     );
   });
 
+  it('lets only one of two simultaneous late callbacks take the last room', async () => {
+    // The case the Serializable transaction exists for. Both bookings have
+    // expired holds, so each re-checks availability; each excludes itself, so
+    // without serialization both would read "1 room free" from the same
+    // snapshot and both would confirm — two guests, one room.
+    await loadRates(1);
+    const first = await createPendingBooking({ createdAt: expiredHold() });
+    const second = await createPendingBooking({ createdAt: expiredHold() });
+
+    await Promise.all([postCallback(first.payment.orderId), postCallback(second.payment.orderId)]);
+
+    const settled = await prisma.booking.findMany({
+      where: { id: { in: [first.booking.id, second.booking.id] } },
+      select: { status: true },
+    });
+
+    expect(settled.map((b) => b.status).sort()).toEqual(['CONFIRMED', 'REFUND_DUE']);
+  });
+
+  it('holds the line across several simultaneous late callbacks', async () => {
+    await loadRates(2);
+    const bookings = await Promise.all(
+      Array.from({ length: 4 }, () => createPendingBooking({ createdAt: expiredHold() })),
+    );
+
+    await Promise.all(bookings.map((b) => postCallback(b.payment.orderId)));
+
+    const settled = await prisma.booking.findMany({
+      where: { id: { in: bookings.map((b) => b.booking.id) } },
+      select: { status: true },
+    });
+
+    // Two rooms, four paid guests: never more than two confirmations, and
+    // everyone else is owed a refund rather than left pending.
+    const confirmed = settled.filter((b) => b.status === 'CONFIRMED').length;
+    expect(confirmed).toBeLessThanOrEqual(2);
+    expect(settled.filter((b) => b.status === 'REFUND_DUE').length).toBe(4 - confirmed);
+  });
+
   it('is idempotent — a replayed callback neither re-mails nor changes state', async () => {
     await loadRates(1);
     const { booking, payment } = await createPendingBooking();

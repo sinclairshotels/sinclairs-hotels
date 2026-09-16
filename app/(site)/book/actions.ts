@@ -12,12 +12,11 @@ import {
   parseDateOnly,
   todayUtc,
 } from '@/lib/booking';
-import { prisma } from '@/lib/db';
+import { SERIALIZABLE, isWriteConflict, prisma } from '@/lib/db';
 import { generateOrderId, ipayConfigured, requestBaseUrl, startSale } from '@/lib/ipay';
 import { log } from '@/lib/log';
 import { clientIp, isRateLimited } from '@/lib/rate-limit';
 import { bookingSchema } from '@/lib/validation';
-import { Prisma } from '@prisma/client';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -162,8 +161,8 @@ export async function createBooking(
       // Serializable because two guests can be holding the last room at the
       // same instant: the availability re-read above must not see a state
       // that a concurrent booking is about to invalidate. Postgres aborts
-      // the loser, which surfaces as P2034 below.
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      // the loser, which surfaces as a write conflict below.
+      SERIALIZABLE,
     );
   } catch (err) {
     if (err instanceof RoomsGoneError) {
@@ -172,7 +171,7 @@ export async function createBooking(
         message: 'Those rooms were taken while you were booking. Please search again.',
       };
     }
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
+    if (isWriteConflict(err)) {
       return {
         status: 'error',
         message: 'Someone else was booking the same room. Please try again.',
