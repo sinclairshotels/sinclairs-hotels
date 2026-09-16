@@ -29,24 +29,34 @@ code/data at that point, not just assumed.
 
 ## Email
 
-- [ ] **Verify `sinclairshotels.com` in Resend** (https://resend.com/domains —
-      add the domain, add its DNS records, wait for verification). Until this
-      is done, all mail sends from `onboarding@resend.dev`, which can only
-      deliver to the Resend account's own verified address — see `lib/mail.ts`.
-- [ ] Once verified, set `MAIL_FROM_ADDRESS` (Vercel env, production) to a real
-      `@sinclairshotels.com` sender, e.g. `Sinclairs Hotels <noreply@sinclairshotels.com>`.
-- [ ] Set `STAFF_NOTIFY_EMAIL` (Vercel env, production) to the real staff inbox
-      (legacy used `reservations@sinclairshotels.com`) — currently pinned to
-      `subham@sncl.in` in `.env.local` for end-to-end testing only.
-- [ ] Clear `MAIL_RECIPIENT_OVERRIDE` in production — while it's set, every
-      outbound email (guest voucher copies, enquiry notifications, i-Pay
-      confirmations) is redirected to the test address and no real guest or
-      staff recipient ever receives anything.
-- [ ] Clear `OWNER_BCC_EMAIL` in production once testing is done, unless the
-      business wants every outbound email (including guest-facing i-Pay/voucher
-      copies) permanently Bcc'd somewhere.
-- [ ] Confirm real staff distribution list for the daily digest (currently
-      `raviplanet@gmail.com` + `admin@sinclairshotels.com` Bcc, per legacy).
+- [x] **Verify `sinclairshotels.com` in Resend** — verified, with the
+      `resend._domainkey` DKIM record live in DNS. Before this, mail sent from
+      `onboarding@resend.dev`, which can only deliver to the Resend account's
+      own verified address — see `lib/mail.ts`.
+- [x] `MAIL_FROM_ADDRESS` set in production to
+      `Sinclairs Hotels <no-reply@sinclairshotels.com>`.
+- [x] `STAFF_NOTIFY_EMAIL` set in production to `reservations@sinclairshotels.com`,
+      which is also the code's own default. It had briefly been pinned to a
+      personal address while environment variables were rebuilt during the move
+      to the company Vercel team — an override is easy to introduce and silent,
+      since the correct value is a fallback rather than a required setting.
+- [x] `VOUCHER_OFFICE_EMAIL` set in production to `kolkata@sinclairshotels.com`.
+- [x] `OWNER_BCC_EMAIL` set in production to `shlarchive@sinclairshotels.com`.
+      The business asked for a permanent archive copy of all correspondence, so
+      this stays set rather than being cleared at launch.
+- [x] `MAIL_RECIPIENT_OVERRIDE` unset in production — it is Preview-only, where
+      it redirects every outbound mail to a single inbox.
+- [ ] **Set `DIGEST_TO_EMAIL` in production.** It has no fallback: the cron at
+      `30 1 * * *` (07:00 IST) reads it, finds nothing, logs `digest.skipped`
+      and returns HTTP 500. The daily enquiry digest therefore never sends, and
+      Vercel records a failed cron every morning — noise that trains people to
+      ignore a red cron, so a real failure later goes unnoticed. Left unset
+      deliberately pre-launch so business inboxes receive no automated mail
+      before the site is live. Legacy sent to `raviplanet@gmail.com` with
+      `admin@sinclairshotels.com` Bcc; confirm the real distribution list with
+      the business, then set `DIGEST_TO_EMAIL` and optionally `DIGEST_BCC_EMAIL`
+      — and redeploy production afterwards, because env is snapshotted at build
+      time and the variable alone changes nothing.
 
 ## i-Pay (ICICI Payment Gateway, Standard mode)
 
