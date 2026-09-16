@@ -341,7 +341,7 @@ Deployed via `vercel deploy` (add `--prod` for production) from
 `subham-5497`'s Vercel account, project `sinclairs-hotels` — live at
 https://sinclairs-hotels.vercel.app.
 
-**The GitHub repo (`subhamsncl/sinclairs-hotels`) is now connected**, so a push to
+**The GitHub repo (`sinclairshotels/sinclairs-hotels`) is now connected**, so a push to
 `main` triggers a Preview deployment on its own — and because the build command is
 `prisma migrate deploy && next build`, **a push migrates the dev database whether
 or not you then run `vercel deploy`**. Confirmed 2026-09-13: pushing `379a288`
