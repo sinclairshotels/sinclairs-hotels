@@ -147,6 +147,9 @@ export const bookingSchema = staySchema.extend({
 
 export type BookingInput = z.infer<typeof bookingSchema>;
 
+const checkboxField = () =>
+  z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean());
+
 // One /admin/rates submission writes rate + inventory across a date range
 // for a single room type, which is how staff actually think about a season.
 export const rateGridSchema = z.object({
@@ -156,7 +159,16 @@ export const rateGridSchema = z.object({
   to: dateOnlyField('Please select an end date'),
   rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
   totalRooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500)),
-  closed: z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean()),
+  closed: checkboxField(),
+  // 0 (Sunday) to 6. Empty means every night in the range — the common case,
+  // and what a form with no boxes ticked should mean rather than "no nights".
+  weekdays: z.preprocess(
+    (val) => (Array.isArray(val) ? val : val === undefined || val === null ? [] : [val]),
+    z.array(z.coerce.number().int().min(0).max(6)).max(7),
+  ),
+  // Staff see what a load would overwrite before it happens; the write only
+  // goes ahead on the second, confirmed submission.
+  confirmed: checkboxField(),
 });
 
 export type RateGridInput = z.infer<typeof rateGridSchema>;

@@ -34,7 +34,9 @@ const FROM = addDays(todayUtc(), 400);
 const TO = addDays(FROM, 4);
 const WINDOW = { gte: addDays(todayUtc(), 390), lt: addDays(todayUtc(), 430) };
 
-function rateFormData(overrides: Record<string, string> = {}): FormData {
+// Weekdays are multi-valued, so they are appended separately rather than
+// squeezed into the single-value overrides map.
+function rateFormData(overrides: Record<string, string> = {}, weekdays: number[] = []): FormData {
   const data = new FormData();
   const fields: Record<string, string> = {
     hotelSlug: HOTEL,
@@ -43,9 +45,11 @@ function rateFormData(overrides: Record<string, string> = {}): FormData {
     to: dateKey(TO),
     rate: '5500',
     totalRooms: '4',
+    confirmed: 'on',
     ...overrides,
   };
   for (const [key, value] of Object.entries(fields)) data.append(key, value);
+  for (const day of weekdays) data.append('weekdays', String(day));
   return data;
 }
 
@@ -53,6 +57,7 @@ const submit = (formData: FormData) => saveRates({ status: 'idle' }, formData);
 
 async function cleanup() {
   await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: WINDOW } });
+  await prisma.rateChange.deleteMany({ where: { hotelSlug: HOTEL, firstNight: WINDOW } });
 }
 
 beforeAll(async () => {
@@ -148,5 +153,131 @@ describe('saveRates', () => {
 
     expect(state.status).toBe('error');
     expect(await prisma.roomRate.count({ where: { hotelSlug: HOTEL, date: WINDOW } })).toBe(0);
+  });
+});
+
+describe('the confirmation step', () => {
+  it('writes nothing until the change is confirmed', async () => {
+    const state = await submit(rateFormData({ confirmed: '' }));
+
+    expect(state.status).toBe('preview');
+    expect(state.preview?.nights).toBe(5);
+    expect(state.preview?.existing).toBe(0);
+    expect(state.preview?.changing).toBe(0);
+    expect(await prisma.roomRate.count({ where: { hotelSlug: HOTEL, date: WINDOW } })).toBe(0);
+  });
+
+  it('counts how many nights are already loaded and how many actually differ', async () => {
+    await submit(rateFormData({ to: dateKey(addDays(FROM, 2)) })); // 3 nights at 5500/4
+
+    const state = await submit(rateFormData({ confirmed: '', rate: '6900' }));
+
+    expect(state.status).toBe('preview');
+    expect(state.preview).toMatchObject({ nights: 5, existing: 3, changing: 3 });
+  });
+
+  it('does not count a night re-saved at the values it already holds', async () => {
+    await submit(rateFormData());
+
+    const state = await submit(rateFormData({ confirmed: '' }));
+
+    expect(state.preview).toMatchObject({ nights: 5, existing: 5, changing: 0 });
+  });
+
+  it('carries the property slug back so the confirmation can resubmit it', async () => {
+    const state = await submit(rateFormData({ confirmed: '' }));
+    expect(state.preview?.hotelSlug).toBe(HOTEL);
+  });
+});
+
+describe('day-of-week filtering', () => {
+  it('writes only the nights falling on the selected days', async () => {
+    // FROM is a known weekday; select exactly the day it falls on.
+    const onlyThatDay = FROM.getUTCDay();
+    const state = await submit(rateFormData({ to: dateKey(addDays(FROM, 13)) }, [onlyThatDay]));
+
+    expect(state.status).toBe('success');
+    const rows = await prisma.roomRate.findMany({
+      where: { hotelSlug: HOTEL, date: WINDOW },
+      orderBy: { date: 'asc' },
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.date.getUTCDay() === onlyThatDay)).toBe(true);
+  });
+
+  it('treats no days ticked as every night, not none', async () => {
+    const state = await submit(rateFormData({}, []));
+    expect(state.status).toBe('success');
+    expect(await prisma.roomRate.count({ where: { hotelSlug: HOTEL, date: WINDOW } })).toBe(5);
+  });
+
+  it('leaves the other days of an existing season untouched', async () => {
+    await submit(rateFormData({ to: dateKey(addDays(FROM, 13)) })); // 14 nights at 5500
+    const weekendDay = FROM.getUTCDay();
+
+    await submit(rateFormData({ to: dateKey(addDays(FROM, 13)), rate: '9900' }, [weekendDay]));
+
+    const rows = await prisma.roomRate.findMany({ where: { hotelSlug: HOTEL, date: WINDOW } });
+    expect(rows).toHaveLength(14);
+    expect(rows.filter((r) => r.rate.toNumber() === 9900)).toHaveLength(2);
+    expect(rows.filter((r) => r.rate.toNumber() === 5500)).toHaveLength(12);
+  });
+
+  it('refuses a range that contains none of the selected days', async () => {
+    // A three-night range cannot contain all seven weekdays, so pick one it misses.
+    const missing = (FROM.getUTCDay() + 4) % 7;
+    const state = await submit(rateFormData({ to: dateKey(addDays(FROM, 2)) }, [missing]));
+
+    expect(state.status).toBe('error');
+    expect(state.message).toMatch(/none of the selected days|no nights in that range/i);
+  });
+});
+
+describe('the change log', () => {
+  it('records what was written, by whom, and what it replaced', async () => {
+    await submit(rateFormData({ rate: '5000', totalRooms: '3' }));
+    await submit(rateFormData({ rate: '7000', totalRooms: '2' }));
+
+    const changes = await prisma.rateChange.findMany({
+      where: { hotelSlug: HOTEL, firstNight: WINDOW },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    expect(changes).toHaveLength(2);
+    expect(changes[1]).toMatchObject({
+      roomName: ROOM,
+      nightsWritten: 5,
+      nightsChanged: 5,
+      totalRooms: 2,
+    });
+    expect(changes[1]?.rate.toNumber()).toBe(7000);
+    expect(changes[1]?.actorIp).toBeTruthy();
+    expect(changes[1]?.actor).toMatch(/admin/i);
+
+    // The values it replaced, per night, so the log is a history not a list.
+    const previous = changes[1]?.previous as Array<{ rate: number; totalRooms: number }>;
+    expect(previous).toHaveLength(5);
+    expect(previous[0]).toMatchObject({ rate: 5000, totalRooms: 3 });
+  });
+
+  it('records the write but not a replacement when nothing actually changed', async () => {
+    await submit(rateFormData());
+    await submit(rateFormData());
+
+    const changes = await prisma.rateChange.findMany({
+      where: { hotelSlug: HOTEL, firstNight: WINDOW },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    expect(changes[1]).toMatchObject({ nightsWritten: 5, nightsChanged: 0 });
+    expect(changes[1]?.previous).toEqual([]);
+  });
+
+  it('writes no log entry for a rejected submission', async () => {
+    await submit(rateFormData({ roomName: 'Presidential Yurt' }));
+    expect(await prisma.rateChange.count({ where: { hotelSlug: HOTEL, firstNight: WINDOW } })).toBe(
+      0,
+    );
   });
 });

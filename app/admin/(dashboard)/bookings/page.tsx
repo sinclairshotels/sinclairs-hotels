@@ -182,7 +182,7 @@ export default async function BookingsPage({
                 <td className="px-4 py-3">
                   {getHotelBySlug(booking.hotelSlug)?.name ?? booking.hotelSlug}
                 </td>
-                <td className="px-4 py-3 text-ink/70">
+                <td className="whitespace-nowrap px-4 py-3 text-ink/70">
                   {booking.roomName}
                   {booking.rooms > 1 && <span className="text-ink/50"> ×{booking.rooms}</span>}
                 </td>

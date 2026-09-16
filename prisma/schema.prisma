@@ -268,3 +268,34 @@ model Booking {
   @@index([status, createdAt])
   @@index([createdAt])
 }
+
+// One row per rate write from /admin/rates, including single-night edits made
+// from the calendar grid. `previous` holds the values that were replaced, for
+// the nights that actually changed — a rate that was re-saved unchanged is
+// counted but not recorded, so the log reads as a history of real changes.
+//
+// `actor` is the shared admin account until per-user staff logins land
+// (PLAN.md → Phase 2). Until then "who" can only honestly be "someone signed
+// in as admin, from this IP" — which is worth recording, but is not yet the
+// accountability a real audit log implies.
+model RateChange {
+  id            String   @id @default(cuid())
+  hotelSlug     String
+  roomName      String
+  firstNight    DateTime @db.Date
+  lastNight     DateTime @db.Date
+  // Empty means every night in the range; otherwise 0 (Sunday) to 6.
+  weekdays      Int[]
+  nightsWritten Int
+  nightsChanged Int
+  rate          Decimal  @db.Decimal(10, 2)
+  totalRooms    Int
+  closed        Boolean
+  previous      Json
+  actor         String
+  actorIp       String?
+  createdAt     DateTime @default(now())
+
+  @@index([hotelSlug, createdAt])
+  @@index([createdAt])
+}

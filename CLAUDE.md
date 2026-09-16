@@ -211,6 +211,35 @@ distinguishes the two with a `roomRate.count`, and they need opposite copy.
 cannot see STAAH's sales, so anything sold in both places is sold twice. That
 constraint is the engine's one real operational rule.
 
+**The rates screen is the ops surface for all of this.** `/admin/rates` has a
+calendar grid (dates across, room types down; each cell shows rate, rooms on
+sale, sold and remaining, and opens a single-night editor), a bulk "load a
+season" form with day-of-week checkboxes, a coverage banner, and a change log.
+Three things about it are load-bearing rather than decorative:
+
+- **Sold is counted with the same rule availability uses** (`heldBookingFilter`),
+  so the grid and the guest-facing pages can never disagree about a night.
+- **A bulk load previews before it writes.** It reports nights written, how many
+  were already loaded, and how many hold *different* values — re-saving a season
+  unchanged is an overwrite but not a change, and staff care about the
+  difference. The confirmation posts the previewed values back as hidden fields
+  rather than re-reading the form, so what is written is what was described.
+  Single-night edits from the grid skip the preview: one night is its own
+  confirmation.
+- **A dependent Select must not be trusted to keep its value.** Changing the
+  property swaps the room Select's entire item set, and a controlled Radix
+  Select whose value is no longer among its items reports back an empty string.
+  The form therefore *derives* the submitted room (falling back to the
+  property's first room) instead of reading it from state. Before that, picking
+  a different property posted an empty `roomName` and the loader rejected its
+  own form — jsdom does not reproduce this, so the regression test for it is in
+  `e2e/rates.spec.ts`, not a component test.
+
+`RateChange` records every write (range, weekdays, nights written/changed, the
+new values, and the per-night values replaced). `actor` is the shared admin
+login plus its IP — there are no per-user staff accounts yet (PLAN.md → Phase
+2), so that is the most "who" it can honestly claim.
+
 **Inventory is counted, never decremented.** Availability subtracts the rooms
 held by overlapping bookings (`lib/availability.ts`) rather than maintaining a
 counter that can drift. A `PENDING_PAYMENT` booking holds its rooms for

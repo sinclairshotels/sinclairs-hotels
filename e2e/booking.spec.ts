@@ -22,6 +22,11 @@ const WINDOW = {
 
 const stayQuery = `checkIn=${CHECK_IN}&checkOut=${CHECK_OUT}&rooms=1&adults=2&children=0`;
 
+// Serial: these share one seeded date window, and beforeAll/afterAll run once
+// per worker — split across workers, one worker's afterAll deletes the rates
+// another worker is still asserting against.
+test.describe.configure({ mode: 'serial' });
+
 test.beforeAll(async () => {
   for (let i = 0; i < 2; i++) {
     const date = new Date(`${isoDay(200 + i)}T00:00:00.000Z`);
