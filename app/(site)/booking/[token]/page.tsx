@@ -27,6 +27,7 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
     PENDING_PAYMENT: 'Waiting for your payment',
     PAYMENT_FAILED: 'Payment did not go through',
     CANCELLED: 'This booking was cancelled',
+    REFUND_DUE: 'We could not confirm this booking',
   }[booking.status];
 
   const blurb = {
@@ -36,6 +37,16 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
     PAYMENT_FAILED:
       'Nothing has been charged and no room is held. You are welcome to try again — please search for your dates afresh.',
     CANCELLED: 'No room is held against this reference.',
+    REFUND_DUE:
+      'Your payment went through, but the last room was taken before it reached us, so we could not hold your stay. We are refunding you in full and our reservations team will be in touch to find you another room.',
+  }[booking.status];
+
+  const totalLabel = {
+    CONFIRMED: 'Total paid',
+    PENDING_PAYMENT: 'Total',
+    PAYMENT_FAILED: 'Total',
+    CANCELLED: 'Total',
+    REFUND_DUE: 'Amount being refunded',
   }[booking.status];
 
   return (
@@ -77,9 +88,7 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
           </dl>
 
           <div className="mt-6 flex items-baseline justify-between border-t border-ink/10 pt-6">
-            <span className="text-xs uppercase tracking-wider text-ink/60">
-              {booking.status === 'CONFIRMED' ? 'Total paid' : 'Total'}
-            </span>
+            <span className="text-xs uppercase tracking-wider text-ink/60">{totalLabel}</span>
             <span className="font-display text-2xl text-forest">
               {formatInr(booking.total.toNumber())}
             </span>

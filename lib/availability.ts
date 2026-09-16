@@ -37,6 +37,9 @@ export interface AvailabilityQuery {
   checkOut: Date;
   rooms: number;
   now?: Date;
+  // A booking to leave out of the held count — used when re-checking
+  // availability *for* a specific booking, so it cannot block itself.
+  excludeBookingId?: string;
 }
 
 // Every room type at a property that can be sold for the whole of the
@@ -46,7 +49,7 @@ export interface AvailabilityQuery {
 // guess a rate for.
 export async function roomOffers(
   db: Db,
-  { hotelSlug, checkIn, checkOut, rooms, now = new Date() }: AvailabilityQuery,
+  { hotelSlug, checkIn, checkOut, rooms, now = new Date(), excludeBookingId }: AvailabilityQuery,
 ): Promise<RoomOffer[]> {
   const hotel = getHotelBySlug(hotelSlug);
   const nights = eachNight(checkIn, checkOut);
@@ -61,6 +64,7 @@ export async function roomOffers(
         hotelSlug,
         checkIn: { lt: checkOut },
         checkOut: { gt: checkIn },
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
         ...heldBookingFilter(now),
       },
       select: { roomName: true, rooms: true, checkIn: true, checkOut: true },

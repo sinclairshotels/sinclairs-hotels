@@ -1,6 +1,11 @@
 import { getHotelBySlug } from '@/content/hotels';
+import { roomOffer } from '@/lib/availability';
+import { HOLD_MINUTES } from '@/lib/booking';
 import { prisma } from '@/lib/db';
-import { bookingConfirmationHtml } from '@/lib/email-templates/booking-confirmation';
+import {
+  bookingConfirmationHtml,
+  bookingOversoldHtml,
+} from '@/lib/email-templates/booking-confirmation';
 import { ipayConfirmationHtml } from '@/lib/email-templates/ipay-confirmation';
 import {
   iciciConfig,
@@ -26,6 +31,28 @@ async function settlementUrl(baseUrl: string, paymentId: string, orderId: string
   return booking
     ? `${baseUrl}/booking/${booking.viewToken}`
     : `${baseUrl}/ipay/result?order=${orderId}`;
+}
+
+// Re-checks that the room this booking was made for can still be sold,
+// ignoring the booking itself — its own expired hold must not count against
+// it.
+async function hasRoomsLeftFor(booking: {
+  id: string;
+  hotelSlug: string;
+  roomName: string;
+  checkIn: Date;
+  checkOut: Date;
+  rooms: number;
+}): Promise<boolean> {
+  const offer = await roomOffer(prisma, {
+    hotelSlug: booking.hotelSlug,
+    roomName: booking.roomName,
+    checkIn: booking.checkIn,
+    checkOut: booking.checkOut,
+    rooms: booking.rooms,
+    excludeBookingId: booking.id,
+  });
+  return Boolean(offer && offer.roomsLeft >= booking.rooms);
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -138,9 +165,21 @@ export async function POST(request: Request): Promise<NextResponse> {
   // room, exactly as it is the only thing that confirms the money.
   const booking = await prisma.booking.findUnique({ where: { paymentId: updated.id } });
   if (booking) {
+    // A booking only holds its rooms for HOLD_MINUTES. Past that the
+    // availability query has stopped counting it, so another guest may have
+    // taken the same room while this one was still on the bank's page —
+    // confirming blindly here is how a paid guest arrives to no room.
+    // Inside the window the rooms were genuinely reserved for this booking,
+    // so there is nothing to re-check.
+    const holdExpired = booking.createdAt.getTime() <= Date.now() - HOLD_MINUTES * 60_000;
+    const stillAvailable = status !== 'SUCCESS' || !holdExpired || (await hasRoomsLeftFor(booking));
+
     const settled = await prisma.booking.update({
       where: { id: booking.id },
-      data: { status: status === 'SUCCESS' ? 'CONFIRMED' : 'PAYMENT_FAILED' },
+      data: {
+        status:
+          status !== 'SUCCESS' ? 'PAYMENT_FAILED' : stillAvailable ? 'CONFIRMED' : 'REFUND_DUE',
+      },
     });
 
     log.info('booking.settled', {
@@ -151,7 +190,37 @@ export async function POST(request: Request): Promise<NextResponse> {
       amount: settled.total.toNumber(),
     });
 
-    if (status === 'SUCCESS') {
+    if (status === 'SUCCESS' && !stillAvailable) {
+      // Money taken, no room: an incident, not a payment outcome. The refund
+      // itself stays manual — it goes back through ICICI from /admin/payments,
+      // and this codebase never moves real money without a person deciding to.
+      log.error('booking.oversold', {
+        reference: settled.reference,
+        order_id: orderId,
+        hotel: settled.hotelSlug,
+        room: settled.roomName,
+        rooms: settled.rooms,
+        amount: settled.total.toNumber(),
+      });
+
+      const viewUrl = `${publicSiteUrl}/booking/${settled.viewToken}`;
+
+      await sendMail({
+        to: settled.guestEmail,
+        kind: 'booking-oversold-guest',
+        subject: `We could not confirm booking ${settled.reference} — refund on its way`,
+        html: bookingOversoldHtml({ booking: settled, hotel, viewUrl }),
+      });
+
+      await sendMail({
+        to: STAFF_NOTIFY_EMAIL,
+        kind: 'booking-oversold-staff',
+        subject: `REFUND DUE: ${settled.reference} paid but not confirmed — ${hotelName}`,
+        html: bookingOversoldHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
+      });
+    }
+
+    if (status === 'SUCCESS' && stillAvailable) {
       const viewUrl = `${publicSiteUrl}/booking/${settled.viewToken}`;
 
       await sendMail({

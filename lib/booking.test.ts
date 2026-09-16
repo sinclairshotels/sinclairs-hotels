@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  GST_SLAB_THRESHOLD,
+  GST_RATE,
   bookingReference,
   dateKey,
   eachNight,
   formatStayDate,
-  gstRateFor,
   nightsBetween,
   parseDateOnly,
   quoteStay,
@@ -61,34 +60,26 @@ describe('nights', () => {
   });
 });
 
-describe('gstRateFor', () => {
-  it('charges 12% up to the slab threshold and 18% above it', () => {
-    expect(gstRateFor(4000)).toBe(0.12);
-    expect(gstRateFor(GST_SLAB_THRESHOLD)).toBe(0.12);
-    expect(gstRateFor(GST_SLAB_THRESHOLD + 1)).toBe(0.18);
-  });
-});
-
 describe('quoteStay', () => {
   it('prices each night at its own rate and multiplies by rooms', () => {
     const quote = quoteStay([4000, 5000], 2);
     expect(quote.nights).toBe(2);
     expect(quote.roomTotal).toBe(18000);
-    expect(quote.taxTotal).toBe(2160);
-    expect(quote.total).toBe(20160);
+    expect(quote.taxTotal).toBe(3240);
+    expect(quote.total).toBe(21240);
   });
 
-  it('applies the slab per night, so cheap nights stay at 12% in a mixed stay', () => {
+  it('taxes every night at the same rate whatever the tariff', () => {
+    expect(GST_RATE).toBe(0.18);
     const quote = quoteStay([7000, 9000], 1);
-    // 7000 * 0.12 + 9000 * 0.18 — not 16000 * 0.18.
-    expect(quote.taxTotal).toBe(2460);
+    expect(quote.taxTotal).toBe(2880);
   });
 
   it('rounds money to paise rather than carrying float error', () => {
     const quote = quoteStay([3333.33], 3);
     expect(quote.roomTotal).toBe(9999.99);
-    expect(quote.taxTotal).toBe(1200);
-    expect(quote.total).toBe(11199.99);
+    expect(quote.taxTotal).toBe(1800);
+    expect(quote.total).toBe(11799.99);
   });
 });
 

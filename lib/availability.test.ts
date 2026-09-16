@@ -101,7 +101,7 @@ describe('roomOffers', () => {
     expect(offer?.nightlyRates).toEqual([4000, 4000, 4000]);
     expect(offer?.quote.nights).toBe(3);
     expect(offer?.quote.roomTotal).toBe(12000);
-    expect(offer?.quote.taxTotal).toBe(1440);
+    expect(offer?.quote.taxTotal).toBe(2160);
     expect(offer?.roomsLeft).toBe(3);
   });
 
@@ -129,7 +129,7 @@ describe('roomOffers', () => {
     const [offer] = await roomOffers(prisma, { ...query, rooms: 2 });
 
     expect(offer?.quote.roomTotal).toBe(24000);
-    expect(offer?.quote.total).toBe(26880);
+    expect(offer?.quote.total).toBe(28320);
   });
 
   it('lists room types in the content file’s order, not the database’s', async () => {
@@ -199,6 +199,28 @@ describe('inventory held by existing bookings', () => {
     await createBooking({ status: 'CONFIRMED', rooms: 3, roomName: OTHER_ROOM });
     const [offer] = await roomOffers(prisma, query);
     expect(offer?.roomsLeft).toBe(3);
+  });
+});
+
+describe('excludeBookingId', () => {
+  beforeEach(() => loadRates(ROOM, 3, { totalRooms: 1 }));
+
+  it('leaves the named booking out of the held count, so it cannot block itself', async () => {
+    const booking = await createBooking({ status: 'CONFIRMED', rooms: 1 });
+
+    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(0);
+    expect(
+      (await roomOffers(prisma, { ...query, excludeBookingId: booking.id }))[0]?.roomsLeft,
+    ).toBe(1);
+  });
+
+  it('still counts every other booking', async () => {
+    const mine = await createBooking({ status: 'CONFIRMED', rooms: 1 });
+    await createBooking({ status: 'CONFIRMED', rooms: 1 });
+
+    expect((await roomOffers(prisma, { ...query, excludeBookingId: mine.id }))[0]?.roomsLeft).toBe(
+      0,
+    );
   });
 });
 

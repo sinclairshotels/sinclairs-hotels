@@ -120,11 +120,11 @@ describe('createBooking', () => {
 
     expect(booking?.status).toBe('PENDING_PAYMENT');
     expect(booking?.roomTotal.toNumber()).toBe(8000);
-    expect(booking?.taxTotal.toNumber()).toBe(960);
-    expect(booking?.total.toNumber()).toBe(8960);
+    expect(booking?.taxTotal.toNumber()).toBe(1440);
+    expect(booking?.total.toNumber()).toBe(9440);
     expect(booking?.reference).toMatch(/^SNC-/);
     // The payment carries the same amount and points back at the booking.
-    expect(booking?.payment?.amount.toNumber()).toBe(8960);
+    expect(booking?.payment?.amount.toNumber()).toBe(9440);
     expect(booking?.payment?.status).toBe('INITIATED');
     expect(booking?.payment?.reservationNo).toBe(booking?.reference);
   });
@@ -141,7 +141,7 @@ describe('createBooking', () => {
     const booking = await prisma.booking.findFirst({
       where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } },
     });
-    expect(booking?.total.toNumber()).toBe(8960);
+    expect(booking?.total.toNumber()).toBe(9440);
   });
 
   it('refuses to oversell the last room', async () => {

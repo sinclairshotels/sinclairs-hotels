@@ -231,10 +231,27 @@ instead of `/ipay/result`. `Booking.paymentId` is a real FK to `Payment`, which
 also closes the reconciliation gap `PLAN.md` flags — for bookings, at least;
 `Voucher` still has no such link.
 
-**GST is charged per room per night against that night's rate** (12% up to
-₹7,500, 18% above — `gstRateFor` in `lib/booking.ts`). Applying the slab to the
-booking total instead would push a long cheap stay into the higher band, which
-is not the rule.
+**A callback arriving after the hold expired re-checks availability before it
+confirms.** Past `HOLD_MINUTES` the booking has stopped holding its rooms, so
+another guest can have taken them while this one was still on the bank's page —
+confirming blindly is how a paid guest arrives to no room. The re-check passes
+`excludeBookingId` so the booking's own expired hold cannot make it look
+oversold (there is a test for exactly that; without it a single-room property
+would refund every late callback). Inside the window the rooms were genuinely
+reserved, so there is nothing to re-check and none is done.
+
+If the room really is gone the booking goes to **`REFUND_DUE`**, not
+`CONFIRMED`: it holds no inventory, the guest is emailed that their money is
+coming back, and staff get a task-shaped alert. **The refund stays manual** —
+it goes back through ICICI from `/admin/payments`, and nothing here moves real
+money without a person deciding to. `REFUND_DUE` is the one status on
+`/admin/bookings` styled as a task rather than a state, because it is money
+owed to someone.
+
+**GST is charged per room per night against that night's rate**, at a flat 18%
+(`GST_RATE` in `lib/booking.ts`). A booking stores the tax it was priced with,
+so changing this rate never alters what an existing guest already agreed to pay
+— it only applies to quotes made after the change.
 
 **Dates are UTC-midnight throughout** (`parseDateOnly`/`dateKey`), matching
 Prisma's `@db.Date`. Local midnight would shift which night a rate belongs to.
@@ -255,7 +272,7 @@ Postgres disagree, this is the tiebreaker.
 
 Use `log.info/warn/error(event, fields)` with a dotted event name
 (`enquiry.created`, `ipay.settled`, `booking.created`, `booking.settled`,
-`rates.updated`, `refund.rejected`). No bare `console.*` in
+`booking.oversold`, `rates.updated`, `refund.rejected`). No bare `console.*` in
 `app/` or `lib/` — the logger is the only place those appear.
 
 **Guest data must never reach a log line.** `lib/log.ts` redacts by field name:

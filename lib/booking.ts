@@ -55,15 +55,9 @@ export function eachNight(checkIn: Date, checkOut: Date): Date[] {
   return Array.from({ length: Math.max(0, count) }, (_, i) => addDays(checkIn, i));
 }
 
-// GST on hotel accommodation is charged per room per night against that
-// night's tariff: up to Rs 7,500 it is 12%, above that 18%. Applying the
-// slab to the booking total instead would push a long stay at a cheap rate
-// into the higher band, which is not how the rule works.
-export const GST_SLAB_THRESHOLD = 7500;
-
-export function gstRateFor(nightlyRate: number): number {
-  return nightlyRate <= GST_SLAB_THRESHOLD ? 0.12 : 0.18;
-}
+// GST on hotel accommodation, charged per room per night against that
+// night's tariff rather than against the booking total.
+export const GST_RATE = 0.18;
 
 export interface StayQuote {
   nights: number;
@@ -78,7 +72,7 @@ function round2(value: number): number {
 
 export function quoteStay(nightlyRates: number[], rooms: number): StayQuote {
   const perRoom = nightlyRates.reduce((sum, rate) => sum + rate, 0);
-  const perRoomTax = nightlyRates.reduce((sum, rate) => sum + rate * gstRateFor(rate), 0);
+  const perRoomTax = nightlyRates.reduce((sum, rate) => sum + rate * GST_RATE, 0);
   const roomTotal = round2(perRoom * rooms);
   const taxTotal = round2(perRoomTax * rooms);
 

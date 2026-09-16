@@ -30,7 +30,10 @@ export function bookingFields(booking: Booking, hotel?: Hotel): Array<[string, s
       : []),
     ['Room Charges', formatInr(booking.roomTotal.toNumber())],
     ['Taxes (GST)', formatInr(booking.taxTotal.toNumber())],
-    ['Total Paid', formatInr(booking.total.toNumber())],
+    [
+      booking.status === 'REFUND_DUE' ? 'Amount To Refund' : 'Total Paid',
+      formatInr(booking.total.toNumber()),
+    ],
   ];
 }
 
@@ -69,6 +72,44 @@ export function bookingConfirmationHtml({
 
   return emailLayout({
     title: `Booking ${booking.reference} — ${hotel?.name ?? booking.hotelSlug}`,
+    bodyHtml,
+  });
+}
+
+// Sent instead of a confirmation when a payment cleared but the room had
+// already gone — see app/api/ipay/callback/route.ts. The guest is out of
+// pocket with nothing held, so this says so plainly rather than dressing it
+// up, and the staff copy is a task, not a notification.
+export function bookingOversoldHtml({
+  booking,
+  hotel,
+  viewUrl,
+  forStaff = false,
+}: {
+  booking: Booking;
+  hotel?: Hotel;
+  viewUrl: string;
+  forStaff?: boolean;
+}): string {
+  const amount = formatInr(booking.total.toNumber());
+
+  const bodyHtml = forStaff
+    ? `<p style="font-size:14px; margin:0 0 8px;"><strong>Action needed: refund ${escapeHtml(amount)}.</strong></p>
+       <p style="font-size:14px; margin:0 0 20px;">A guest completed payment for ${escapeHtml(
+         hotel?.name ?? booking.hotelSlug,
+       )}, but the room was no longer available when the bank's confirmation arrived, so the booking was not confirmed. It is holding no inventory. Refund this payment from the Payments page in the admin dashboard, and contact the guest.</p>
+       ${fieldRowsHtml(bookingFields(booking, hotel))}`
+    : `<p style="font-size:14px; margin:0 0 16px;">Dear ${escapeHtml(booking.guestName)},</p>
+       <p style="font-size:14px; margin:0 0 20px;">We are very sorry. Your payment of ${escapeHtml(
+         amount,
+       )} went through, but the last room was taken before your payment reached us, so we could not confirm your stay. We are refunding you in full, and our reservations team will be in touch shortly to help you find another room.</p>
+       ${fieldRowsHtml(bookingFields(booking, hotel))}
+       <div style="margin:20px 0;">
+         ${buttonHtml(viewUrl, 'View This Booking Online')}
+       </div>`;
+
+  return emailLayout({
+    title: `Booking ${booking.reference} — refund due`,
     bodyHtml,
   });
 }

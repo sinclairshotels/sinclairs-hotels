@@ -16,6 +16,7 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   PENDING_PAYMENT: 'Awaiting payment',
   PAYMENT_FAILED: 'Payment failed',
   CANCELLED: 'Cancelled',
+  REFUND_DUE: 'Refund due',
 };
 
 const STATUS_STYLE: Record<BookingStatus, string> = {
@@ -23,6 +24,9 @@ const STATUS_STYLE: Record<BookingStatus, string> = {
   PENDING_PAYMENT: 'bg-gold/20 text-gold-dark',
   PAYMENT_FAILED: 'bg-red-50 text-red-700',
   CANCELLED: 'bg-ink/10 text-ink/60',
+  // Paid but unconfirmed and owing the guest money — the one status on this
+  // page that is a task rather than a state.
+  REFUND_DUE: 'bg-red-700 text-white',
 };
 
 export default async function BookingsPage({

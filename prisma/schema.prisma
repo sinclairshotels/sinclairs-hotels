@@ -210,6 +210,10 @@ enum BookingStatus {
   CONFIRMED
   PAYMENT_FAILED
   CANCELLED
+  // Paid for, but the room was gone by the time the gateway's callback
+  // arrived — see app/api/ipay/callback/route.ts. Holds no inventory and
+  // owes the guest their money back; staff settle it from /admin/payments.
+  REFUND_DUE
 }
 
 // A direct booking made on this site, as opposed to one that came through

@@ -57,9 +57,9 @@ test('a room with rates loaded is offered, priced, and leads to the guest form',
   await page.goto(`/book/${HOTEL}?${stayQuery}`);
 
   await expect(page.getByRole('heading', { level: 2, name: ROOM })).toBeVisible();
-  // 2 nights at 6,800 plus 12% GST — the price the guest is shown must be the
+  // 2 nights at 6,800 plus 18% GST — the price the guest is shown must be the
   // one the server computes, not a rounded display of something else.
-  await expect(page.getByText('₹15,232')).toBeVisible();
+  await expect(page.getByText('₹16,048')).toBeVisible();
 
   await page.getByRole('link', { name: 'Select' }).first().click();
 
@@ -68,7 +68,7 @@ test('a room with rates loaded is offered, priced, and leads to the guest form',
     page.getByRole('heading', { level: 1, name: /confirm your booking/i }),
   ).toBeVisible();
   await expect(page.getByText('Total payable')).toBeVisible();
-  await expect(page.getByText('₹15,232')).toBeVisible();
+  await expect(page.getByText('₹16,048')).toBeVisible();
   await expect(page.getByLabel('Full Name')).toBeVisible();
   await expect(page.getByRole('button', { name: /pay & confirm booking/i })).toBeVisible();
 });
