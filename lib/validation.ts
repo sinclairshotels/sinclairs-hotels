@@ -105,3 +105,58 @@ export const refundSchema = z.object({
 });
 
 export type RefundInput = z.infer<typeof refundSchema>;
+
+const phoneField = (message = 'Please enter a valid phone number') =>
+  z
+    .string()
+    .trim()
+    .min(7, message)
+    .max(20)
+    .regex(/^[0-9+()\-\s]+$/, message);
+
+const dateOnlyField = (message: string) =>
+  z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, message);
+
+// The stay itself, shared by the availability page's query string and the
+// booking submission — both are guest-supplied and neither is trusted.
+// Whether the dates make sense relative to each other and to today is
+// checked against real rate rows in lib/availability.ts, not here.
+export const staySchema = z.object({
+  hotelSlug: z.string().trim().min(1, 'Please select a property').max(60),
+  checkIn: dateOnlyField('Please select a check-in date'),
+  checkOut: dateOnlyField('Please select a check-out date'),
+  rooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(5).catch(1)),
+  adults: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).catch(2)),
+  children: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(20).catch(0)),
+});
+
+export type StayInput = z.infer<typeof staySchema>;
+
+export const bookingSchema = staySchema.extend({
+  roomName: z.string().trim().min(1, 'Please choose a room').max(120),
+  guestName: z.string().trim().min(2, 'Please enter your full name').max(120),
+  guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
+  guestPhone: phoneField(),
+  billingAddress: z.string().trim().min(5, 'Please enter your address').max(500),
+  specialRequests: optionalTrimmed(1000),
+  company: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
+});
+
+export type BookingInput = z.infer<typeof bookingSchema>;
+
+// One /admin/rates submission writes rate + inventory across a date range
+// for a single room type, which is how staff actually think about a season.
+export const rateGridSchema = z.object({
+  hotelSlug: z.string().trim().min(1, 'Please select a hotel').max(60),
+  roomName: z.string().trim().min(1, 'Please select a room type').max(120),
+  from: dateOnlyField('Please select a start date'),
+  to: dateOnlyField('Please select an end date'),
+  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+  totalRooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500)),
+  closed: z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean()),
+});
+
+export type RateGridInput = z.infer<typeof rateGridSchema>;

@@ -187,6 +187,64 @@ Migrations apply themselves — the build command is
 database. Never hand-edit a Neon branch's schema. To refresh dev data, use Neon's
 **Reset from parent** rather than recreating the branch.
 
+## Booking engine
+
+`/book` sells a **direct allotment** this site owns, end to end: search → live
+availability → guest details → ICICI i-Pay → confirmation. It is deliberately
+separate from the STAAH handoff, which still exists and is unchanged.
+
+**Inventory and rates are staff data, not content.** `RoomRate` holds one row per
+(hotel, room type, date) carrying `rate`, `totalRooms` and a `closed` stop-sell
+flag, edited on `/admin/rates` next to Vouchers. This is the one deliberate
+exception to "a hotel is a typed object in `content/hotels`" — a tariff change
+must not require a deploy, and inventory moves daily. `roomName` matches
+`RoomType.name` in the content file by string, with no FK: room types stay
+content, and a rate whose name no longer matches simply stops being offered.
+
+**A room is only sellable for nights that have an open rate row.** A gap in the
+calendar is an unpriced night, not a night to guess a price for, so the whole
+stay drops out of the results. That is why a property with nothing loaded says
+"not yet bookable online" rather than "no availability" — `/book/[slug]`
+distinguishes the two with a `roomRate.count`, and they need opposite copy.
+
+**`RoomRate.totalRooms` must be an allotment held back from STAAH.** This app
+cannot see STAAH's sales, so anything sold in both places is sold twice. That
+constraint is the engine's one real operational rule.
+
+**Inventory is counted, never decremented.** Availability subtracts the rooms
+held by overlapping bookings (`lib/availability.ts`) rather than maintaining a
+counter that can drift. A `PENDING_PAYMENT` booking holds its rooms for
+`HOLD_MINUTES` (20, `lib/booking.ts`) so a guest mid-payment can't be oversold,
+then stops counting on its own — there is no sweeper job, and adding one would
+be a bug, not a feature.
+
+**The booking is written in a Serializable transaction** (`app/(site)/book/actions.ts`)
+that re-reads availability and re-prices the stay from the rate rows. The form
+posts no prices at all — only the stay — so a tampered submission cannot set its
+own total. Postgres aborts the loser of a race as `P2034`, which surfaces to the
+guest as "someone else was booking the same room".
+
+**Only ICICI's signed callback confirms a booking**, exactly as it is the only
+thing that confirms the money — `app/api/ipay/callback/route.ts` moves the
+booking to `CONFIRMED`/`PAYMENT_FAILED` and redirects to `/booking/<viewToken>`
+instead of `/ipay/result`. `Booking.paymentId` is a real FK to `Payment`, which
+also closes the reconciliation gap `PLAN.md` flags — for bookings, at least;
+`Voucher` still has no such link.
+
+**GST is charged per room per night against that night's rate** (12% up to
+₹7,500, 18% above — `gstRateFor` in `lib/booking.ts`). Applying the slab to the
+booking total instead would push a long cheap stay into the higher band, which
+is not the rule.
+
+**Dates are UTC-midnight throughout** (`parseDateOnly`/`dateKey`), matching
+Prisma's `@db.Date`. Local midnight would shift which night a rate belongs to.
+
+**Every "Book Now" CTA still goes to STAAH.** `ReservationLink` and
+`BookingWidget` are untouched, so the engine is reachable at `/book` (linked from
+the sitemap) without a property that has no allotment loaded becoming a dead end.
+Repointing them is a one-line change per component — make it once real allotments
+are loaded for the properties you want selling direct, not before.
+
 ## Server logging
 
 `lib/log.ts` emits one line of JSON per server event; Vercel indexes the fields,
@@ -196,7 +254,8 @@ client events it survives ad blockers and a guest closing the tab — when GA4 a
 Postgres disagree, this is the tiebreaker.
 
 Use `log.info/warn/error(event, fields)` with a dotted event name
-(`enquiry.created`, `ipay.settled`, `refund.rejected`). No bare `console.*` in
+(`enquiry.created`, `ipay.settled`, `booking.created`, `booking.settled`,
+`rates.updated`, `refund.rejected`). No bare `console.*` in
 `app/` or `lib/` — the logger is the only place those appear.
 
 **Guest data must never reach a log line.** `lib/log.ts` redacts by field name:

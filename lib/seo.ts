@@ -6,11 +6,15 @@ export function pageMetadata({
   description,
   path,
   image,
+  robots,
 }: {
   title: string;
   description: string;
   path: string;
   image?: string;
+  // Only for pages that exist but shouldn't be indexed — a live availability
+  // result, for instance, where the hotel's own page is the indexable one.
+  robots?: Metadata['robots'];
 }): Metadata {
   // No standalone social-share graphic exists yet, so pages without a more
   // specific image (a hotel's own heroImage) fall back to this real photo
@@ -21,6 +25,7 @@ export function pageMetadata({
     title,
     description,
     alternates: { canonical: path },
+    ...(robots ? { robots } : {}),
     openGraph: {
       title,
       description,

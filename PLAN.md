@@ -179,6 +179,10 @@ repo on 2026-09-10.
   by that transaction." Needs: a schema link, ICICI's Transaction Status +
   Settlement Summary/Details calls (both still deferred in
   `GO_LIVE_CHECKLIST.md` → i-Pay), and a reconciliation view in `/admin`.
+  *Updated 2026-09-16:* the booking engine's `Booking.paymentId` is exactly
+  that link for direct bookings, and `Payment.reservationNo` carries the
+  booking reference back the other way — so the gap is now specifically
+  `Voucher`'s, not payments in general.
 - **Legacy host decommission** — no work in this repo; blocked entirely on
   cutover (DNS + final catch-up import). The daily legacy sync script retires
   at the same moment.
@@ -214,6 +218,30 @@ repo on 2026-09-10.
   it interacts with the i-Pay work already done. Scope it on its own before
   slotting it anywhere; do not treat it as a Phase 2 line item alongside a
   careers page.
+
+  **Partly overtaken by events (2026-09-16).** A direct booking engine now
+  exists — `/book`, with staff-managed rates and inventory on `/admin/rates`,
+  and payment through the existing i-Pay gateway (see CLAUDE.md → Booking
+  engine). It answers the "a guest cannot book online" half of the problem
+  without STAAH, and it links `Payment` to a real reservation via
+  `Booking.paymentId`. It does **not** answer the distribution half, and it
+  introduces the one thing STAAH exists to prevent: this app and STAAH can sell
+  the same room, because neither can see the other's inventory. The engine is
+  therefore safe only while `RoomRate.totalRooms` is an allotment deliberately
+  held back from STAAH.
+
+  What still needs scoping is consequently narrower than it was: either a real
+  two-way STAAH integration (its API becomes the source of truth and `RoomRate`
+  retires), or an explicit decision that direct and STAAH inventory stay
+  manually partitioned. That is still a commercial decision, not a ticket — but
+  it is now a decision about *reconciling* two booking paths rather than about
+  whether to have one at all.
+
+  Also note: every "Book Now" CTA on the site still points at STAAH. The new
+  engine is reachable at `/book` only, deliberately, so that a property with no
+  allotment loaded is not a dead end. Repointing those CTAs is the switch that
+  makes direct booking the default, and it should be thrown per-property, once
+  real allotments exist.
 
 ### Parked, deliberately
 

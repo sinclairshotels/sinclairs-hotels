@@ -1,5 +1,6 @@
 import { getHotelBySlug } from '@/content/hotels';
 import { prisma } from '@/lib/db';
+import { bookingConfirmationHtml } from '@/lib/email-templates/booking-confirmation';
 import { ipayConfirmationHtml } from '@/lib/email-templates/ipay-confirmation';
 import {
   iciciConfig,
@@ -10,7 +11,22 @@ import {
 } from '@/lib/icici';
 import { log } from '@/lib/log';
 import { STAFF_NOTIFY_EMAIL, sendMail } from '@/lib/mail';
+import { publicSiteUrl } from '@/lib/site-url';
 import { NextResponse } from 'next/server';
+
+// A payment taken for a direct booking belongs to that booking, so the guest
+// comes back to their booking page rather than the standalone i-Pay receipt.
+// Used by the replay branch too, so a guest pressing back lands in the same
+// place they did the first time.
+async function settlementUrl(baseUrl: string, paymentId: string, orderId: string): Promise<string> {
+  const booking = await prisma.booking.findUnique({
+    where: { paymentId },
+    select: { viewToken: true },
+  });
+  return booking
+    ? `${baseUrl}/booking/${booking.viewToken}`
+    : `${baseUrl}/ipay/result?order=${orderId}`;
+}
 
 export async function POST(request: Request): Promise<NextResponse> {
   // Protocol can't be hardcoded to https: local dev serves plain http, and a
@@ -65,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Expected, not an error: ICICI retries and guests use the back button.
     // Worth a line so a duplicate purchase in GA4 can be traced to a replay.
     log.info('ipay.callback.replayed', { order_id: orderId, status: payment.status });
-    return NextResponse.redirect(`${baseUrl}/ipay/result?order=${orderId}`, 303);
+    return NextResponse.redirect(await settlementUrl(baseUrl, payment.id, orderId), 303);
   }
 
   // The gateway's own signed response is trusted for pass/fail, but a
@@ -114,7 +130,50 @@ export async function POST(request: Request): Promise<NextResponse> {
     response_code: resp.responseCode ?? null,
   });
 
-  const hotelName = getHotelBySlug(updated.hotelSlug)?.name ?? updated.hotelSlug;
+  const hotel = getHotelBySlug(updated.hotelSlug);
+  const hotelName = hotel?.name ?? updated.hotelSlug;
+
+  // A payment raised by the booking engine settles its booking in the same
+  // breath: the gateway's signed response is the only thing that confirms a
+  // room, exactly as it is the only thing that confirms the money.
+  const booking = await prisma.booking.findUnique({ where: { paymentId: updated.id } });
+  if (booking) {
+    const settled = await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: status === 'SUCCESS' ? 'CONFIRMED' : 'PAYMENT_FAILED' },
+    });
+
+    log.info('booking.settled', {
+      reference: settled.reference,
+      order_id: orderId,
+      status: settled.status,
+      hotel: settled.hotelSlug,
+      amount: settled.total.toNumber(),
+    });
+
+    if (status === 'SUCCESS') {
+      const viewUrl = `${publicSiteUrl}/booking/${settled.viewToken}`;
+
+      await sendMail({
+        to: settled.guestEmail,
+        kind: 'booking-guest',
+        subject: `Your Sinclairs booking is confirmed — ${settled.reference}`,
+        html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
+      });
+
+      const hotelInbox = hotel?.contact?.email ?? STAFF_NOTIFY_EMAIL;
+      await sendMail({
+        to: hotelInbox,
+        bcc: hotelInbox === STAFF_NOTIFY_EMAIL ? undefined : STAFF_NOTIFY_EMAIL,
+        kind: 'booking-hotel',
+        subject: `New direct booking ${settled.reference} — ${hotelName}`,
+        html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
+      });
+    }
+
+    return NextResponse.redirect(`${baseUrl}/booking/${settled.viewToken}`, 303);
+  }
+
   const emailData = {
     orderId: updated.orderId,
     hotelName,

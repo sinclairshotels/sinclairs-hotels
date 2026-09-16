@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
+  { label: 'Bookings', href: '/admin/bookings' },
+  { label: 'Rates', href: '/admin/rates' },
   { label: 'Vouchers', href: '/admin/vouchers' },
   { label: 'Payments', href: '/admin/payments' },
   { label: 'Enquiries', href: '/admin/enquiries' },

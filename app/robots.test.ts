@@ -39,10 +39,16 @@ describe('robots', () => {
     expect(result.rules).toMatchObject({ allow: '/' });
   });
 
-  it('keeps the admin dashboard, payments and voucher links out of the index', async () => {
+  it('keeps the admin dashboard, payments and token-addressed guest links out of the index', async () => {
     const result = await robotsFor(CANONICAL_HOST);
     const rules = result.rules as { disallow?: string[] };
-    expect(rules.disallow).toEqual(['/admin', '/api', '/ipay', '/v']);
+    expect(rules.disallow).toEqual(['/admin', '/api', '/ipay', '/v', '/booking']);
+  });
+
+  it('leaves /book itself crawlable — it is the public entry to the booking engine', async () => {
+    const result = await robotsFor(CANONICAL_HOST);
+    const rules = result.rules as { disallow?: string[] };
+    expect(rules.disallow).not.toContain('/book');
   });
 
   it('always advertises the sitemap on the canonical host, never the host it was asked on', async () => {
