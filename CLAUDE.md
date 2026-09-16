@@ -163,7 +163,7 @@ that, create a `develop` branch and repoint the `dev.*` domains at it.
 |---|---|---|---|
 | Local | `localhost:3000`, `staff.localhost:3000` | local Postgres | logged, not sent |
 | Dev | `dev.sinclairshotels.com`, `staff.dev.sinclairshotels.com` | Neon branch `dev` | redirected to one inbox |
-| Production | `sinclairs-hotels.vercel.app`, `staff.sinclairshotels.com` | Neon branch `main` | real recipients |
+| Production | `sinclairs-hotels.vercel.app`, `staff.sinclairshotels.com` | Neon branch `prod` | real recipients |
 
 ```bash
 vercel deploy          # dev only
@@ -338,7 +338,7 @@ any deploy), run `pnpm verify:ci` — it catches the class of bug that only show
 in CI's leaner environment, which the quicker loop above cannot.
 
 Deployed via `vercel deploy` (add `--prod` for production) from
-`subham-5497`'s Vercel account, project `sinclairs-hotels` — live at
+the `sinclairs-hotels` Vercel team (Pro), project `sinclairs-hotels` — live at
 https://sinclairs-hotels.vercel.app.
 
 **The GitHub repo (`sinclairshotels/sinclairs-hotels`) is now connected**, so a push to
