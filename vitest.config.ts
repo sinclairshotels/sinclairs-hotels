@@ -20,6 +20,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    // The database-backed suites share one Postgres, and some of what they
+    // assert on is global by nature: coverageWarnings reports every
+    // under-loaded room type across every property, so a sibling file loading
+    // or clearing nights concurrently changes its answer. Partitioning by date
+    // cannot isolate that, and rate plan activation is a single row per plan
+    // with no date dimension at all. Run files one at a time instead.
+    fileParallelism: false,
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'e2e'],
   },

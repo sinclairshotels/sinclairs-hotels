@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "prisma migrate deploy && tsx scripts/sync-room-types.ts && next build",
     "start": "next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -16,7 +16,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "verify:ci": "pnpm prisma:migrate:deploy && pnpm check:images && pnpm lint && pnpm typecheck && pnpm test:ci-local && pnpm build",
+    "verify:ci": "pnpm prisma:migrate:deploy && pnpm sync:rooms && pnpm check:images && pnpm lint && pnpm typecheck && pnpm test:ci-local && pnpm build",
     "postinstall": "prisma generate",
     "check:images": "node scripts/check-image-budget.mjs",
     "prune:deployments": "vercel remove sinclairs-hotels --safe --yes",

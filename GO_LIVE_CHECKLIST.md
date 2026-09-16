@@ -458,7 +458,8 @@ the abandonment metrics are wanted). The local evidence points at the third for
       answer to a guest looking for it.
 - [x] **GitHub repo connected — done.** Confirmed 2026-09-13: pushing `379a288`
       produced a Preview build cloned straight from the commit. Consequence worth
-      remembering: the build command is `prisma migrate deploy && next build`, so
+      remembering: the build command is
+      `prisma migrate deploy && tsx scripts/sync-room-types.ts && next build`, so
       **a push to `main` migrates the dev database on its own**. Production still
       only moves on `vercel deploy --prod`, so the two drift after every push.
 - [ ] *(Phase 2)* Decommission the GoDaddy hosting once DNS has fully cut over and the

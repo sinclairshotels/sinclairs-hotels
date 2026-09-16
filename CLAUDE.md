@@ -183,9 +183,16 @@ dev at production data; if the integration re-syncs it may recreate that. Check
 before cutover.
 
 Migrations apply themselves — the build command is
-`prisma migrate deploy && next build`, so deploying an environment migrates its
-database. Never hand-edit a Neon branch's schema. To refresh dev data, use Neon's
-**Reset from parent** rather than recreating the branch.
+`prisma migrate deploy && tsx scripts/sync-room-types.ts && next build`, so
+deploying an environment migrates its database *and* reconciles its room types
+with the content files. That second step is load-bearing, not tidiness: a
+migration cannot read `content/hotels/*.ts`, so the A0 migration could only
+create room types that already had a rate or a booking. Without it a fresh
+database has no `RoomType` rows at all and the booking engine has nothing to
+sell. The script is idempotent and never overwrites a name, occupancy or charge
+staff have edited, which is what makes it safe on every deploy. Never hand-edit
+a Neon branch's schema. To refresh dev data, use Neon's **Reset from parent**
+rather than recreating the branch.
 
 ## Booking engine
 
@@ -522,7 +529,7 @@ https://sinclairs-hotels.vercel.app.
 
 **The GitHub repo (`sinclairshotels/sinclairs-hotels`) is now connected**, so a push to
 `main` triggers a Preview deployment on its own — and because the build command is
-`prisma migrate deploy && next build`, **a push migrates the dev database whether
+`prisma migrate deploy && tsx scripts/sync-room-types.ts && next build`, **a push migrates the dev database whether
 or not you then run `vercel deploy`**. Confirmed 2026-09-13: pushing `379a288`
 produced a Preview build that applied a migration one minute before the manual
 `vercel deploy` ran, which then reported "No pending migrations to apply".

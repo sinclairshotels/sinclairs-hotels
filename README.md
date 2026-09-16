@@ -92,8 +92,9 @@ archive, never delete.
 ## Databases
 
 Migrations are applied automatically: the build command is
-`prisma migrate deploy && next build`, so deploying to an environment migrates
-that environment's database. Never edit a Neon branch's schema by hand.
+`prisma migrate deploy && tsx scripts/sync-room-types.ts && next build`, so
+deploying to an environment migrates that environment's database and reconciles
+its room types with the content files. Never edit a Neon branch's schema by hand.
 
 Normal loop:
 
