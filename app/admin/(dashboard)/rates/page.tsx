@@ -1,105 +1,85 @@
+import { CopyToolsPanel } from '@/components/admin/copy-tools-panel';
 import { RateCalendarGrid } from '@/components/admin/rate-calendar-grid';
-import { type LoadableProperty, RateGridForm } from '@/components/admin/rate-grid-form';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
+import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { addDays, dateKey, parseDateOnly, todayUtc } from '@/lib/booking';
 import { prisma } from '@/lib/db';
-import { COVERAGE_WARNING_DAYS, coverageWarnings, rateCalendar } from '@/lib/rate-calendar';
+import {
+  CALENDAR_VIEWS,
+  COVERAGE_WARNING_DAYS,
+  coverageWarnings,
+  parseCalendarView,
+  rateCalendar,
+} from '@/lib/rate-calendar';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
-const LOOKAHEAD_DAYS = 120;
-const CALENDAR_DAYS = 14;
-const RECENT_CHANGES = 12;
+const RECENT_CHANGES = 10;
 
 export default async function RatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ hotel?: string; from?: string }>;
+  searchParams: Promise<{ hotel?: string; from?: string; days?: string }>;
 }) {
-  const { hotel: hotelParam, from: fromParam } = await searchParams;
-  const today = todayUtc();
+  const viewer = await getSession();
+  if (!viewer || !can(viewer, 'rates:read')) notFound();
 
-  const selectedHotel = getHotelBySlug(hotelParam ?? '')?.slug ?? hotels[0]?.slug ?? '';
-  // Clamped to today: the grid is a selling tool, and there is nothing to
-  // load into last week.
+  const { hotel: hotelParam, from: fromParam, days: daysParam } = await searchParams;
+  const today = todayUtc();
+  const view = parseCalendarView(daysParam);
+  const canEdit = can(viewer, 'rates:write');
+
+  // A Hotel user sees only their own properties, so the picker cannot offer a
+  // property whose calendar they would then be refused.
+  const visibleHotels = hotels.filter((hotel) => canAccessHotel(viewer, hotel.slug));
+  if (visibleHotels.length === 0) notFound();
+
+  const requested = getHotelBySlug(hotelParam ?? '')?.slug;
+  const selectedHotel =
+    requested && canAccessHotel(viewer, requested) ? requested : (visibleHotels[0]?.slug ?? '');
+
+  // Clamped to today: the grid is a selling tool, and there is nothing to load
+  // into last week.
   const requestedFrom = parseDateOnly(fromParam ?? '') ?? today;
   const calendarFrom = requestedFrom < today ? today : requestedFrom;
 
-  const [calendar, warnings, loaded, changes] = await Promise.all([
-    rateCalendar({ hotelSlug: selectedHotel, from: calendarFrom, days: CALENDAR_DAYS }),
+  const [calendar, allWarnings, changes] = await Promise.all([
+    rateCalendar({ hotelSlug: selectedHotel, from: calendarFrom, days: view }),
     coverageWarnings(),
-    prisma.roomInventory.groupBy({
-      by: ['hotelSlug', 'roomTypeId'],
-      where: { date: { gte: today, lte: addDays(today, LOOKAHEAD_DAYS) } },
-      _count: { _all: true },
-      _max: { date: true },
-    }),
     prisma.auditEvent.findMany({
-      where: { action: { startsWith: 'rates.' } },
+      where: {
+        action: { startsWith: 'rates.' },
+        ...(viewer.restrictedToHotels ? { hotelSlug: { in: viewer.restrictedToHotels } } : {}),
+      },
       orderBy: { at: 'desc' },
       take: RECENT_CHANGES,
     }),
   ]);
 
-  const roomTypeNames = new Map(
-    (
-      await prisma.roomType.findMany({
-        where: { id: { in: loaded.map((row) => row.roomTypeId) } },
-        select: { id: true, name: true },
-      })
-    ).map((room) => [room.id, room.name]),
-  );
-
-  const summary = loaded
-    .map((row) => ({ ...row, roomName: roomTypeNames.get(row.roomTypeId) ?? row.roomTypeId }))
-    .sort(
-      (a, b) =>
-        (getHotelBySlug(a.hotelSlug)?.name ?? a.hotelSlug).localeCompare(
-          getHotelBySlug(b.hotelSlug)?.name ?? b.hotelSlug,
-        ) || a.roomName.localeCompare(b.roomName),
-    );
-
-  const calendarHref = (overrides: Record<string, string>) =>
-    `/admin/rates?${new URLSearchParams({ hotel: selectedHotel, from: dateKey(calendarFrom), ...overrides })}`;
-
-  // Built from the database, not the content files: the loader posts room type
-  // and rate plan ids, which only exist here.
-  const loadableProperties: LoadableProperty[] = (
-    await prisma.roomType.findMany({
-      where: { active: true },
-      include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
-      orderBy: [{ hotelSlug: 'asc' }, { sortOrder: 'asc' }],
-    })
-  ).reduce<LoadableProperty[]>((properties, roomType) => {
-    const property = properties.find((p) => p.slug === roomType.hotelSlug);
-    const entry = property ?? {
-      slug: roomType.hotelSlug,
-      name: getHotelBySlug(roomType.hotelSlug)?.name ?? roomType.hotelSlug,
-      roomTypes: [],
-    };
-    entry.roomTypes.push({
-      id: roomType.id,
-      name: roomType.name,
-      ratePlans: roomType.ratePlans.map((plan) => ({ id: plan.id, name: plan.name })),
-    });
-    if (!property) properties.push(entry);
-    return properties;
-  }, []);
-
+  const warnings = allWarnings.filter((warning) => canAccessHotel(viewer, warning.hotelSlug));
   const missing = warnings.filter((w) => w.lastNight === null);
   const expiring = warnings.filter((w) => w.lastNight !== null);
+
+  const href = (overrides: Record<string, string>) =>
+    `/admin/rates?${new URLSearchParams({
+      hotel: selectedHotel,
+      from: dateKey(calendarFrom),
+      days: String(view),
+      ...overrides,
+    })}`;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
-        <p className="font-display text-xl text-forest">Rates &amp; Availability</p>
+        <p className="font-display text-xl text-forest">Inventory &amp; Rates</p>
         <p className="mt-1 text-sm text-ink/60">
-          What this website may sell direct. A room is only offered online for nights that have a
-          rate loaded here.
+          What this website may sell direct. Rooms on sale is the allotment held back from STAAH —
+          anything left on sale in both places can be sold twice.
         </p>
       </div>
 
@@ -125,10 +105,10 @@ export default async function RatesPage({
               A calendar running out has no symptom — the room simply stops being offered.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
-              {warnings.slice(0, 12).map((warning) => (
+              {warnings.slice(0, 10).map((warning) => (
                 <li key={`${warning.hotelSlug}-${warning.roomName}`}>
                   <Link
-                    href={`/admin/rates?hotel=${warning.hotelSlug}`}
+                    href={href({ hotel: warning.hotelSlug })}
                     className="inline-block rounded border border-ink/15 bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:border-forest hover:text-forest"
                   >
                     <span className="font-medium text-ink">{warning.hotelName}</span> ·{' '}
@@ -139,8 +119,8 @@ export default async function RatesPage({
                   </Link>
                 </li>
               ))}
-              {warnings.length > 12 && (
-                <li className="self-center text-xs text-ink/50">and {warnings.length - 12} more</li>
+              {warnings.length > 10 && (
+                <li className="self-center text-xs text-ink/50">and {warnings.length - 10} more</li>
               )}
             </ul>
           </section>
@@ -149,8 +129,6 @@ export default async function RatesPage({
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-display text-lg text-forest">Calendar</p>
-            {/* Same shape as the Bookings filter bar, so the two admin
-                screens read as one tool. */}
             <form method="get" className="flex flex-nowrap items-center gap-2 overflow-x-auto">
               <input type="hidden" name="from" value={dateKey(calendarFrom)} />
               <select
@@ -158,9 +136,20 @@ export default async function RatesPage({
                 defaultValue={selectedHotel}
                 className="select w-auto shrink-0 py-1.5 text-sm"
               >
-                {hotels.map((hotel) => (
+                {visibleHotels.map((hotel) => (
                   <option key={hotel.slug} value={hotel.slug}>
                     {hotel.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="days"
+                defaultValue={String(view)}
+                className="select w-auto shrink-0 py-1.5 text-sm"
+              >
+                {CALENDAR_VIEWS.map((days) => (
+                  <option key={days} value={days}>
+                    {days} days
                   </option>
                 ))}
               </select>
@@ -168,24 +157,23 @@ export default async function RatesPage({
                 type="submit"
                 className="shrink-0 whitespace-nowrap rounded bg-forest px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-forest-dark"
               >
-                Filter
+                Show
               </button>
             </form>
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3">
             <Link
-              href={calendarHref({ from: dateKey(addDays(calendarFrom, -CALENDAR_DAYS)) })}
+              href={href({ from: dateKey(addDays(calendarFrom, -view)) })}
               className="rounded border border-ink/15 px-3 py-1.5 text-xs uppercase tracking-wider text-ink/60 transition hover:border-forest hover:text-forest"
             >
               &larr; Earlier
             </Link>
             <p className="text-xs uppercase tracking-wider text-ink/50">
-              {formatDate(calendarFrom)} &ndash;{' '}
-              {formatDate(addDays(calendarFrom, CALENDAR_DAYS - 1))}
+              {formatDate(calendarFrom)} &ndash; {formatDate(addDays(calendarFrom, view - 1))}
             </p>
             <Link
-              href={calendarHref({ from: dateKey(addDays(calendarFrom, CALENDAR_DAYS)) })}
+              href={href({ from: dateKey(addDays(calendarFrom, view)) })}
               className="rounded border border-ink/15 px-3 py-1.5 text-xs uppercase tracking-wider text-ink/60 transition hover:border-forest hover:text-forest"
             >
               Later &rarr;
@@ -193,69 +181,32 @@ export default async function RatesPage({
           </div>
 
           <div className="mt-3">
-            {calendar ? (
-              <RateCalendarGrid calendar={calendar} />
+            {calendar && calendar.rows.length > 0 ? (
+              <RateCalendarGrid calendar={calendar} canEdit={canEdit} />
             ) : (
               <p className="rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
-                Pick a property to see its calendar.
+                This property has no active room types yet. Run <code>pnpm sync:rooms</code> or add
+                them in Setup.
               </p>
             )}
           </div>
         </section>
 
-        <section className="max-w-3xl">
-          <p className="font-display text-lg text-forest">Load a season</p>
-          <div className="mt-3 rounded-lg border border-ink/10 bg-white p-6">
-            <RateGridForm properties={loadableProperties} />
-          </div>
-        </section>
-
-        <section className="max-w-3xl">
-          <p className="font-display text-lg text-forest">Loaded — next {LOOKAHEAD_DAYS} days</p>
-          {summary.length === 0 ? (
-            <p className="mt-3 rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
-              Nothing loaded yet — until a room has rates here, the booking pages will tell guests
-              that direct booking is not open for that property.
+        {canEdit && calendar && (
+          <section className="max-w-4xl">
+            <p className="font-display text-lg text-forest">Copy tools</p>
+            <p className="mt-1 text-xs text-ink/50">
+              For patterns that repeat: a week across a season, or one room priced off another.
             </p>
-          ) : (
-            <table className="mt-3 w-full border-collapse overflow-hidden rounded-lg bg-white text-sm">
-              <thead>
-                <tr className="border-b border-ink/10 text-left text-xs uppercase tracking-wider text-ink/50">
-                  <th className="px-4 py-3 font-medium">Property</th>
-                  <th className="px-4 py-3 font-medium">Room</th>
-                  <th className="px-4 py-3 font-medium">Nights</th>
-                  <th className="px-4 py-3 font-medium">Loaded through</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.map((row) => {
-                  return (
-                    <tr
-                      key={`${row.hotelSlug}-${row.roomTypeId}`}
-                      className="border-b border-ink/5"
-                    >
-                      <td className="px-4 py-3">
-                        {getHotelBySlug(row.hotelSlug)?.name ?? row.hotelSlug}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-ink/70">{row.roomName}</td>
-                      <td className="px-4 py-3 text-ink/70">{row._count._all}</td>
-                      <td className="px-4 py-3 text-ink/70">
-                        {row._max.date ? formatDate(row._max.date) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </section>
+            <div className="mt-3">
+              <CopyToolsPanel calendar={calendar} />
+            </div>
+          </section>
+        )}
 
-        <section className="max-w-3xl pb-4">
+        <section className="max-w-4xl pb-4">
           <p className="font-display text-lg text-forest">Change log</p>
-          <p className="mt-1 text-xs text-ink/50">
-            Every rate write, newest first. Signed in as the shared admin account, so
-            &ldquo;who&rdquo; is the login and its address until per-user staff accounts exist.
-          </p>
+          <p className="mt-1 text-xs text-ink/50">Every rate write, newest first.</p>
           {changes.length === 0 ? (
             <p className="mt-3 rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
               No rate changes recorded yet.
@@ -272,7 +223,6 @@ export default async function RatesPage({
                     </p>
                     <p className="text-xs text-ink/50">
                       {formatDate(change.at)} {formatTime(change.at)} · {change.actorLabel}
-                      {change.ip ? ` · ${change.ip}` : ''}
                     </p>
                   </div>
                   {change.summary && <p className="mt-1 text-xs text-ink/70">{change.summary}</p>}

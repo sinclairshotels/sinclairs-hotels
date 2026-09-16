@@ -76,3 +76,13 @@ export async function ensureE2EAdmin(email: string, password: string): Promise<v
     create: { email, name: 'E2E Admin', role: 'ADMIN', passwordHash },
   });
 }
+
+// A live admin session token for the Playwright specs, injected straight into
+// the browser as a cookie. Driving the sign-in form per test would trip the
+// per-address login rate limiter, and sharing one page across tests made a
+// single closed page fail every test after it.
+export async function e2eAdminSessionToken(email: string, password: string): Promise<string> {
+  await ensureE2EAdmin(email, password);
+  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+  return createSession(user.id);
+}

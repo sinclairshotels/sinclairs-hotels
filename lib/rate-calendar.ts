@@ -10,6 +10,9 @@ export interface CalendarCell {
   sold: number;
   remaining: number;
   closed: boolean;
+  minStay: number | null;
+  closedToArrival: boolean;
+  closedToDeparture: boolean;
 }
 
 export interface CalendarRow {
@@ -26,6 +29,16 @@ export interface RateCalendar {
   dates: string[];
   holidays: Record<string, string>;
   rows: CalendarRow[];
+}
+
+// The lengths of calendar staff can ask for. Fourteen is the working view,
+// sixty is for checking a season holds together.
+export const CALENDAR_VIEWS = [14, 30, 60] as const;
+export type CalendarView = (typeof CALENDAR_VIEWS)[number];
+
+export function parseCalendarView(value: string | undefined): CalendarView {
+  const days = Number.parseInt(value ?? '', 10);
+  return (CALENDAR_VIEWS as readonly number[]).includes(days) ? (days as CalendarView) : 14;
 }
 
 // Dates across, room types down. "Sold" counts the rooms currently held by
@@ -119,6 +132,9 @@ export async function rateCalendar({
             sold,
             remaining: Math.max(0, onSale - sold),
             closed: row?.stopSell ?? false,
+            minStay: row?.minStay ?? null,
+            closedToArrival: row?.closedToArrival ?? false,
+            closedToDeparture: row?.closedToDeparture ?? false,
           };
         }),
       });

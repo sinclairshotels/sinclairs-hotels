@@ -23,6 +23,10 @@ const WINDOW = {
 
 const stayQuery = `checkIn=${CHECK_IN}&checkOut=${CHECK_OUT}&rooms=1&adults=2&children=0`;
 
+// A property this spec empties on purpose, to prove the "not open here yet"
+// message. Kept away from the one the rates spec works on.
+const UNLOADED_HOTEL = 'kalimpong';
+
 // Serial: these share one seeded date window, and beforeAll/afterAll run once
 // per worker — split across workers, one worker's afterAll deletes the rates
 // another worker is still asserting against.
@@ -76,7 +80,15 @@ test('a room with rates loaded is offered, priced, and leads to the guest form',
 test('a property with no rates loaded says so rather than showing no availability', async ({
   page,
 }) => {
-  await page.goto(`/book/ooty?${stayQuery}`);
+  // The message depends on the property having nothing loaded at all, which
+  // pnpm seed:demo would otherwise undo — so the spec empties this one itself
+  // rather than assuming a bare database. Re-run the seed to restore it.
+  await clearNights(UNLOADED_HOTEL, {
+    gte: new Date(`${isoDay(-400)}T00:00:00.000Z`),
+    lt: new Date(`${isoDay(400)}T00:00:00.000Z`),
+  });
+
+  await page.goto(`/book/${UNLOADED_HOTEL}?${stayQuery}`);
   await expect(page.getByText(/not yet bookable online/i)).toBeVisible();
 });
 

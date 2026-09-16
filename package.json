@@ -21,7 +21,8 @@
     "check:images": "node scripts/check-image-budget.mjs",
     "prune:deployments": "vercel remove sinclairs-hotels --safe --yes",
     "seed:dev": "tsx prisma/seed-dev.ts",
-    "sync:rooms": "tsx scripts/sync-room-types.ts"
+    "sync:rooms": "tsx scripts/sync-room-types.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",
