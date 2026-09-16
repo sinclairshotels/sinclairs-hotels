@@ -67,6 +67,24 @@ export async function refundPayment(
     return { status: 'error', message: 'Payment not found.' };
   }
 
+  // Checked before status, because provenance is the real reason and it holds
+  // whatever the status says: a payment imported from the legacy MySQL was
+  // taken by the gateway this site replaced, so its orderId means nothing to
+  // ICICI and callRefund would send a transaction reference the gateway never
+  // issued. These have to be settled with the bank instead.
+  if (payment.legacySource) {
+    log.warn('refund.rejected', {
+      order_id: orderId,
+      reason: 'legacy_payment',
+      legacy_source: payment.legacySource,
+    });
+    return {
+      status: 'error',
+      message:
+        'This payment predates the current gateway and cannot be refunded here. Settle it directly with the bank.',
+    };
+  }
+
   if (payment.status !== 'SUCCESS') {
     log.warn('refund.rejected', { order_id: orderId, reason: 'payment_not_successful' });
     return { status: 'error', message: 'Only a successful payment can be refunded.' };

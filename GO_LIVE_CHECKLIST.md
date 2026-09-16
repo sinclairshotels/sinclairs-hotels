@@ -120,6 +120,7 @@ office copy → guest view page. It works; what's open below is scope, not bugs.
       issued came out as #3. Both databases corrected with `setval` to 35001 on
       2026-09-12 (next voucher is #35002), and `scripts/migrate-legacy-data.ts`
       now advances the sequence itself so a re-import cannot reintroduce it.
+      Fixed, but **not self-verifying** — see the sequence check in `## Data`.
 
 ## Analytics
 
@@ -229,7 +230,9 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
       legacy payments (`cca_status`, the old CCAvenue/HDFC gateway log, added
       in a second pass). Re-running inserts 0 rows. Skips are small and
       reasoned in `dumps/migration-report.json` — 53 enquiries, 3 vouchers, 40
-      payments, all unmapped-property or unparseable-date.
+      payments, all unmapped-property or unparseable-date. That file is outside
+      the repo and overwritten every run, so the durable summary now lives in
+      `docs/legacy-import-report.md`; keep it as the record once the dumps go.
 - [ ] Confirm those counts in **production**. The figures above were checked
       against local dev; the production import ran on 2026-09-08 and hasn't
       been re-counted since.
@@ -256,6 +259,48 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
 - [ ] *(Phase 2)* Decide what "Sinclairs Yangang" is (1,043 enquiries + 58 vouchers,
       confirmed in the local DB) — imported verbatim rather than folded into
       `gangtok`, pending a call on whether it's a separate property.
+- [ ] **The newsletter list has no opt-out state, and the app has no unsubscribe
+      flow.** All 26,258 imported subscribers have `unsubscribedAt = NULL`, going
+      back to 2014-06-04. That is faithful to the source, not an import bug: the
+      legacy `newsletter_signup.date_unsubscribe` column is `NULL` on 16,434 rows
+      and MySQL's zero-date `0000-00-00 00:00:00` on the other 10,034 — **zero
+      real unsubscribes in twelve years**. The reason is in
+      `legacy-php-site/newsletter_unsubscribe.php`: its only database write is
+      **commented out**, so the old unsubscribe page told people they were
+      unsubscribed and never recorded it.
+      Nothing mails this list today — the only newsletter email
+      (`newsletter-notification`) goes to staff, and nothing in `app/` or `lib/`
+      ever writes `unsubscribedAt` — so this is latent, not live. It becomes real
+      the first time anyone sends a campaign: some unknown share of those 26,258
+      addresses asked to be removed and were silently kept, and there is still no
+      way for a recipient to opt out.
+      **Decided 2026-09-13: no unsubscribe route is being built.** That is fine
+      while nothing sends to the list. It stops being fine the moment a campaign
+      goes out — every bulk sender (and India's DPDP consent rules) requires a
+      working opt-out — so treat an unsubscribe route plus re-permissioning the
+      list as prerequisites of the first send, not as work owed now.
+- [ ] **Verify the voucher sequence in production before cutover, and again
+      after the catch-up import.** The 2026-09-12 fix was a one-time manual
+      `setval`; `scripts/migrate-legacy-data.ts`'s `syncVoucherSequence()` only
+      re-runs as the last step of a full import, and **nothing else asserts the
+      invariant**. The local dev database currently violates it — its sequence
+      sits at 509 against imported vouchers numbered 21455-35001, so the next
+      voucher issued locally would be #510 (the test suite creates and deletes
+      vouchers, consuming the sequence from a low base; `pnpm seed:dev` resets it
+      to 35001). Production was fixed separately and should be fine, but "should
+      be" is the problem. One query settles it:
+
+      ```sql
+      SELECT (SELECT last_value FROM "Voucher_voucherNo_seq") AS seq,
+             (SELECT max("voucherNo") FROM "Voucher") AS max_voucher;
+      -- seq must be >= max_voucher
+      ```
+- [ ] *(cosmetic, public URLs)* 11 imported vouchers have `checkOut` **before**
+      `checkIn` (e.g. #22026 Kalimpong, 2020-12-30 → 2020-01-01), and 23 have
+      `rate = 0`. Bad data in the legacy free-text date fields, not a parsing
+      bug. Nothing crashes — `lib/voucher-view.ts` prints both dates and never
+      computes nights — but each is reachable at its own `/v/<token>` URL and
+      reads as broken. Either correct the 11 by hand or accept them as historical.
 
 Note: legacy free text carries attack payloads — `migration-report.json` shows
 enquiry rows containing PHP object-injection probes submitted to the old form.
@@ -283,6 +328,70 @@ HTML export to any admin view that shows imported content.
 - [ ] *(Phase 2)* Admin auth is currently a single shared `ADMIN_PASSWORD` —
       fine to launch with, but revisit for real per-user accounts once more
       than a couple of people use `/admin`.
+
+## Unresolved legacy tables — decide before cutover
+
+Checking the legacy databases directly (rather than the four tables the import
+script happens to read) turned up two that were never migrated. The import's own
+header records that `cca_status` was "missed in the first migration pass and
+added later", so a second omission is plausible rather than unlikely.
+
+- [ ] **`ipay_entries` — 6,651 rows**, in `sinclairsltd_hdfcmpgs`. More rows than
+      the entire Payment table we did import. Most likely the attempt/initiation
+      log to `cca_status`'s response record — the same relationship the new
+      `Payment` table has with its `INITIATED` rows that never settle — which
+      would make it wanted only for the abandonment metrics in
+      `docs/analytics-events.md`, not for money actually taken. Still unconfirmed:
+      it needs the table's date range and whether its order IDs are the same
+      orders as `cca_status`'s.
+
+      **Do not reason from the gateway names here — three brands attach to one
+      payment flow.** The table is called `cca_status` and its columns are
+      verbatim CCAvenue response fields (`tracking_id`, `bank_ref_no`,
+      `failure_message`, `billing_name`), it lives in a database named
+      `sinclairsltd_hdfcmpgs` (HDFC MPGS), and the daily ops report
+      (`utility/sinclairs-booking-cron.php`) prints its `order_id` under the
+      heading **"iPay Order No."**. So `ipay_entries` being "the i-Pay table" is
+      no evidence that it is a different gateway from the one we imported.
+
+      **`cca_status` is not dead history.** Its dump runs to `2026-09-12
+      11:42:02` — it is the actively written payment record, and the daily
+      report reads it (filtered to `order_status = 'Success'`) as *the* record of
+      money taken. The worry that we imported a retired gateway's history and
+      skipped the live one's is therefore not supported: we imported the live one.
+- [ ] **`hdfc_itsbook` — 13,404 rows**, in `sinclairsltd_official`. Close in size
+      to `voucher_detail` (13,560), which could mean it is the booking records
+      vouchers were issued against — already represented — or a parallel ledger
+      vouchers only partly cover.
+
+Also unmigrated, deliberately, but worth a decision before the old host is
+decommissioned: `pr_cv` (215 job applications — real applicants' personal data),
+`sin_pressclip` (303 press clippings, possibly better than the hand-curated
+`/media` list), and the old staff login tables, which are the record of who had
+access if per-user accounts are ever built.
+
+To inspect:
+
+```
+ssh -p 5822 root@<legacy-host> 'for t in sinclairsltd_hdfcmpgs.ipay_entries sinclairsltd_official.hdfc_itsbook; do db=${t%%.*}; tb=${t##*.}; echo "=== $t ==="; mysql -N -e "SHOW COLUMNS FROM $db.$tb;"; mysql -e "SELECT * FROM $db.$tb ORDER BY 1 DESC LIMIT 1\G"; done'
+```
+
+Three likely outcomes: duplicates under different gateway names (nothing to do);
+genuinely missing payment history (extend `scripts/migrate-legacy-data.ts`, same
+idempotent pattern); or attempt logs rather than settled records (import only if
+the abandonment metrics are wanted). The local evidence points at the third for
+`ipay_entries`.
+
+- [ ] **Rotate the legacy MySQL credentials, and keep them out of any backup we
+      retain.** `legacy-php-site/utility/sinclairs-booking-cron.php` carries a
+      live `sinclairsltd_root` username and password in plaintext, for both
+      `sinclairsltd_official` and `sinclairsltd_hdfcmpgs` — the databases holding
+      every enquiry, every guest name and email, and the payment records. The
+      same file also hardcodes a personal Gmail address as the daily report's
+      recipient. Those credentials are still valid on the legacy host, and this
+      rebuild exists partly because that host was found compromised. Rotate them
+      (or decommission the databases) at cutover, and scrub the file before this
+      backup is archived anywhere but the local disk.
 
 ## Cutover
 
@@ -321,12 +430,14 @@ HTML export to any admin view that shows imported content.
       `staff.`, `dev.` and `staff.dev.`. The apex currently answering `200`
       without redirecting is the *old* stack's behaviour and disappears when DNS
       moves — nothing to do here.
-- [ ] **`staff.sinclairshotels.com` has no DNS record yet.** The domain is
-      attached in Vercel and `proxy.ts` routes it, but nothing resolves, so the
-      admin/voucher tool will be unreachable on the production domain until an
-      A/CNAME record is added alongside the apex and `www` ones.
-      `staff.dev.sinclairshotels.com` already resolves and works, so this is the
-      prod record only.
+- [x] **`staff.sinclairshotels.com` DNS — done.** Verified 2026-09-13: it CNAMEs
+      to `cname.vercel-dns.com` and serves the staff sign-in; the Payments page was
+      checked through it. Note the asymmetry this creates — the staff tool is live
+      on the production domain **while the apex and `www` still resolve to the
+      legacy box (68.178.172.70)**. That is intended (it is how staff reach the
+      tool pre-cutover) but it means the admin is publicly reachable on a
+      production hostname today, behind nothing but the shared `ADMIN_PASSWORD`.
+      `robots.txt` disallows `/admin` on every host.
 - [ ] **Remove `SITE_BASE_URL` from Vercel production**, so absolute links in
       emails and vouchers point at the real domain rather than the Vercel one
       (`lib/site-url.ts`). This no longer affects `robots.txt`: that is decided
@@ -345,8 +456,10 @@ HTML export to any admin view that shows imported content.
       card payments through ICICI, so these pages need to exist before cutover —
       redirecting a legal page to home is both an SEO soft-404 and the wrong
       answer to a guest looking for it.
-- [ ] Connect the GitHub repo in Vercel for auto-deploy-on-push (currently
-      blocked on a one-time manual GitHub login connection in the Vercel
-      dashboard) — until then, ship via `vercel deploy --prod`.
+- [x] **GitHub repo connected — done.** Confirmed 2026-09-13: pushing `379a288`
+      produced a Preview build cloned straight from the commit. Consequence worth
+      remembering: the build command is `prisma migrate deploy && next build`, so
+      **a push to `main` migrates the dev database on its own**. Production still
+      only moves on `vercel deploy --prod`, so the two drift after every push.
 - [ ] *(Phase 2)* Decommission the GoDaddy hosting once DNS has fully cut over and the
       final catch-up import (above) is confirmed complete.

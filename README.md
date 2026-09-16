@@ -138,5 +138,16 @@ Event reference: `GO_LIVE_CHECKLIST.md` → Server logs.
   list passes ~10. Irreversible.
 - `pnpm prisma studio` — inspect the database locally
 
+## Editing content
+
+Non-technical contributors updating copy, photography or page layout should read
+`docs/CONTENT-EDITING.md` — it covers the two environments, the review flow, and
+which paths require an owner's approval. A business-facing version written for
+people unfamiliar with GitHub is published separately as the Site Handbook.
+
+Content editors are deliberately **not** given Vercel or database accounts:
+pushing to `main` deploys dev by itself, and going live is a reviewed merge. The
+boundary is access, not convention.
+
 See `PLAN.md` for the full migration/execution plan, `CLAUDE.md` for project
 conventions, and `GO_LIVE_CHECKLIST.md` for what is still open before launch.

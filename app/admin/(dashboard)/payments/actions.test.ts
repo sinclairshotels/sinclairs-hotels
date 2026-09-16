@@ -138,6 +138,35 @@ describe('refundPayment', () => {
     expect(sendMail).not.toHaveBeenCalled();
   });
 
+  it('rejects a refund for a legacy-imported payment without calling the gateway', async () => {
+    mockState.cookieValue = await createSessionCookieValue();
+    // Deliberately SUCCESS: the ~4,191 imported cca_status rows with this
+    // status are exactly the ones that used to render a working Refund button.
+    const payment = await prisma.payment.create({
+      data: {
+        orderId: `REFTEST${Math.random()}`,
+        hotelSlug: 'burdwan',
+        amount: 100,
+        guestName: 'Jane Doe',
+        guestEmail: `jane-${Math.random()}@${TEST_EMAIL_DOMAIN}`,
+        guestPhone: '',
+        status: 'SUCCESS',
+        legacySource: 'cca_status',
+      },
+    });
+    // Would be accepted if the guard let the call through, so the assertions
+    // below fail loudly rather than passing because the gateway happened to say no.
+    mockState.refundResponse = { responseCode: 'R1000', respDescription: 'ok' };
+    const before = await prisma.refund.count();
+
+    const result = await refundPayment({ status: 'idle' }, refundFormData(payment.orderId, '10'));
+
+    expect(result.status).toBe('error');
+    expect(result.message).toMatch(/predates the current gateway/i);
+    expect(await prisma.refund.count()).toBe(before);
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+
   it('rejects a refund amount greater than the refundable balance', async () => {
     mockState.cookieValue = await createSessionCookieValue();
     const payment = await createTestPayment({ amount: 100 });

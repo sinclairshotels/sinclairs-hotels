@@ -192,6 +192,14 @@ export default async function PaymentsPage({
                   >
                     {payment.orderId}
                   </a>
+                  {payment.legacySource && (
+                    <div
+                      className="mt-1 text-xs font-normal text-ink/40"
+                      title={`Imported from the legacy ${payment.legacySource} table`}
+                    >
+                      Legacy
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-medium">{payment.guestName}</div>
@@ -222,7 +230,19 @@ export default async function PaymentsPage({
                   {!payment.trackingId && !payment.bankRefNo && '—'}
                 </td>
                 <td className="px-4 py-3">
-                  {payment.status === 'SUCCESS' &&
+                  {/* Only where a Refund link would otherwise have been: a
+                      legacy FAILURE/ABORTED/INITIATED row has nothing to refund
+                      either way, so it stays blank as it always did. */}
+                  {payment.legacySource && payment.status === 'SUCCESS' && (
+                    <span
+                      className="text-xs text-ink/50"
+                      title="This payment predates the current gateway — ICICI has no record of it. Refund it directly with the bank."
+                    >
+                      Via bank
+                    </span>
+                  )}
+                  {!payment.legacySource &&
+                    payment.status === 'SUCCESS' &&
                     (() => {
                       const refundedTotal = payment.refunds
                         .filter((r) => r.status === 'SUCCESS')

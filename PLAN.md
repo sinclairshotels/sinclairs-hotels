@@ -18,7 +18,7 @@ Decisions already made (2026-09-01):
 - Hosting: Vercel.
 - Scope: full site (Home, Hotels listing + per-property pages, Meetings,
   Weddings, Enquiry form, Contact), matching the current nav.
-- Repo: `github.com/subhamsncl/sinclairs-hotels` (public).
+- Repo: `github.com/sinclairshotels/sinclairs-hotels` (public).
 
 ## Phases
 
