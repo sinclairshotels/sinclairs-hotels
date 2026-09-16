@@ -48,11 +48,21 @@ const SETTLE_ATTEMPTS = 3;
 // serializing the write around it would guarantee nothing.
 async function hasRoomsLeftFor(
   db: Parameters<typeof roomOffer>[0],
-  booking: Pick<Booking, 'id' | 'hotelSlug' | 'roomName' | 'checkIn' | 'checkOut' | 'rooms'>,
+  booking: Pick<
+    Booking,
+    'id' | 'hotelSlug' | 'roomTypeId' | 'ratePlanId' | 'checkIn' | 'checkOut' | 'rooms'
+  >,
 ): Promise<boolean> {
+  // A booking with no room type is one whose room no longer exists at all, so
+  // there is nothing to confirm it into. Failing closed sends it to
+  // REFUND_DUE, which is the honest answer: we cannot promise a room we
+  // cannot find.
+  if (!booking.roomTypeId) return false;
+
   const offer = await roomOffer(db, {
     hotelSlug: booking.hotelSlug,
-    roomName: booking.roomName,
+    roomTypeId: booking.roomTypeId,
+    ...(booking.ratePlanId ? { ratePlanId: booking.ratePlanId } : {}),
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     rooms: booking.rooms,

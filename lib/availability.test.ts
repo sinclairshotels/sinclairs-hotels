@@ -1,12 +1,19 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { roomOffer, roomOffers } from './availability';
-import { HOLD_MINUTES, dateKey, parseDateOnly } from './booking';
+import {
+  type LoadedRoom,
+  clearNights,
+  findRoom,
+  loadNights,
+  planFor,
+} from '../test-utils/inventory';
+import { availability, roomOffer, roomOffers } from './availability';
+import { HOLD_MINUTES, addDays, dateKey, parseDateOnly } from './booking';
 import { prisma } from './db';
 
 // Real Postgres, per this project's testing rules — availability is a query,
 // and a mock would assert nothing about the one thing that can be wrong.
 // Everything is written far enough into the future that it cannot collide
-// with (or be cleaned up alongside) real data in a shared dev database.
+// with real data in a shared dev database.
 const HOTEL = 'gangtok';
 const ROOM = 'Deluxe Room';
 const OTHER_ROOM = 'Deluxe Family Room';
@@ -15,49 +22,31 @@ const TO = parseDateOnly('2099-06-04') as Date;
 const RANGE = { gte: parseDateOnly('2099-01-01') as Date, lt: parseDateOnly('2100-01-01') as Date };
 const TEST_EMAIL_DOMAIN = 'vitest-availability-test.invalid';
 
-const day = (offset: number) => new Date(FROM.getTime() + offset * 86_400_000);
+const day = (offset: number) => addDays(FROM, offset);
+const nights = (count: number, start = 0) =>
+  Array.from({ length: count }, (_, i) => day(start + i));
 
-async function loadRates(
-  roomName: string,
-  nights: number,
-  values: { rate?: number; totalRooms?: number; closed?: boolean } = {},
-) {
-  for (let i = 0; i < nights; i++) {
-    const date = day(i);
-    await prisma.roomRate.upsert({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName, date } },
-      update: {
-        rate: values.rate ?? 5000,
-        totalRooms: values.totalRooms ?? 3,
-        closed: values.closed ?? false,
-      },
-      create: {
-        hotelSlug: HOTEL,
-        roomName,
-        date,
-        rate: values.rate ?? 5000,
-        totalRooms: values.totalRooms ?? 3,
-        closed: values.closed ?? false,
-      },
-    });
-  }
-}
+let room: LoadedRoom;
+let otherRoom: LoadedRoom;
 
 async function createBooking(overrides: {
-  status: 'CONFIRMED' | 'PENDING_PAYMENT' | 'CANCELLED' | 'PAYMENT_FAILED';
+  status: 'CONFIRMED' | 'PENDING_PAYMENT' | 'CANCELLED' | 'PAYMENT_FAILED' | 'REFUND_DUE';
   rooms?: number;
   createdAt?: Date;
   checkIn?: Date;
   checkOut?: Date;
-  roomName?: string;
+  target?: LoadedRoom;
 }) {
+  const target = overrides.target ?? room;
   const suffix = Math.random().toString(36).slice(2, 10);
   return prisma.booking.create({
     data: {
       reference: `VITEST-${suffix}`,
       viewToken: `vitest-${suffix}`,
       hotelSlug: HOTEL,
-      roomName: overrides.roomName ?? ROOM,
+      roomTypeId: target.roomTypeId,
+      ratePlanId: target.ratePlanId,
+      roomName: target.roomName,
       checkIn: overrides.checkIn ?? FROM,
       checkOut: overrides.checkOut ?? TO,
       rooms: overrides.rooms ?? 1,
@@ -67,8 +56,8 @@ async function createBooking(overrides: {
       guestPhone: '+91 98300 00000',
       billingAddress: 'Somewhere',
       roomTotal: 15000,
-      taxTotal: 1800,
-      total: 16800,
+      taxTotal: 2700,
+      total: 17700,
       status: overrides.status,
       ...(overrides.createdAt ? { createdAt: overrides.createdAt } : {}),
     },
@@ -77,10 +66,21 @@ async function createBooking(overrides: {
 
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
-  await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: RANGE } });
+  await clearNights(HOTEL, RANGE);
+  // planFor() activates a plan to test it; left on, it would change what every
+  // later test sees on offer.
+  await prisma.ratePlan.updateMany({
+    where: { hotelSlug: HOTEL, code: { not: 'EP' } },
+    data: { active: false },
+  });
 }
 
-beforeEach(cleanup);
+beforeEach(async () => {
+  room = await findRoom(HOTEL, ROOM);
+  otherRoom = await findRoom(HOTEL, OTHER_ROOM);
+  await cleanup();
+});
+
 afterAll(async () => {
   await cleanup();
   await prisma.$disconnect();
@@ -89,73 +89,152 @@ afterAll(async () => {
 const query = { hotelSlug: HOTEL, checkIn: FROM, checkOut: TO, rooms: 1 };
 
 describe('roomOffers', () => {
-  it('offers nothing for a property with no rates loaded', async () => {
+  it('offers nothing for a property with nothing loaded', async () => {
     expect(await roomOffers(prisma, query)).toEqual([]);
   });
 
   it('prices every night of the stay from its own rate row', async () => {
-    await loadRates(ROOM, 3, { rate: 4000 });
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 3 });
     const [offer] = await roomOffers(prisma, query);
 
-    expect(offer?.room.name).toBe(ROOM);
+    expect(offer?.roomTypeName).toBe(ROOM);
     expect(offer?.nightlyRates).toEqual([4000, 4000, 4000]);
-    expect(offer?.quote.nights).toBe(3);
     expect(offer?.quote.roomTotal).toBe(12000);
     expect(offer?.quote.taxTotal).toBe(2160);
     expect(offer?.roomsLeft).toBe(3);
   });
 
   it('does not offer a room whose calendar has a gap — an unpriced night is not bookable', async () => {
-    await loadRates(ROOM, 3);
-    await prisma.roomRate.delete({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date: day(1) } },
+    await loadNights(room, HOTEL, nights(3));
+    await prisma.roomInventory.deleteMany({
+      where: { roomTypeId: room.roomTypeId, date: day(1) },
     });
 
+    const { offers, blocked } = await availability(prisma, query);
+    expect(offers).toEqual([]);
+    expect(blocked[0]?.reason).toBe('unpriced');
+  });
+
+  it('does not offer a room priced but with no inventory row, or vice versa', async () => {
+    await loadNights(room, HOTEL, nights(3), { priced: false });
     expect(await roomOffers(prisma, query)).toEqual([]);
   });
 
   it('does not offer a room that is stop-sold on any night of the stay', async () => {
-    await loadRates(ROOM, 3);
-    await prisma.roomRate.update({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date: day(2) } },
-      data: { closed: true },
-    });
+    await loadNights(room, HOTEL, nights(3));
+    await loadNights(room, HOTEL, [day(2)], { stopSell: true });
 
-    expect(await roomOffers(prisma, query)).toEqual([]);
+    const { offers, blocked } = await availability(prisma, query);
+    expect(offers).toEqual([]);
+    expect(blocked[0]?.reason).toBe('stop-sell');
   });
 
   it('multiplies the quote by the number of rooms asked for', async () => {
-    await loadRates(ROOM, 3, { rate: 4000 });
+    await loadNights(room, HOTEL, nights(3), { rate: 4000 });
     const [offer] = await roomOffers(prisma, { ...query, rooms: 2 });
 
     expect(offer?.quote.roomTotal).toBe(24000);
     expect(offer?.quote.total).toBe(28320);
   });
 
-  it('lists room types in the content file’s order, not the database’s', async () => {
-    await loadRates(OTHER_ROOM, 3);
-    await loadRates(ROOM, 3);
+  it('lists room types in their configured order', async () => {
+    await loadNights(otherRoom, HOTEL, nights(3));
+    await loadNights(room, HOTEL, nights(3));
 
-    expect((await roomOffers(prisma, query)).map((offer) => offer.room.name)).toEqual([
+    expect((await roomOffers(prisma, query)).map((offer) => offer.roomTypeName)).toEqual([
       ROOM,
       OTHER_ROOM,
     ]);
   });
+
+  it('offers each active rate plan separately, sharing the room’s inventory', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    const breakfastPlanId = await planFor(room.roomTypeId, 'CP');
+    // Same roomsOnSale: loadNights upserts the shared inventory row, so a
+    // different value here would silently re-open the room rather than add a
+    // plan to it.
+    await loadNights({ ...room, ratePlanId: breakfastPlanId }, HOTEL, nights(3), {
+      rate: 4600,
+      roomsOnSale: 2,
+    });
+
+    const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
+
+    expect(offers).toHaveLength(2);
+    // The same two rooms back both plans — a room is sold once, whatever it
+    // was sold on.
+    expect(offers.every((offer) => offer.roomsLeft === 2)).toBe(true);
+    expect(offers.map((o) => o.nightlyRates[0]).sort()).toEqual([4000, 4600]);
+  });
+
+  it('drops a plan with an unpriced night without dropping the room', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000 });
+    const breakfastPlanId = await planFor(room.roomTypeId, 'CP');
+    await loadNights({ ...room, ratePlanId: breakfastPlanId }, HOTEL, nights(2), {
+      rate: 4600,
+      roomsOnSale: 3,
+    });
+
+    const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
+    expect(offers).toHaveLength(1);
+    expect(offers[0]?.ratePlanCode).toBe('EP');
+  });
+});
+
+describe('restrictions staff set', () => {
+  it('refuses a stay shorter than a night’s minimum stay', async () => {
+    await loadNights(room, HOTEL, nights(3), { minStay: 5 });
+
+    const { offers, blocked } = await availability(prisma, query);
+    expect(offers).toEqual([]);
+    expect(blocked[0]).toMatchObject({ reason: 'min-stay', minStay: 5 });
+  });
+
+  it('allows a stay that meets the minimum', async () => {
+    await loadNights(room, HOTEL, nights(3), { minStay: 3 });
+    expect(await roomOffers(prisma, query)).toHaveLength(1);
+  });
+
+  it('refuses arrival on a night closed to arrival', async () => {
+    await loadNights(room, HOTEL, nights(3));
+    await loadNights(room, HOTEL, [day(0)], { closedToArrival: true });
+
+    const { blocked } = await availability(prisma, query);
+    expect(blocked[0]?.reason).toBe('closed-to-arrival');
+  });
+
+  it('ignores closed-to-arrival on a night the guest is not arriving on', async () => {
+    await loadNights(room, HOTEL, nights(3));
+    await loadNights(room, HOTEL, [day(1)], { closedToArrival: true });
+
+    expect(await roomOffers(prisma, query)).toHaveLength(1);
+  });
+
+  it('refuses departure on a day closed to departure', async () => {
+    await loadNights(room, HOTEL, nights(3));
+    // The checkout day is not a night the guest pays for, so its row has to be
+    // read separately — that is the whole subtlety of this rule.
+    await loadNights(room, HOTEL, [day(3)], { closedToDeparture: true, priced: false });
+
+    const { offers, blocked } = await availability(prisma, query);
+    expect(offers).toEqual([]);
+    expect(blocked[0]?.reason).toBe('closed-to-departure');
+  });
 });
 
 describe('inventory held by existing bookings', () => {
-  beforeEach(() => loadRates(ROOM, 3, { totalRooms: 3 }));
+  beforeEach(() => loadNights(room, HOTEL, nights(3), { roomsOnSale: 3 }));
 
   it('a confirmed booking takes its rooms out of availability', async () => {
     await createBooking({ status: 'CONFIRMED', rooms: 2 });
-    const [offer] = await roomOffers(prisma, query);
-    expect(offer?.roomsLeft).toBe(1);
+    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(1);
   });
 
   it('a booking still inside the payment hold window keeps holding its rooms', async () => {
     await createBooking({ status: 'PENDING_PAYMENT', rooms: 3 });
-    const [offer] = await roomOffers(prisma, query);
-    expect(offer?.roomsLeft).toBe(0);
+    const { offers, blocked } = await availability(prisma, query);
+    expect(offers).toEqual([]);
+    expect(blocked[0]?.reason).toBe('sold-out');
   });
 
   it('an abandoned payment releases its rooms once the hold expires', async () => {
@@ -164,51 +243,43 @@ describe('inventory held by existing bookings', () => {
       rooms: 3,
       createdAt: new Date(Date.now() - (HOLD_MINUTES + 1) * 60_000),
     });
-    const [offer] = await roomOffers(prisma, query);
-    expect(offer?.roomsLeft).toBe(3);
+    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(3);
   });
 
-  it.each(['CANCELLED', 'PAYMENT_FAILED'] as const)(
+  it.each(['CANCELLED', 'PAYMENT_FAILED', 'REFUND_DUE'] as const)(
     'a %s booking holds nothing',
     async (status) => {
       await createBooking({ status, rooms: 3 });
-      const [offer] = await roomOffers(prisma, query);
-      expect(offer?.roomsLeft).toBe(3);
+      expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(3);
     },
   );
 
   it('a booking that checks out on our check-in day does not overlap it', async () => {
-    await createBooking({
-      status: 'CONFIRMED',
-      rooms: 3,
-      checkIn: day(-2),
-      checkOut: FROM,
-    });
-    const [offer] = await roomOffers(prisma, query);
-    expect(offer?.roomsLeft).toBe(3);
+    await createBooking({ status: 'CONFIRMED', rooms: 3, checkIn: day(-2), checkOut: FROM });
+    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(3);
   });
 
-  it('holds only the nights it actually occupies, so the stay takes the tightest night', async () => {
+  it('holds only the nights it occupies, so the stay takes the tightest night', async () => {
     await createBooking({ status: 'CONFIRMED', rooms: 2, checkIn: day(1), checkOut: day(2) });
-    const [offer] = await roomOffers(prisma, query);
-    // Nights 0 and 2 still have 3 free; night 1 has 1, and a stay needs every night.
-    expect(offer?.roomsLeft).toBe(1);
+    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(1);
   });
 
   it('a booking of another room type does not touch this one', async () => {
-    await createBooking({ status: 'CONFIRMED', rooms: 3, roomName: OTHER_ROOM });
-    const [offer] = await roomOffers(prisma, query);
+    await loadNights(otherRoom, HOTEL, nights(3), { roomsOnSale: 3 });
+    await createBooking({ status: 'CONFIRMED', rooms: 3, target: otherRoom });
+
+    const offer = (await roomOffers(prisma, query)).find((o) => o.roomTypeName === ROOM);
     expect(offer?.roomsLeft).toBe(3);
   });
 });
 
 describe('excludeBookingId', () => {
-  beforeEach(() => loadRates(ROOM, 3, { totalRooms: 1 }));
+  beforeEach(() => loadNights(room, HOTEL, nights(3), { roomsOnSale: 1 }));
 
   it('leaves the named booking out of the held count, so it cannot block itself', async () => {
     const booking = await createBooking({ status: 'CONFIRMED', rooms: 1 });
 
-    expect((await roomOffers(prisma, query))[0]?.roomsLeft).toBe(0);
+    expect(await roomOffers(prisma, query)).toEqual([]);
     expect(
       (await roomOffers(prisma, { ...query, excludeBookingId: booking.id }))[0]?.roomsLeft,
     ).toBe(1);
@@ -218,24 +289,32 @@ describe('excludeBookingId', () => {
     const mine = await createBooking({ status: 'CONFIRMED', rooms: 1 });
     await createBooking({ status: 'CONFIRMED', rooms: 1 });
 
-    expect((await roomOffers(prisma, { ...query, excludeBookingId: mine.id }))[0]?.roomsLeft).toBe(
-      0,
-    );
+    expect(await roomOffers(prisma, { ...query, excludeBookingId: mine.id })).toEqual([]);
   });
 });
 
 describe('roomOffer', () => {
-  it('returns the named room only', async () => {
-    await loadRates(ROOM, 3);
-    expect((await roomOffer(prisma, { ...query, roomName: ROOM }))?.room.name).toBe(ROOM);
-    expect(await roomOffer(prisma, { ...query, roomName: 'No Such Room' })).toBeUndefined();
+  it('returns the named room and plan only', async () => {
+    await loadNights(room, HOTEL, nights(3));
+
+    expect((await roomOffer(prisma, { ...query, roomTypeId: room.roomTypeId }))?.roomTypeName).toBe(
+      ROOM,
+    );
+    expect(await roomOffer(prisma, { ...query, roomTypeId: 'no-such-room' })).toBeUndefined();
+    expect(
+      await roomOffer(prisma, {
+        ...query,
+        roomTypeId: room.roomTypeId,
+        ratePlanId: 'no-such-plan',
+      }),
+    ).toBeUndefined();
   });
 });
 
 describe('date handling', () => {
   it('reads back @db.Date rows on the same calendar day they were written', async () => {
-    await loadRates(ROOM, 1);
-    const row = await prisma.roomRate.findFirst({ where: { hotelSlug: HOTEL, date: RANGE } });
+    await loadNights(room, HOTEL, nights(1));
+    const row = await prisma.roomInventory.findFirst({ where: { hotelSlug: HOTEL, date: RANGE } });
     expect(dateKey(row?.date as Date)).toBe('2099-06-01');
   });
 });

@@ -11,3 +11,4 @@ content/hotels/convert-to-webp.js
 playwright.config.ts
 vitest.config.ts
 vitest.setup.ts
+test-utils

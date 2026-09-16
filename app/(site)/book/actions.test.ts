@@ -1,6 +1,7 @@
 import { addDays, dateKey, todayUtc } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type LoadedRoom, clearNights, findRoom, loadNights } from '../../../test-utils/inventory';
 import { createBooking } from './actions';
 
 const mockState = vi.hoisted(() => ({
@@ -42,22 +43,18 @@ const CHECK_IN = addDays(todayUtc(), 300);
 const CHECK_OUT = addDays(CHECK_IN, 2);
 const RATE_WINDOW = { gte: addDays(todayUtc(), 290), lt: addDays(todayUtc(), 320) };
 
-async function loadRates(totalRooms: number, rate = 4000) {
-  for (let i = 0; i < 2; i++) {
-    const date = addDays(CHECK_IN, i);
-    await prisma.roomRate.upsert({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date } },
-      update: { rate, totalRooms, closed: false },
-      create: { hotelSlug: HOTEL, roomName: ROOM, date, rate, totalRooms, closed: false },
-    });
-  }
+let room: LoadedRoom;
+
+async function loadRates(roomsOnSale: number, rate = 4000) {
+  await loadNights(room, HOTEL, [CHECK_IN, addDays(CHECK_IN, 1)], { rate, roomsOnSale });
 }
 
 function bookingFormData(overrides: Record<string, string> = {}): FormData {
   const data = new FormData();
   const fields: Record<string, string> = {
     hotelSlug: HOTEL,
-    roomName: ROOM,
+    roomTypeId: room.roomTypeId,
+    ratePlanId: room.ratePlanId,
     checkIn: dateKey(CHECK_IN),
     checkOut: dateKey(CHECK_OUT),
     rooms: '1',
@@ -89,10 +86,11 @@ async function submit(formData: FormData) {
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await prisma.payment.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
-  await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: RATE_WINDOW } });
+  await clearNights(HOTEL, RATE_WINDOW);
 }
 
 beforeEach(async () => {
+  room = await findRoom(HOTEL, ROOM);
   mockState.ip = `booking-${Math.random()}`;
   mockState.sale = { ok: true, redirectUrl: 'https://gateway.example/pay' };
   mockState.configured = true;

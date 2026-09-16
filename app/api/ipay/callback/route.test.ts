@@ -3,6 +3,12 @@ import { prisma } from '@/lib/db';
 import { hashV1 } from '@/lib/icici';
 import { sendMail } from '@/lib/mail';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  type LoadedRoom,
+  clearNights,
+  findRoom,
+  loadNights,
+} from '../../../../test-utils/inventory';
 import { POST } from './route';
 
 vi.mock('@/lib/mail', () => ({
@@ -25,15 +31,10 @@ const RATE_WINDOW = { gte: addDays(todayUtc(), 240), lt: addDays(todayUtc(), 270
 
 let orderCounter = 0;
 
-async function loadRates(totalRooms: number) {
-  for (let i = 0; i < 2; i++) {
-    const date = addDays(CHECK_IN, i);
-    await prisma.roomRate.upsert({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date } },
-      update: { rate: 5000, totalRooms, closed: false },
-      create: { hotelSlug: HOTEL, roomName: ROOM, date, rate: 5000, totalRooms, closed: false },
-    });
-  }
+let room: LoadedRoom;
+
+async function loadRates(roomsOnSale: number) {
+  await loadNights(room, HOTEL, [CHECK_IN, addDays(CHECK_IN, 1)], { rate: 5000, roomsOnSale });
 }
 
 async function createPendingBooking({
@@ -59,7 +60,9 @@ async function createPendingBooking({
       reference: `SNC-CB-${suffix}`,
       viewToken: `cbtoken-${suffix}`,
       hotelSlug: HOTEL,
-      roomName: ROOM,
+      roomTypeId: room.roomTypeId,
+      ratePlanId: room.ratePlanId,
+      roomName: room.roomName,
       checkIn: CHECK_IN,
       checkOut: CHECK_OUT,
       rooms,
@@ -87,7 +90,9 @@ async function createCompetingBooking(rooms: number) {
       reference: `SNC-RIVAL-${suffix}`,
       viewToken: `rivaltoken-${suffix}`,
       hotelSlug: HOTEL,
-      roomName: ROOM,
+      roomTypeId: room.roomTypeId,
+      ratePlanId: room.ratePlanId,
+      roomName: room.roomName,
       checkIn: CHECK_IN,
       checkOut: CHECK_OUT,
       rooms,
@@ -135,7 +140,7 @@ const expiredHold = () => new Date(Date.now() - (HOLD_MINUTES + 5) * 60_000);
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await prisma.payment.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
-  await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: RATE_WINDOW } });
+  await clearNights(HOTEL, RATE_WINDOW);
 }
 
 beforeAll(() => {
@@ -143,6 +148,7 @@ beforeAll(() => {
 });
 
 beforeEach(async () => {
+  room = await findRoom(HOTEL, ROOM);
   vi.mocked(sendMail).mockClear();
   await cleanup();
 });

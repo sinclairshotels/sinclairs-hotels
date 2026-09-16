@@ -102,7 +102,8 @@ export async function createBooking(
         // so a tampered submission cannot set its own total.
         const offer = await roomOffer(tx, {
           hotelSlug: d.hotelSlug,
-          roomName: d.roomName,
+          roomTypeId: d.roomTypeId,
+          ratePlanId: d.ratePlanId,
           checkIn,
           checkOut,
           rooms: d.rooms,
@@ -130,7 +131,11 @@ export async function createBooking(
             reference: bookingReference(),
             viewToken: randomBytes(32).toString('base64url'),
             hotelSlug: d.hotelSlug,
-            roomName: d.roomName,
+            roomTypeId: offer.roomTypeId,
+            ratePlanId: offer.ratePlanId,
+            // Stored as well as linked: the name is what the guest agreed to,
+            // and it must keep reading correctly if the room type is renamed.
+            roomName: offer.roomTypeName,
             checkIn,
             checkOut,
             rooms: d.rooms,
@@ -184,7 +189,7 @@ export async function createBooking(
     reference: created.reference,
     order_id: orderId,
     hotel: d.hotelSlug,
-    room: d.roomName,
+    room_type_id: d.roomTypeId,
     rooms: d.rooms,
     nights: nightsBetween(checkIn, checkOut),
     amount: created.total,

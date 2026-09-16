@@ -1,5 +1,5 @@
 import { RateCalendarGrid } from '@/components/admin/rate-calendar-grid';
-import { RateGridForm } from '@/components/admin/rate-grid-form';
+import { type LoadableProperty, RateGridForm } from '@/components/admin/rate-grid-form';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
 import { addDays, dateKey, parseDateOnly, todayUtc } from '@/lib/booking';
@@ -32,25 +32,63 @@ export default async function RatesPage({
   const [calendar, warnings, loaded, changes] = await Promise.all([
     rateCalendar({ hotelSlug: selectedHotel, from: calendarFrom, days: CALENDAR_DAYS }),
     coverageWarnings(),
-    prisma.roomRate.groupBy({
-      by: ['hotelSlug', 'roomName'],
+    prisma.roomInventory.groupBy({
+      by: ['hotelSlug', 'roomTypeId'],
       where: { date: { gte: today, lte: addDays(today, LOOKAHEAD_DAYS) } },
       _count: { _all: true },
-      _min: { rate: true },
-      _max: { date: true, rate: true },
+      _max: { date: true },
     }),
-    prisma.rateChange.findMany({ orderBy: { createdAt: 'desc' }, take: RECENT_CHANGES }),
+    prisma.auditEvent.findMany({
+      where: { action: { startsWith: 'rates.' } },
+      orderBy: { at: 'desc' },
+      take: RECENT_CHANGES,
+    }),
   ]);
 
-  const summary = loaded.sort(
-    (a, b) =>
-      (getHotelBySlug(a.hotelSlug)?.name ?? a.hotelSlug).localeCompare(
-        getHotelBySlug(b.hotelSlug)?.name ?? b.hotelSlug,
-      ) || a.roomName.localeCompare(b.roomName),
+  const roomTypeNames = new Map(
+    (
+      await prisma.roomType.findMany({
+        where: { id: { in: loaded.map((row) => row.roomTypeId) } },
+        select: { id: true, name: true },
+      })
+    ).map((room) => [room.id, room.name]),
   );
+
+  const summary = loaded
+    .map((row) => ({ ...row, roomName: roomTypeNames.get(row.roomTypeId) ?? row.roomTypeId }))
+    .sort(
+      (a, b) =>
+        (getHotelBySlug(a.hotelSlug)?.name ?? a.hotelSlug).localeCompare(
+          getHotelBySlug(b.hotelSlug)?.name ?? b.hotelSlug,
+        ) || a.roomName.localeCompare(b.roomName),
+    );
 
   const calendarHref = (overrides: Record<string, string>) =>
     `/admin/rates?${new URLSearchParams({ hotel: selectedHotel, from: dateKey(calendarFrom), ...overrides })}`;
+
+  // Built from the database, not the content files: the loader posts room type
+  // and rate plan ids, which only exist here.
+  const loadableProperties: LoadableProperty[] = (
+    await prisma.roomType.findMany({
+      where: { active: true },
+      include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
+      orderBy: [{ hotelSlug: 'asc' }, { sortOrder: 'asc' }],
+    })
+  ).reduce<LoadableProperty[]>((properties, roomType) => {
+    const property = properties.find((p) => p.slug === roomType.hotelSlug);
+    const entry = property ?? {
+      slug: roomType.hotelSlug,
+      name: getHotelBySlug(roomType.hotelSlug)?.name ?? roomType.hotelSlug,
+      roomTypes: [],
+    };
+    entry.roomTypes.push({
+      id: roomType.id,
+      name: roomType.name,
+      ratePlans: roomType.ratePlans.map((plan) => ({ id: plan.id, name: plan.name })),
+    });
+    if (!property) properties.push(entry);
+    return properties;
+  }, []);
 
   const missing = warnings.filter((w) => w.lastNight === null);
   const expiring = warnings.filter((w) => w.lastNight !== null);
@@ -168,7 +206,7 @@ export default async function RatesPage({
         <section className="max-w-3xl">
           <p className="font-display text-lg text-forest">Load a season</p>
           <div className="mt-3 rounded-lg border border-ink/10 bg-white p-6">
-            <RateGridForm hotels={hotels} />
+            <RateGridForm properties={loadableProperties} />
           </div>
         </section>
 
@@ -187,15 +225,15 @@ export default async function RatesPage({
                   <th className="px-4 py-3 font-medium">Room</th>
                   <th className="px-4 py-3 font-medium">Nights</th>
                   <th className="px-4 py-3 font-medium">Loaded through</th>
-                  <th className="px-4 py-3 text-right font-medium">Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.map((row) => {
-                  const min = row._min.rate?.toNumber() ?? 0;
-                  const max = row._max.rate?.toNumber() ?? 0;
                   return (
-                    <tr key={`${row.hotelSlug}-${row.roomName}`} className="border-b border-ink/5">
+                    <tr
+                      key={`${row.hotelSlug}-${row.roomTypeId}`}
+                      className="border-b border-ink/5"
+                    >
                       <td className="px-4 py-3">
                         {getHotelBySlug(row.hotelSlug)?.name ?? row.hotelSlug}
                       </td>
@@ -203,11 +241,6 @@ export default async function RatesPage({
                       <td className="px-4 py-3 text-ink/70">{row._count._all}</td>
                       <td className="px-4 py-3 text-ink/70">
                         {row._max.date ? formatDate(row._max.date) : '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-ink/70">
-                        {min === max
-                          ? `₹${min.toLocaleString('en-IN')}`
-                          : `₹${min.toLocaleString('en-IN')} – ₹${max.toLocaleString('en-IN')}`}
                       </td>
                     </tr>
                   );
@@ -229,40 +262,22 @@ export default async function RatesPage({
             </p>
           ) : (
             <ul className="mt-3 space-y-2">
-              {changes.map((change) => {
-                const previous = Array.isArray(change.previous) ? change.previous : [];
-                return (
-                  <li key={change.id} className="rounded-lg border border-ink/10 bg-white p-4">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium text-ink">
-                        {getHotelBySlug(change.hotelSlug)?.name ?? change.hotelSlug} ·{' '}
-                        <span className="font-normal text-ink/70">{change.roomName}</span>
-                      </p>
-                      <p className="text-xs text-ink/50">
-                        {formatDate(change.createdAt)} {formatTime(change.createdAt)} ·{' '}
-                        {change.actor}
-                        {change.actorIp ? ` · ${change.actorIp}` : ''}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-xs text-ink/60">
-                      {formatDate(change.firstNight)} – {formatDate(change.lastNight)}
-                      {change.weekdays.length > 0 && ` · ${change.weekdays.length} days a week`} ·{' '}
-                      {change.nightsWritten} written, {change.nightsChanged} changed
+              {changes.map((change) => (
+                <li key={change.id} className="rounded-lg border border-ink/10 bg-white p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="text-sm font-medium text-ink">
+                      {change.hotelSlug
+                        ? (getHotelBySlug(change.hotelSlug)?.name ?? change.hotelSlug)
+                        : 'All properties'}
                     </p>
-                    <p className="mt-1 text-xs text-ink/70">
-                      Set to ₹{change.rate.toNumber().toLocaleString('en-IN')} · {change.totalRooms}{' '}
-                      on sale
-                      {change.closed && ' · stop sell'}
-                      {previous.length > 0 && (
-                        <span className="text-ink/50">
-                          {' '}
-                          (replaced {previous.length} {previous.length === 1 ? 'night' : 'nights'})
-                        </span>
-                      )}
+                    <p className="text-xs text-ink/50">
+                      {formatDate(change.at)} {formatTime(change.at)} · {change.actorLabel}
+                      {change.ip ? ` · ${change.ip}` : ''}
                     </p>
-                  </li>
-                );
-              })}
+                  </div>
+                  {change.summary && <p className="mt-1 text-xs text-ink/70">{change.summary}</p>}
+                </li>
+              ))}
             </ul>
           )}
         </section>

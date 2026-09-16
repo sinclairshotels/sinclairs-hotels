@@ -1,21 +1,36 @@
 'use client';
 
 import { logout } from '@/app/admin/logout/actions';
+import { type AuthedUser, type Capability, can } from '@/lib/roles';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const navItems = [
-  { label: 'Bookings', href: '/admin/bookings' },
-  { label: 'Rates', href: '/admin/rates' },
-  { label: 'Vouchers', href: '/admin/vouchers' },
-  { label: 'Payments', href: '/admin/payments' },
-  { label: 'Enquiries', href: '/admin/enquiries' },
-  { label: 'Newsletter', href: '/admin/newsletter' },
+// Each entry names the capability it needs, so the nav and the pages agree on
+// who may see what from one definition. Hiding a link is presentation only —
+// the page and its actions check again.
+const NAV_ITEMS: Array<{ label: string; href: string; capability: Capability }> = [
+  { label: 'Bookings', href: '/admin/bookings', capability: 'bookings:read' },
+  { label: 'Rates', href: '/admin/rates', capability: 'rates:read' },
+  { label: 'Vouchers', href: '/admin/vouchers', capability: 'vouchers:read' },
+  { label: 'Payments', href: '/admin/payments', capability: 'payments:read' },
+  { label: 'Enquiries', href: '/admin/enquiries', capability: 'enquiries:read' },
+  { label: 'Newsletter', href: '/admin/newsletter', capability: 'enquiries:read' },
+  { label: 'Users', href: '/admin/users', capability: 'users:manage' },
+  { label: 'Audit', href: '/admin/audit', capability: 'audit:read' },
 ];
 
-export function AdminSidebar() {
+const ROLE_LABEL: Record<AuthedUser['role'], string> = {
+  ADMIN: 'Admin',
+  REVENUE: 'Revenue',
+  RESERVATIONS: 'Reservations',
+  HOTEL: 'Hotel',
+  VIEWER: 'Viewer',
+};
+
+export function AdminSidebar({ user }: { user: AuthedUser }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const navItems = NAV_ITEMS.filter((item) => can(user, item.capability));
 
   return (
     <>
@@ -44,7 +59,12 @@ export function AdminSidebar() {
         </nav>
 
         <div className="border-t border-cream/10 px-3 py-4">
-          <form action={logout}>
+          <p className="px-3 text-xs text-cream/70">{user.name}</p>
+          <p className="px-3 text-[10px] uppercase tracking-widest text-gold-light">
+            {ROLE_LABEL[user.role]}
+            {user.restrictedToHotels && ` · ${user.restrictedToHotels.length} properties`}
+          </p>
+          <form action={logout} className="mt-2">
             <button
               type="submit"
               className="w-full rounded px-3 py-2 text-left text-xs uppercase tracking-wider text-cream/60 transition hover:bg-forest-dark/60 hover:text-gold-light"

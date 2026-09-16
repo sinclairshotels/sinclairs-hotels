@@ -10,8 +10,12 @@ const calendar: RateCalendar = {
   hotelSlug: 'gangtok',
   hotelName: 'Sinclairs Gangtok',
   dates: ['2099-06-01', '2099-06-02'],
+  holidays: {},
   rows: [
     {
+      roomTypeId: 'room-deluxe',
+      ratePlanId: 'plan-deluxe-ep',
+      ratePlanName: 'Room Only',
       roomName: 'Deluxe Room',
       cells: [
         { date: '2099-06-01', rate: 6800, onSale: 5, sold: 2, remaining: 3, closed: false },
@@ -19,6 +23,9 @@ const calendar: RateCalendar = {
       ],
     },
     {
+      roomTypeId: 'room-family',
+      ratePlanId: 'plan-family-ep',
+      ratePlanName: 'Room Only',
       roomName: 'Deluxe Family Room',
       cells: [
         { date: '2099-06-01', rate: null, onSale: 0, sold: 0, remaining: 0, closed: false },
@@ -33,8 +40,8 @@ describe('RateCalendarGrid', () => {
     render(<RateCalendarGrid calendar={calendar} />);
 
     expect(screen.getByRole('columnheader', { name: 'Room' })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Deluxe Room' })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Deluxe Family Room' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: /Deluxe Room/ })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: /Deluxe Family Room/ })).toBeInTheDocument();
   });
 
   it('shows rate, rooms on sale, sold and remaining in every loaded cell', () => {
@@ -106,7 +113,8 @@ describe('RateCalendarGrid', () => {
 
     expect(hidden).toEqual({
       hotelSlug: 'gangtok',
-      roomName: 'Deluxe Family Room',
+      roomTypeId: 'room-family',
+      ratePlanId: 'plan-family-ep',
       from: '2099-06-02',
       to: '2099-06-02',
       confirmed: 'on',

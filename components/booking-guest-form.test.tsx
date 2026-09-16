@@ -7,7 +7,8 @@ vi.mock('@/lib/analytics', () => ({ pushDataLayerEvent: vi.fn() }));
 
 const stay = {
   hotelSlug: 'gangtok',
-  roomName: 'Deluxe Room',
+  roomTypeId: 'room-deluxe',
+  ratePlanId: 'plan-deluxe-ep',
   checkIn: '2099-06-01',
   checkOut: '2099-06-04',
   rooms: 2,
@@ -39,7 +40,8 @@ describe('BookingGuestForm', () => {
 
     expect(hidden).toEqual({
       hotelSlug: 'gangtok',
-      roomName: 'Deluxe Room',
+      roomTypeId: 'room-deluxe',
+      ratePlanId: 'plan-deluxe-ep',
       checkIn: '2099-06-01',
       checkOut: '2099-06-04',
       rooms: '2',

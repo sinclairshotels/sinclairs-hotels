@@ -8,7 +8,8 @@ const initialState: BookingFormState = { status: 'idle' };
 
 export interface StayFields {
   hotelSlug: string;
-  roomName: string;
+  roomTypeId: string;
+  ratePlanId: string;
   checkIn: string;
   checkOut: string;
   rooms: number;
@@ -36,7 +37,8 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
       className="space-y-5"
     >
       <input type="hidden" name="hotelSlug" value={stay.hotelSlug} />
-      <input type="hidden" name="roomName" value={stay.roomName} />
+      <input type="hidden" name="roomTypeId" value={stay.roomTypeId} />
+      <input type="hidden" name="ratePlanId" value={stay.ratePlanId} />
       <input type="hidden" name="checkIn" value={stay.checkIn} />
       <input type="hidden" name="checkOut" value={stay.checkOut} />
       <input type="hidden" name="rooms" value={stay.rooms} />

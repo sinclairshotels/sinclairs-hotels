@@ -193,13 +193,38 @@ database. Never hand-edit a Neon branch's schema. To refresh dev data, use Neon'
 availability → guest details → ICICI i-Pay → confirmation. It is deliberately
 separate from the STAAH handoff, which still exists and is unchanged.
 
-**Inventory and rates are staff data, not content.** `RoomRate` holds one row per
-(hotel, room type, date) carrying `rate`, `totalRooms` and a `closed` stop-sell
-flag, edited on `/admin/rates` next to Vouchers. This is the one deliberate
-exception to "a hotel is a typed object in `content/hotels`" — a tariff change
-must not require a deploy, and inventory moves daily. `roomName` matches
-`RoomType.name` in the content file by string, with no FK: room types stay
-content, and a rate whose name no longer matches simply stops being offered.
+**Inventory and rates are staff data, not content**, and they are four tables,
+not one:
+
+| Table | Grain | Holds |
+|---|---|---|
+| `RoomType` | hotel × room | occupancy, extra-guest charges, `contentKey` |
+| `RatePlan` | room type | EP/CP/MAP/AP |
+| `RoomInventory` | room type × date | rooms on sale, stop-sell, MLOS, CTA, CTD |
+| `RatePrice` | rate plan × date | the money |
+
+**Inventory belongs to the room type and price to the rate plan**, and fusing
+them (as the old `RoomRate` did) is a correctness bug once rate plans exist: a
+room is sold once whatever meal plan it was sold on, so one shared allotment has
+to back all four plans. A gap in *one plan's* prices drops that plan; a gap in
+the room's inventory drops the room.
+
+**A room type is split across two homes on purpose.** The marketing half —
+description, photography, the copy on the hotel page — stays in
+`content/hotels/*.ts`; the operational half lives in Postgres because staff
+change it without a deploy. `RoomType.contentKey` joins them, and
+`pnpm sync:rooms` (`scripts/sync-room-types.ts`) keeps them in step. That script
+is deliberately non-destructive: it creates what content declares and refreshes
+ordering, but never overwrites a name or charge staff have edited, and never
+deletes a room type that has left the content files — that would drop its rates
+and orphan its bookings. It reports those instead.
+
+**Restrictions staff set are enforced in the guest flow**, not just displayed:
+`minStay`, `closedToArrival` and `closedToDeparture` all bind in
+`lib/availability.ts`. Closed-to-departure is the subtle one — it applies to the
+*checkout date*, which is never one of the nights the guest pays for, so the
+availability query reads inventory through `checkOut` inclusive while pricing
+only the nights before it.
 
 **A room is only sellable for nights that have an open rate row.** A gap in the
 calendar is an unpriced night, not a night to guess a price for, so the whole
@@ -235,10 +260,10 @@ Three things about it are load-bearing rather than decorative:
   own form — jsdom does not reproduce this, so the regression test for it is in
   `e2e/rates.spec.ts`, not a component test.
 
-`RateChange` records every write (range, weekdays, nights written/changed, the
-new values, and the per-night values replaced). `actor` is the shared admin
-login plus its IP — there are no per-user staff accounts yet (PLAN.md → Phase
-2), so that is the most "who" it can honestly claim.
+`AuditEvent` records every write (action, entity, hotel, a summary, and the
+before/after values). It replaced the rate-only `RateChange`, and `actor` is now
+a real person: `actorUserId` plus `actorLabel`, the label stored alongside the
+key so the log still reads correctly after a user is deleted.
 
 **Inventory is counted, never decremented.** Availability subtracts the rooms
 held by overlapping bookings (`lib/availability.ts`) rather than maintaining a
@@ -290,6 +315,53 @@ Prisma's `@db.Date`. Local midnight would shift which night a rate belongs to.
 the sitemap) without a property that has no allotment loaded becoming a dead end.
 Repointing them is a one-line change per component — make it once real allotments
 are loaded for the properties you want selling direct, not before.
+
+## Staff accounts and roles
+
+`/admin` is per-person, not a shared password. `User`, `UserHotel` and `Session`
+are real tables; `lib/auth.ts` owns passwords and sessions, `lib/roles.ts` owns
+the capability matrix.
+
+**Three modules, because of where the code can run.** `lib/auth.ts` reaches
+Prisma, `node:crypto` and `next/headers`, so it is server-only; `lib/roles.ts`
+is pure data and predicates, safe in a client component; `lib/auth-shared.ts`
+holds the two constants the edge middleware and the browser need. Importing
+`lib/auth.ts` from a client component or from `proxy.ts` fails the build — that
+is the intended signal, not an obstacle to work around.
+
+**Passwords are scrypt from `node:crypto`**, no new dependency, with the cost
+parameters stored inside each hash so they can be raised later without
+invalidating anyone. A user created by an Admin has **no** password hash and a
+single-use `setupToken`: they choose their own password through
+`/admin/login/setup`, so nobody — including whoever created the account — ever
+knows it. A null hash can never match, so an un-set account cannot be signed
+into by guessing.
+
+**Sessions are database rows, and only a hash of the token is stored.** That is
+what lets an account be disabled or a session revoked immediately; the previous
+signed-cookie scheme could only wait for the cookie to expire. Timeouts are 30
+minutes idle and 10 hours absolute, both checked on every request, and
+`lastSeenAt` is only touched once a minute so a page view is not a write.
+
+**Authorization is checked in three places and only one of them is real.**
+`proxy.ts` runs on the edge and can only see whether a cookie exists — it cannot
+reach Postgres. The dashboard layout resolves the real session. Every server
+action calls `authorize(capability)` or `authorizeHotel(capability, slug)` and
+returns its message on failure. **A hidden nav link is presentation, never a
+permission**: pages check again with `can()`, and `notFound()` is the right
+response to someone typing a URL they may not have.
+
+**`UserHotel` is a restriction, not a grant** — no rows means every property,
+which is how the central team is modelled. `hotelScopeFilter(user)` spreads into
+a Prisma `where` so a scoped user's list query cannot return another property's
+rows even if the page forgets to filter.
+
+The first Admin is bootstrapped from `ADMIN_PASSWORD` on the first sign-in
+against an empty `User` table, under whatever email is typed. That branch is
+dead the moment one account exists, so it is not a standing back door — but it
+also means **tests must not rely on it**: one leftover row turns every
+bootstrap sign-in into a failed login, which is why `test-utils/auth.ts`
+exposes `ensureE2EAdmin`.
 
 ## Server logging
 
@@ -430,6 +502,8 @@ rollback story. Storage is not a place to keep history.
 - `pnpm test:ci-local` — Vitest with `CI=true`, which makes `vitest.config.ts` skip loading
   `.env.local` — the same env shape the real CI job runs with (`DATABASE_URL` only)
 - `pnpm test:e2e` — Playwright smoke suite
+- `pnpm sync:rooms` — reconcile `RoomType`/`RatePlan`/`HotelSettings` with the content
+  files and seed holidays. Run after adding a room type to `content/hotels`.
 - `pnpm prisma:generate` / `pnpm prisma:migrate` — Prisma client / migrations (dev)
 - `pnpm prisma:migrate:deploy` — `prisma migrate deploy`, the non-interactive form CI uses
 - `pnpm verify:ci` — `prisma migrate deploy && lint && typecheck && test:ci-local && build`,

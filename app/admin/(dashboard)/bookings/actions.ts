@@ -1,6 +1,6 @@
 'use server';
 
-import { ADMIN_COOKIE_NAME, verifySessionCookieValue } from '@/lib/admin-auth';
+import { authorize } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { revalidatePath } from 'next/cache';
@@ -12,8 +12,8 @@ export async function cancelBooking(
   _prevState: CancelBookingState,
   formData: FormData,
 ): Promise<CancelBookingState> {
-  const authed = await verifySessionCookieValue((await cookies()).get(ADMIN_COOKIE_NAME)?.value);
-  if (!authed) return { status: 'error', message: 'Session expired, please sign in again.' };
+  const auth = await authorize('bookings:write');
+  if (!auth.ok) return { status: 'error', message: auth.message };
 
   const id = String(formData.get('id') ?? '');
   if (!id) return { status: 'error', message: 'No booking selected.' };

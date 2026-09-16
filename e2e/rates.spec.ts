@@ -1,9 +1,12 @@
 import { type Page, expect, test } from '@playwright/test';
 import { prisma } from '../lib/db';
+import { ensureE2EAdmin } from '../test-utils/auth';
+import { clearNights } from '../test-utils/inventory';
 
 // The admin tools only exist on the staff.* hostname (see proxy.ts).
 const STAFF_BASE_URL = 'http://staff.localhost:3000';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const E2E_ADMIN_EMAIL = 'e2e-admin@sinclairshotels.test';
 
 const HOTEL_LABEL = 'Sinclairs Gangtok';
 const HOTEL_SLUG = 'gangtok';
@@ -36,23 +39,30 @@ test.describe('rates loader (staff)', () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+    await ensureE2EAdmin(E2E_ADMIN_EMAIL, ADMIN_PASSWORD ?? '');
+
     await page.goto(`${STAFF_BASE_URL}/admin/login`);
+    await page.locator('#email').fill(E2E_ADMIN_EMAIL);
     await page.locator('#password').fill(ADMIN_PASSWORD ?? '');
     await page.getByRole('button', { name: 'Sign In' }).click();
     // Must be the page login lands on, not /\/admin\// — that also matches
     // /admin/login, so the assertion would pass before the redirect ran and
     // the next navigation would race it.
-    await expect(page).toHaveURL(/\/admin\/vouchers$/);
+    await expect(page).toHaveURL(/\/admin\/bookings$/);
   });
 
   test.beforeEach(async () => {
-    await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } });
-    await prisma.rateChange.deleteMany({ where: { hotelSlug: HOTEL_SLUG, firstNight: WINDOW } });
+    await clearNights(HOTEL_SLUG, WINDOW);
+    await prisma.auditEvent.deleteMany({
+      where: { hotelSlug: HOTEL_SLUG, action: 'rates.updated' },
+    });
   });
 
   test.afterAll(async () => {
-    await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } });
-    await prisma.rateChange.deleteMany({ where: { hotelSlug: HOTEL_SLUG, firstNight: WINDOW } });
+    await clearNights(HOTEL_SLUG, WINDOW);
+    await prisma.auditEvent.deleteMany({
+      where: { hotelSlug: HOTEL_SLUG, action: 'rates.updated' },
+    });
     await prisma.$disconnect();
     await page.close();
   });
@@ -66,9 +76,11 @@ test.describe('rates loader (staff)', () => {
     await page.locator('[role="listbox"]').getByRole('option', { name: HOTEL_LABEL }).click();
 
     // Regression: the room Select's items are replaced when the property
-    // changes, which used to leave the posted room name empty and make the
-    // loader reject its own form.
-    await expect(loader.locator('input[name="roomName"]')).toHaveValue('Deluxe Room');
+    // changes, which used to leave the posted room empty and make the loader
+    // reject its own form. The value is a generated id, so what matters is
+    // that it is populated and names a room of the property just chosen.
+    await expect(loader.locator('input[name="roomTypeId"]')).not.toHaveValue('');
+    await expect(loader.locator('input[name="ratePlanId"]')).not.toHaveValue('');
     await expect(triggers.nth(1)).toHaveText(/Deluxe Room/);
   });
 
@@ -92,18 +104,24 @@ test.describe('rates loader (staff)', () => {
 
     // Nothing is written by the preview itself.
     await expect(page.getByText('Confirm this change')).toBeVisible();
-    expect(await prisma.roomRate.count({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } })).toBe(0);
+    expect(
+      await prisma.roomInventory.count({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } }),
+    ).toBe(0);
 
     await page.getByRole('button', { name: /save 7 nights/i }).click();
     await expect(page.getByText(/7 nights updated/i)).toBeVisible();
 
-    const rows = await prisma.roomRate.findMany({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } });
+    const rows = await prisma.roomInventory.findMany({
+      where: { hotelSlug: HOTEL_SLUG, date: WINDOW },
+    });
     expect(rows).toHaveLength(7);
-    expect(rows.every((row) => row.rate.toNumber() === 7777 && row.totalRooms === 3)).toBe(true);
+    expect(rows.every((row) => row.roomsOnSale === 3)).toBe(true);
 
     // And the write is recorded.
     expect(
-      await prisma.rateChange.count({ where: { hotelSlug: HOTEL_SLUG, firstNight: WINDOW } }),
+      await prisma.auditEvent.count({
+        where: { hotelSlug: HOTEL_SLUG, action: 'rates.updated' },
+      }),
     ).toBe(1);
   });
 
@@ -130,7 +148,9 @@ test.describe('rates loader (staff)', () => {
     await page.getByRole('button', { name: /save 1 night/i }).click();
     await expect(page.getByText(/1 night updated/i)).toBeVisible();
 
-    const rows = await prisma.roomRate.findMany({ where: { hotelSlug: HOTEL_SLUG, date: WINDOW } });
+    const rows = await prisma.roomInventory.findMany({
+      where: { hotelSlug: HOTEL_SLUG, date: WINDOW },
+    });
     expect(rows).toHaveLength(1);
     expect(rows[0]?.date.getUTCDay()).toBe(saturday);
   });

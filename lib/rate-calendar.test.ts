@@ -1,5 +1,6 @@
 import { hotels } from '@/content/hotels';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { type LoadedRoom, clearNights, findRoom, loadNights } from '../test-utils/inventory';
 import { addDays, parseDateOnly, todayUtc } from './booking';
 import { prisma } from './db';
 import { COVERAGE_WARNING_DAYS, coverageWarnings, rateCalendar } from './rate-calendar';
@@ -15,22 +16,19 @@ const TEST_EMAIL_DOMAIN = 'vitest-calendar-test.invalid';
 
 const day = (offset: number) => addDays(FROM, offset);
 
-async function loadRates(nights: number, values: { totalRooms?: number; closed?: boolean } = {}) {
-  for (let i = 0; i < nights; i++) {
-    const date = day(i);
-    await prisma.roomRate.upsert({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date } },
-      update: { rate: 5000, totalRooms: values.totalRooms ?? 4, closed: values.closed ?? false },
-      create: {
-        hotelSlug: HOTEL,
-        roomName: ROOM,
-        date,
-        rate: 5000,
-        totalRooms: values.totalRooms ?? 4,
-        closed: values.closed ?? false,
-      },
-    });
-  }
+let room: LoadedRoom;
+
+async function loadRates(
+  count: number,
+  values: { totalRooms?: number; closed?: boolean } = {},
+  start = 0,
+) {
+  await loadNights(
+    room,
+    HOTEL,
+    Array.from({ length: count }, (_, i) => day(start + i)),
+    { rate: 5000, roomsOnSale: values.totalRooms ?? 4, stopSell: values.closed ?? false },
+  );
 }
 
 async function book(rooms: number, startOffset: number, nights: number, status = 'CONFIRMED') {
@@ -40,7 +38,9 @@ async function book(rooms: number, startOffset: number, nights: number, status =
       reference: `CAL-${suffix}`,
       viewToken: `cal-${suffix}`,
       hotelSlug: HOTEL,
-      roomName: ROOM,
+      roomTypeId: room.roomTypeId,
+      ratePlanId: room.ratePlanId,
+      roomName: room.roomName,
       checkIn: day(startOffset),
       checkOut: day(startOffset + nights),
       rooms,
@@ -59,10 +59,13 @@ async function book(rooms: number, startOffset: number, nights: number, status =
 
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
-  await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: WINDOW } });
+  await clearNights(HOTEL, WINDOW);
 }
 
-beforeEach(cleanup);
+beforeEach(async () => {
+  room = await findRoom(HOTEL, ROOM);
+  await cleanup();
+});
 afterAll(async () => {
   await cleanup();
   await prisma.$disconnect();
@@ -143,7 +146,7 @@ const NOW = new Date('2098-06-01T09:00:00.000Z');
 describe('coverageWarnings', () => {
   it('flags every room type when nothing is loaded', async () => {
     const warnings = await coverageWarnings(NOW);
-    const roomCount = hotels.reduce((sum, hotel) => sum + hotel.rooms.length, 0);
+    const roomCount = await prisma.roomType.count({ where: { active: true } });
 
     expect(warnings).toHaveLength(roomCount);
     expect(warnings.every((w) => w.lastNight === null && w.daysLeft === 0)).toBe(true);

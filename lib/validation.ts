@@ -136,7 +136,10 @@ export const staySchema = z.object({
 export type StayInput = z.infer<typeof staySchema>;
 
 export const bookingSchema = staySchema.extend({
-  roomName: z.string().trim().min(1, 'Please choose a room').max(120),
+  // Ids, not names: a room type can be renamed between the guest seeing it and
+  // submitting, and the booking must still land on the room they picked.
+  roomTypeId: z.string().trim().min(1, 'Please choose a room').max(40),
+  ratePlanId: z.string().trim().min(1, 'Please choose a rate').max(40),
   guestName: z.string().trim().min(2, 'Please enter your full name').max(120),
   guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
   guestPhone: phoneField(),
@@ -154,7 +157,8 @@ const checkboxField = () =>
 // for a single room type, which is how staff actually think about a season.
 export const rateGridSchema = z.object({
   hotelSlug: z.string().trim().min(1, 'Please select a hotel').max(60),
-  roomName: z.string().trim().min(1, 'Please select a room type').max(120),
+  roomTypeId: z.string().trim().min(1, 'Please select a room type').max(40),
+  ratePlanId: z.string().trim().min(1, 'Please select a rate plan').max(40),
   from: dateOnlyField('Please select a start date'),
   to: dateOnlyField('Please select an end date'),
   rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),

@@ -3,7 +3,6 @@
 import { type RateFormState, saveRates } from '@/app/admin/(dashboard)/rates/actions';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import type { Hotel } from '@/content/types';
 import { addDays, dateKey, todayUtc } from '@/lib/booking';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
@@ -22,27 +21,45 @@ const WEEKDAYS = [
   { value: 6, label: 'Sat' },
 ];
 
-export function RateGridForm({ hotels }: { hotels: Hotel[] }) {
+// The sellable shape of a property, built from the database rather than the
+// content files: inventory hangs off a room type row and price off a rate
+// plan row, so the form has to post their ids.
+export interface LoadableProperty {
+  slug: string;
+  name: string;
+  roomTypes: Array<{
+    id: string;
+    name: string;
+    ratePlans: Array<{ id: string; name: string }>;
+  }>;
+}
+
+export function RateGridForm({ properties }: { properties: LoadableProperty[] }) {
   const [state, formAction, pending] = useActionState(saveRates, initialState);
   const router = useRouter();
   const today = dateKey(todayUtc());
 
-  const [hotelSlug, setHotelSlug] = useState(hotels[0]?.slug ?? '');
-  const [roomName, setRoomName] = useState(hotels[0]?.rooms[0]?.name ?? '');
+  const [hotelSlug, setHotelSlug] = useState(properties[0]?.slug ?? '');
+  const [roomTypeId, setRoomTypeId] = useState(properties[0]?.roomTypes[0]?.id ?? '');
+  const [ratePlanId, setRatePlanId] = useState(properties[0]?.roomTypes[0]?.ratePlans[0]?.id ?? '');
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(dateKey(addDays(todayUtc(), 30)));
 
-  const rooms = hotels.find((hotel) => hotel.slug === hotelSlug)?.rooms ?? [];
+  const rooms = properties.find((property) => property.slug === hotelSlug)?.roomTypes ?? [];
 
   // Derived, not trusted from state: changing the property swaps the room
   // Select's whole item set, and a controlled Radix Select whose value is no
   // longer among its items reports back an empty value. Reconciling here means
-  // the posted room is always one this property actually has, whatever the
-  // Select does in between — before this, picking a different property posted
-  // an empty roomName and the loader rejected its own form.
-  const selectedRoom = rooms.some((room) => room.name === roomName)
-    ? roomName
-    : (rooms[0]?.name ?? '');
+  // the posted room and plan are always ones this property actually has,
+  // whatever the Selects do in between — before this, picking a different
+  // property posted an empty room and the loader rejected its own form.
+  const selectedRoomId = rooms.some((room) => room.id === roomTypeId)
+    ? roomTypeId
+    : (rooms[0]?.id ?? '');
+  const plans = rooms.find((room) => room.id === selectedRoomId)?.ratePlans ?? [];
+  const selectedPlanId = plans.some((plan) => plan.id === ratePlanId)
+    ? ratePlanId
+    : (plans[0]?.id ?? '');
 
   useEffect(() => {
     if (state.status === 'success') router.refresh();
@@ -52,8 +69,15 @@ export function RateGridForm({ hotels }: { hotels: Hotel[] }) {
   // leaving the old one selected would submit a room name the new hotel does
   // not have, which the action rejects.
   const handleHotel = (slug: string) => {
+    const property = properties.find((p) => p.slug === slug);
     setHotelSlug(slug);
-    setRoomName(hotels.find((hotel) => hotel.slug === slug)?.rooms[0]?.name ?? '');
+    setRoomTypeId(property?.roomTypes[0]?.id ?? '');
+    setRatePlanId(property?.roomTypes[0]?.ratePlans[0]?.id ?? '');
+  };
+
+  const handleRoom = (id: string) => {
+    setRoomTypeId(id);
+    setRatePlanId(rooms.find((room) => room.id === id)?.ratePlans[0]?.id ?? '');
   };
 
   if (state.status === 'preview' && state.preview) {
@@ -63,7 +87,8 @@ export function RateGridForm({ hotels }: { hotels: Hotel[] }) {
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="hotelSlug" value={hotelSlug} />
-      <input type="hidden" name="roomName" value={selectedRoom} />
+      <input type="hidden" name="roomTypeId" value={selectedRoomId} />
+      <input type="hidden" name="ratePlanId" value={selectedPlanId} />
       <input type="hidden" name="from" value={from} />
       <input type="hidden" name="to" value={to} />
 
@@ -84,9 +109,9 @@ export function RateGridForm({ hotels }: { hotels: Hotel[] }) {
           <Select value={hotelSlug} onValueChange={handleHotel}>
             <SelectTrigger />
             <SelectContent>
-              {hotels.map((hotel) => (
-                <SelectItem key={hotel.slug} value={hotel.slug}>
-                  {hotel.name}
+              {properties.map((property) => (
+                <SelectItem key={property.slug} value={property.slug}>
+                  {property.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -96,12 +121,25 @@ export function RateGridForm({ hotels }: { hotels: Hotel[] }) {
         <Field label="Room Type">
           {/* Keyed on the property so the Select is rebuilt rather than
               handed a new item set, which is what confused it. */}
-          <Select key={hotelSlug} value={selectedRoom} onValueChange={setRoomName}>
+          <Select key={hotelSlug} value={selectedRoomId} onValueChange={handleRoom}>
             <SelectTrigger />
             <SelectContent>
               {rooms.map((room) => (
-                <SelectItem key={room.name} value={room.name}>
+                <SelectItem key={room.id} value={room.id}>
                   {room.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="Rate Plan">
+          <Select key={selectedRoomId} value={selectedPlanId} onValueChange={setRatePlanId}>
+            <SelectTrigger />
+            <SelectContent>
+              {plans.map((plan) => (
+                <SelectItem key={plan.id} value={plan.id}>
+                  {plan.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -212,7 +250,8 @@ function PreviewStep({
       {/* Every field the action needs, echoed from the preview it produced —
           so the confirmed write is exactly the one that was described. */}
       <input type="hidden" name="hotelSlug" value={preview.hotelSlug} />
-      <input type="hidden" name="roomName" value={preview.roomName} />
+      <input type="hidden" name="roomTypeId" value={preview.roomTypeId} />
+      <input type="hidden" name="ratePlanId" value={preview.ratePlanId} />
       <input type="hidden" name="from" value={preview.firstNight} />
       <input type="hidden" name="to" value={preview.lastNight} />
       <input type="hidden" name="rate" value={preview.rate} />
@@ -226,7 +265,7 @@ function PreviewStep({
       <div className="rounded-lg border border-gold/40 bg-gold/5 p-5">
         <p className="font-display text-lg text-forest">Confirm this change</p>
         <p className="mt-1 text-sm text-ink/70">
-          {preview.hotelName} — {preview.roomName}
+          {preview.hotelName} — {preview.roomTypeName} · {preview.ratePlanName}
         </p>
 
         <dl className="mt-4 space-y-1.5 border-t border-ink/10 pt-4 text-sm">

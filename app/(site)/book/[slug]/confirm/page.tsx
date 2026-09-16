@@ -32,7 +32,8 @@ export default async function ConfirmBookingPage({
 }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{
-    room?: string;
+    roomType?: string;
+    ratePlan?: string;
     checkIn?: string;
     checkOut?: string;
     rooms?: string;
@@ -57,7 +58,7 @@ export default async function ConfirmBookingPage({
     ...(query.children ? { children: query.children } : {}),
   })}`;
 
-  if (!parsed.success || !query.room || !checkIn || !checkOut || checkIn < todayUtc()) {
+  if (!parsed.success || !query.roomType || !checkIn || !checkOut || checkIn < todayUtc()) {
     return <Expired hotelName={hotel.name} searchHref={searchHref} />;
   }
 
@@ -68,7 +69,8 @@ export default async function ConfirmBookingPage({
   // change, and the guest must see the price they will actually be charged.
   const offer = await roomOffer(prisma, {
     hotelSlug: slug,
-    roomName: query.room,
+    roomTypeId: query.roomType,
+    ...(query.ratePlan ? { ratePlanId: query.ratePlan } : {}),
     checkIn,
     checkOut,
     rooms,
@@ -101,7 +103,8 @@ export default async function ConfirmBookingPage({
               <BookingGuestForm
                 stay={{
                   hotelSlug: slug,
-                  roomName: offer.room.name,
+                  roomTypeId: offer.roomTypeId,
+                  ratePlanId: offer.ratePlanId,
                   checkIn: dateKey(checkIn),
                   checkOut: dateKey(checkOut),
                   rooms,
@@ -115,8 +118,8 @@ export default async function ConfirmBookingPage({
           <aside className="order-1 self-start overflow-hidden rounded-xl bg-white shadow-xl lg:order-2">
             <div className="relative aspect-[4/3]">
               <Image
-                src={offer.room.images?.[0] ?? hotel.thumbnailImage}
-                alt={offer.room.name}
+                src={offer.content?.images?.[0] ?? hotel.thumbnailImage}
+                alt={offer.roomTypeName}
                 fill
                 sizes="(min-width: 1024px) 22rem, 100vw"
                 className="object-cover"
@@ -126,7 +129,10 @@ export default async function ConfirmBookingPage({
             <div className="p-6">
               <p className="text-xs uppercase tracking-[0.2em] text-gold-dark">{hotel.location}</p>
               <p className="mt-1 font-display text-lg text-forest">{hotel.name}</p>
-              <p className="mt-1 text-sm text-ink/70">{offer.room.name}</p>
+              <p className="mt-1 text-sm text-ink/70">{offer.roomTypeName}</p>
+              <p className="text-xs uppercase tracking-wider text-gold-dark">
+                {offer.ratePlanName}
+              </p>
 
               <dl className="mt-5 space-y-2 border-t border-ink/10 pt-5 text-sm">
                 <Row label="Check in" value={formatStayDate(checkIn)} />

@@ -1,4 +1,4 @@
-import { ADMIN_COOKIE_NAME, verifySessionCookieValue } from '@/lib/admin-auth';
+import { SESSION_COOKIE } from '@/lib/auth-shared';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // The internal admin/voucher tool only exists on the staff.* hostname — on the
@@ -20,15 +20,19 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!isAdminPath) {
-    return NextResponse.redirect(new URL('/admin/vouchers', request.url));
+    return NextResponse.redirect(new URL('/admin/bookings', request.url));
   }
 
   if (request.nextUrl.pathname.startsWith('/admin/login')) {
     return NextResponse.next();
   }
 
-  const ok = await verifySessionCookieValue(request.cookies.get(ADMIN_COOKIE_NAME)?.value);
-  if (!ok) {
+  // Middleware runs on the edge and cannot reach Postgres, so this is only a
+  // cheap gate: it turns a visitor with no session cookie around before the
+  // app renders. Whether the cookie names a live, unexpired, still-permitted
+  // session is decided in the dashboard layout and again in every action,
+  // which are the real enforcement points.
+  if (!request.cookies.get(SESSION_COOKIE)?.value) {
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
@@ -36,7 +40,7 @@ export async function proxy(request: NextRequest) {
   // it do — so send an authenticated visit there to the same default landing
   // spot as the non-admin-path redirect above, instead of a dead-end 404.
   if (request.nextUrl.pathname === '/admin' || request.nextUrl.pathname === '/admin/') {
-    return NextResponse.redirect(new URL('/admin/vouchers', request.url));
+    return NextResponse.redirect(new URL('/admin/bookings', request.url));
   }
 
   return NextResponse.next();

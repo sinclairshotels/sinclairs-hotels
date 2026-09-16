@@ -2,7 +2,7 @@
 
 import { type RateFormState, saveRates } from '@/app/admin/(dashboard)/rates/actions';
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog';
-import type { CalendarCell, RateCalendar } from '@/lib/rate-calendar';
+import type { CalendarCell, CalendarRow, RateCalendar } from '@/lib/rate-calendar';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 
@@ -19,7 +19,7 @@ function dayLabel(iso: string) {
 }
 
 export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
-  const [editing, setEditing] = useState<{ roomName: string; cell: CalendarCell } | null>(null);
+  const [editing, setEditing] = useState<{ row: CalendarRow; cell: CalendarCell } | null>(null);
 
   return (
     <>
@@ -55,19 +55,20 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
           </thead>
           <tbody>
             {calendar.rows.map((row) => (
-              <tr key={row.roomName} className="border-b border-ink/5 last:border-0">
+              <tr
+                key={`${row.roomTypeId}:${row.ratePlanId}`}
+                className="border-b border-ink/5 last:border-0"
+              >
                 <th
                   scope="row"
                   className="sticky left-0 z-10 max-w-[12rem] bg-white px-4 py-2 text-left font-medium text-ink"
                 >
                   {row.roomName}
+                  <span className="block text-xs font-normal text-ink/50">{row.ratePlanName}</span>
                 </th>
                 {row.cells.map((cell) => (
                   <td key={cell.date} className="p-1 align-top">
-                    <CellButton
-                      cell={cell}
-                      onEdit={() => setEditing({ roomName: row.roomName, cell })}
-                    />
+                    <CellButton cell={cell} onEdit={() => setEditing({ row, cell })} />
                   </td>
                 ))}
               </tr>
@@ -84,7 +85,7 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         {editing && (
           <DialogContent
-            title={editing.roomName}
+            title={`${editing.row.roomName} · ${editing.row.ratePlanName}`}
             description={`${calendar.hotelName} — ${new Date(
               `${editing.cell.date}T00:00:00.000Z`,
             ).toLocaleDateString('en-IN', {
@@ -97,7 +98,7 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
           >
             <NightForm
               hotelSlug={calendar.hotelSlug}
-              roomName={editing.roomName}
+              row={editing.row}
               cell={editing.cell}
               onSaved={() => setEditing(null)}
             />
@@ -152,12 +153,12 @@ function CellButton({ cell, onEdit }: { cell: CalendarCell; onEdit: () => void }
 // loads that can silently replace a season, which this cannot.
 function NightForm({
   hotelSlug,
-  roomName,
+  row,
   cell,
   onSaved,
 }: {
   hotelSlug: string;
-  roomName: string;
+  row: CalendarRow;
   cell: CalendarCell;
   onSaved: () => void;
 }) {
@@ -174,7 +175,8 @@ function NightForm({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="hotelSlug" value={hotelSlug} />
-      <input type="hidden" name="roomName" value={roomName} />
+      <input type="hidden" name="roomTypeId" value={row.roomTypeId} />
+      <input type="hidden" name="ratePlanId" value={row.ratePlanId} />
       <input type="hidden" name="from" value={cell.date} />
       <input type="hidden" name="to" value={cell.date} />
       <input type="hidden" name="confirmed" value="on" />

@@ -78,7 +78,7 @@ export default async function BookHotelPage({
   // look identical from an empty result but need completely different copy.
   const ratesLoaded =
     offers.length > 0 ||
-    (await prisma.roomRate.count({ where: { hotelSlug: slug, date: { gte: today } } })) > 0;
+    (await prisma.ratePrice.count({ where: { hotelSlug: slug, date: { gte: today } } })) > 0;
 
   return (
     <>
@@ -152,7 +152,8 @@ export default async function BookHotelPage({
             {bookable.map((offer) => {
               const perNight = Math.round(offer.quote.roomTotal / offer.quote.nights / rooms);
               const confirmHref = `/book/${slug}/confirm?${new URLSearchParams({
-                room: offer.room.name,
+                roomType: offer.roomTypeId,
+                ratePlan: offer.ratePlanId,
                 checkIn: dateKey(checkIn as Date),
                 checkOut: dateKey(checkOut as Date),
                 rooms: String(rooms),
@@ -162,13 +163,13 @@ export default async function BookHotelPage({
 
               return (
                 <article
-                  key={offer.room.name}
+                  key={`${offer.roomTypeId}:${offer.ratePlanId}`}
                   className="grid grid-cols-1 overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-lg sm:grid-cols-[minmax(0,14rem)_1fr]"
                 >
                   <div className="relative aspect-[4/3] sm:aspect-auto">
                     <Image
-                      src={offer.room.images?.[0] ?? hotel.thumbnailImage}
-                      alt={offer.room.name}
+                      src={offer.content?.images?.[0] ?? hotel.thumbnailImage}
+                      alt={offer.roomTypeName}
                       fill
                       sizes="(min-width: 640px) 14rem, 100vw"
                       className="object-cover"
@@ -177,9 +178,12 @@ export default async function BookHotelPage({
 
                   <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
                     <div className="min-w-0 flex-1">
-                      <h2 className="font-display text-xl text-forest">{offer.room.name}</h2>
+                      <h2 className="font-display text-xl text-forest">{offer.roomTypeName}</h2>
+                      <p className="text-xs uppercase tracking-wider text-gold-dark">
+                        {offer.ratePlanName}
+                      </p>
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
-                        {offer.room.description}
+                        {offer.content?.description}
                       </p>
                       {offer.roomsLeft <= 3 && (
                         <p className="mt-3 text-xs uppercase tracking-wider text-gold-dark">

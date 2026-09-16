@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { prisma } from '../lib/db';
+import { clearNights, findRoom, loadNights } from '../test-utils/inventory';
 
 // Far enough out that these rows cannot collide with anything real, and the
 // whole window can be cleaned up by date.
@@ -27,26 +28,20 @@ const stayQuery = `checkIn=${CHECK_IN}&checkOut=${CHECK_OUT}&rooms=1&adults=2&ch
 // another worker is still asserting against.
 test.describe.configure({ mode: 'serial' });
 
+let room: Awaited<ReturnType<typeof findRoom>>;
+
 test.beforeAll(async () => {
-  for (let i = 0; i < 2; i++) {
-    const date = new Date(`${isoDay(200 + i)}T00:00:00.000Z`);
-    await prisma.roomRate.upsert({
-      where: { hotelSlug_roomName_date: { hotelSlug: HOTEL, roomName: ROOM, date } },
-      update: { rate: RATE, totalRooms: TOTAL_ROOMS, closed: false },
-      create: {
-        hotelSlug: HOTEL,
-        roomName: ROOM,
-        date,
-        rate: RATE,
-        totalRooms: TOTAL_ROOMS,
-        closed: false,
-      },
-    });
-  }
+  room = await findRoom(HOTEL, ROOM);
+  await loadNights(
+    room,
+    HOTEL,
+    [0, 1].map((i) => new Date(`${isoDay(200 + i)}T00:00:00.000Z`)),
+    { rate: RATE, roomsOnSale: TOTAL_ROOMS },
+  );
 });
 
 test.afterAll(async () => {
-  await prisma.roomRate.deleteMany({ where: { hotelSlug: HOTEL, date: WINDOW } });
+  await clearNights(HOTEL, WINDOW);
   await prisma.$disconnect();
 });
 
@@ -91,7 +86,9 @@ test('a stay in the past is refused', async ({ page }) => {
 });
 
 test('the guest form refuses an empty submission', async ({ page }) => {
-  await page.goto(`/book/${HOTEL}/confirm?room=${encodeURIComponent(ROOM)}&${stayQuery}`);
+  // The confirm page is addressed by room type id now, not by name — a room
+  // can be renamed between a guest seeing it and submitting.
+  await page.goto(`/book/${HOTEL}/confirm?roomType=${room.roomTypeId}&${stayQuery}`);
   await page.getByRole('button', { name: /pay & confirm booking/i }).click();
   await expect(page.getByLabel('Full Name')).toHaveJSProperty('validity.valid', false);
 });
