@@ -14,23 +14,23 @@
 # Backend and integrations — owners only
 # ---------------------------------------------------------------------------
 
-/lib/                       @subhamsncl
-/prisma/                    @subhamsncl
-/app/api/                   @subhamsncl
-/app/admin/                 @subhamsncl
-/scripts/                   @subhamsncl
-/proxy.ts                   @subhamsncl
-/next.config.ts             @subhamsncl
-/package.json               @subhamsncl
-/pnpm-lock.yaml             @subhamsncl
-/.github/                   @subhamsncl
-/vercel.json                @subhamsncl
-/.env.example               @subhamsncl
+/lib/                       @subhamsncl @nikhil-sncl
+/prisma/                    @subhamsncl @nikhil-sncl
+/app/api/                   @subhamsncl @nikhil-sncl
+/app/admin/                 @subhamsncl @nikhil-sncl
+/scripts/                   @subhamsncl @nikhil-sncl
+/proxy.ts                   @subhamsncl @nikhil-sncl
+/next.config.ts             @subhamsncl @nikhil-sncl
+/package.json               @subhamsncl @nikhil-sncl
+/pnpm-lock.yaml             @subhamsncl @nikhil-sncl
+/.github/                   @subhamsncl @nikhil-sncl
+/vercel.json                @subhamsncl @nikhil-sncl
+/.env.example               @subhamsncl @nikhil-sncl
 
 # Server actions that write to the database or send mail
-/app/(site)/enquiry/actions.ts      @subhamsncl
-/app/(site)/newsletter/actions.ts   @subhamsncl
-/app/(site)/ipay/actions.ts         @subhamsncl
+/app/(site)/enquiry/actions.ts      @subhamsncl @nikhil-sncl
+/app/(site)/newsletter/actions.ts   @subhamsncl @nikhil-sncl
+/app/(site)/ipay/actions.ts         @subhamsncl @nikhil-sncl
 
 # ---------------------------------------------------------------------------
 # Not listed, and therefore open to any collaborator:
