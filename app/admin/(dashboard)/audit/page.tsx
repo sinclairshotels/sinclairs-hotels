@@ -67,7 +67,7 @@ export default async function AuditPage({
           Every rate, inventory, setup and booking change — who made it, when, and what it replaced.
         </p>
 
-        <form method="get" className="mt-3 flex flex-nowrap items-center gap-2 overflow-x-auto">
+        <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input
             type="search"
             name="q"

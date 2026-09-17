@@ -129,7 +129,7 @@ export default async function RatesPage({
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-display text-lg text-forest">Calendar</p>
-            <form method="get" className="flex flex-nowrap items-center gap-2 overflow-x-auto">
+            <form method="get" className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="from" value={dateKey(calendarFrom)} />
               <select
                 name="hotel"
