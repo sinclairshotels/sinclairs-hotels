@@ -57,11 +57,15 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
                     key={iso}
                     scope="col"
                     title={holiday}
+                    // Opaque golds, not gold/20 and gold/10: this header is
+                    // sticky, and a translucent cell lets the rows scrolling
+                    // underneath print straight through it. Same colours the
+                    // alphas resolved to over white.
                     className={`min-w-[5.5rem] border-b border-ink/10 px-2 py-3 text-center text-xs font-medium ${
                       holiday
-                        ? 'bg-gold/20 text-gold-dark'
+                        ? 'bg-[#f2eadd] text-gold-dark'
                         : label.isWeekend
-                          ? 'bg-gold/10 text-gold-dark'
+                          ? 'bg-[#f8f4ee] text-gold-dark'
                           : 'bg-white text-ink/50'
                     }`}
                   >
@@ -99,6 +103,8 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
       <p className="mt-2 text-xs leading-relaxed text-ink/50">
         Each cell shows the nightly rate, then rooms on sale, sold and left. Colour is how much of
         the allotment is still sellable. A{' '}
+        <span className="text-ink/60 line-through">struck-through rate</span> is a stop sell — the
+        night keeps its price but is not offered. A{' '}
         <span className="rounded-sm bg-forest px-1 py-0.5 font-medium text-cream">•</span> marks a
         night set on the Daily screen, which a monthly save leaves alone.{' '}
         <span className="whitespace-nowrap">

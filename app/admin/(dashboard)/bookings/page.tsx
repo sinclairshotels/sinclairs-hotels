@@ -153,18 +153,26 @@ export default async function BookingsPage({
               <th className="whitespace-nowrap px-4 py-3">Reference</th>
               <th className="whitespace-nowrap px-4 py-3">Guest</th>
               <th className="whitespace-nowrap px-4 py-3">Hotel</th>
-              <th className="whitespace-nowrap px-4 py-3">Room</th>
-              <th className="whitespace-nowrap px-4 py-3">Stay</th>
+              <th className="px-4 py-3">Room</th>
+              <th className="px-4 py-3">Stay</th>
               <th className="whitespace-nowrap px-4 py-3 text-right">Total</th>
               <th className="whitespace-nowrap px-4 py-3">Status</th>
-              <th className="whitespace-nowrap px-4 py-3" />
+              {/* Pinned: this column holds Cancel, and the table is wider than
+                  the screen. An action that releases a paid room must not be
+                  something staff have to scroll sideways to discover. */}
+              <th className="sticky right-0 whitespace-nowrap bg-forest px-4 py-3 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.25)]" />
             </tr>
           </thead>
           <tbody>
             {bookings.map((booking) => (
               <tr
                 key={booking.id}
-                className="border-b border-ink/5 transition-colors last:border-0 odd:bg-white even:bg-forest/[0.025] hover:bg-forest/[0.08]"
+                // The stripe and hover are opaque rather than forest at low alpha
+                // because the pinned last column inherits this background: a
+                // translucent one lets the columns scrolling beneath show
+                // through it. These are the same colours the alphas resolved to
+                // over white, so nothing looks different.
+                className="border-b border-ink/5 transition-colors last:border-0 odd:bg-white even:bg-[#f9fafa] hover:bg-[#eceff0]"
               >
                 <td className="whitespace-nowrap px-4 py-3 text-ink/70">
                   {formatDate(booking.createdAt)}
@@ -187,12 +195,15 @@ export default async function BookingsPage({
                 <td className="px-4 py-3">
                   {getHotelBySlug(booking.hotelSlug)?.name ?? booking.hotelSlug}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-ink/70">
+                <td className="px-4 py-3 text-ink/70">
                   {booking.roomName}
-                  {booking.rooms > 1 && <span className="text-ink/50"> ×{booking.rooms}</span>}
+                  {booking.rooms > 1 && (
+                    <span className="whitespace-nowrap text-ink/50"> ×{booking.rooms}</span>
+                  )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-ink/70">
-                  {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
+                <td className="px-4 py-3 text-ink/70">
+                  <span className="whitespace-nowrap">{formatDate(booking.checkIn)} –</span>{' '}
+                  <span className="whitespace-nowrap">{formatDate(booking.checkOut)}</span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-ink/70">
                   {formatInr(booking.total.toNumber())}
@@ -204,7 +215,7 @@ export default async function BookingsPage({
                     {STATUS_LABEL[booking.status]}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right">
+                <td className="sticky right-0 z-[1] whitespace-nowrap bg-inherit px-4 py-3 text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]">
                   {booking.status !== 'CANCELLED' && (
                     <CancelBookingButton id={booking.id} reference={booking.reference} />
                   )}
