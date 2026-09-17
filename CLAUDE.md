@@ -154,16 +154,36 @@ across all 9 properties). Follow that pattern for new icon needs rather than add
 
 ## Environments and deploying
 
-Three environments. Dev and production run the **same code from the same `main`
-branch** — the split is by Vercel deployment target and environment variables,
-not by git branch. There is no way to stage unreleased code in dev; if you need
-that, create a `develop` branch and repoint the `dev.*` domains at it.
+Three environments, split by git branch as well as by Vercel deployment target.
+`main` builds Preview and serves the `dev.*` hosts; `prod` builds Production.
+Merging `main` into `prod` is therefore the release step. The two drifted apart
+once already — `prod` sat thirteen files behind `main`, including a migration the
+production database had long since applied — so reconcile them rather than letting
+`prod` lag behind what is actually running.
 
 | | Host | Database | Email |
 |---|---|---|---|
 | Local | `localhost:3000`, `staff.localhost:3000` | local Postgres | logged, not sent |
 | Dev | `dev.sinclairshotels.com`, `staff.dev.sinclairshotels.com` | Neon branch `dev` | redirected to one inbox |
-| Production | `sinclairs-hotels.vercel.app`, `staff.sinclairshotels.com` | Neon branch `main` | real recipients |
+| Production | `sinclairs-hotels.vercel.app`, `staff.sinclairshotels.com` | Neon branch `prod` | real recipients |
+
+**Which Neon branch an environment actually uses.** `DATABASE_URL` is stored as a
+Vercel *sensitive* variable, which is write-only — it cannot be read back by
+anyone, through the CLI, the API or the dashboard. So there is no way to open an
+environment and confirm where it points; the mapping is recorded here instead.
+Neon project `patient-mouse-60163337` (`sinclairs-hotels-db`, Singapore), under the
+Neon org `Vercel: Sinclairs Hotels and Resorts`:
+
+| Vercel environment | Git branch | Neon branch | Endpoint |
+|---|---|---|---|
+| Preview | `main` | `dev` | `ep-twilight-waterfall-az90lhuy` |
+| Production | `prod` | `prod` (default) | `ep-purple-sea-azekup9t` |
+
+The endpoint prefix is the only part of the connection string visible in the Neon
+console without revealing the password, so it is the thing to check a claim
+against. Note that `dev` is *reset from* `prod` rather than seeded: it holds a full
+copy of real guest data, which makes `staff.dev.sinclairshotels.com` exactly as
+sensitive as production despite the name.
 
 ```bash
 vercel deploy          # dev only
@@ -524,7 +544,7 @@ any deploy), run `pnpm verify:ci` — it catches the class of bug that only show
 in CI's leaner environment, which the quicker loop above cannot.
 
 Deployed via `vercel deploy` (add `--prod` for production) from
-`subham-5497`'s Vercel account, project `sinclairs-hotels` — live at
+the `sinclairs-hotels` Vercel team (Pro), project `sinclairs-hotels` — live at
 https://sinclairs-hotels.vercel.app.
 
 **The GitHub repo (`sinclairshotels/sinclairs-hotels`) is now connected**, so a push to
