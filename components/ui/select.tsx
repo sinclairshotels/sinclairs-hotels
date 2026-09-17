@@ -5,19 +5,28 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 export const Select = SelectPrimitive.Root;
 export const SelectValue = SelectPrimitive.Value;
 
+// The control draws its own box, so no caller has to remember to wrap it in
+// one — forgetting that is invisible in review and leaves a value and a chevron
+// floating with no field around them. `bare` is the opt-out for the places that
+// genuinely draw their own: the public booking cards, where each field sits in
+// a divided cell, and this file's sibling date picker's month/year selects.
 export function SelectTrigger({
   placeholder,
   className = '',
   id,
+  bare = false,
 }: {
   placeholder?: string;
   className?: string;
   id?: string;
+  bare?: boolean;
 }) {
   return (
     <SelectPrimitive.Trigger
       id={id}
-      className={`flex w-full items-center justify-between gap-2 border-0 bg-transparent text-left text-sm text-ink outline-none data-[placeholder]:text-ink/40 ${className}`}
+      className={`flex w-full items-center justify-between gap-2 text-left text-sm text-ink outline-none data-[placeholder]:text-ink/40 ${
+        bare ? 'border-0 bg-transparent' : 'input'
+      } ${className}`}
     >
       <SelectPrimitive.Value placeholder={placeholder} />
       <SelectPrimitive.Icon>

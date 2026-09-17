@@ -78,10 +78,19 @@ body {
   /* Native <select> used only in the internal admin dashboard's GET-based filter
      forms — the site-wide "no native select" rule is about guest-facing forms
      needing a fully themed popup (see components/ui/select.tsx); admin already
-     uses plain inputs/buttons rather than the marketing design system. */
+     uses plain inputs/buttons rather than the marketing design system.
+
+     It still has to sit next to the themed Select without looking like a
+     different control, so the browser's own arrow is turned off and replaced
+     with the same chevron SelectTrigger draws, at the same size and colour.
+     The popup itself stays native — that is the part of the concession that
+     actually buys something (GET forms, no JavaScript). */
   .select {
     @apply w-full rounded border border-forest/20 bg-white px-3 py-2 text-sm text-ink;
     @apply focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold;
+    @apply appearance-none bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231c1c1a' stroke-opacity='0.5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
   }
 }
 

@@ -113,50 +113,42 @@ export function EnquiryForm({
         </Field>
         <Field label="Property" name="property" error={fieldError('property')}>
           <input type="hidden" name="property" value={property} />
-          <div className="input">
-            <Select value={property} onValueChange={setProperty}>
-              <SelectTrigger id="property" placeholder="Select a property" />
-              <SelectContent>
-                {hotels.map((hotel) => (
-                  <SelectItem key={hotel.slug} value={hotel.slug}>
-                    {hotel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={property} onValueChange={setProperty}>
+            <SelectTrigger id="property" placeholder="Select a property" />
+            <SelectContent>
+              {hotels.map((hotel) => (
+                <SelectItem key={hotel.slug} value={hotel.slug}>
+                  {hotel.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Enquiry Type" name="type">
           <input type="hidden" name="type" value={type} />
-          <div className="input">
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger id="type" placeholder="Select an enquiry type" />
-              <SelectContent>
-                {ENQUIRY_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger id="type" placeholder="Select an enquiry type" />
+            <SelectContent>
+              {ENQUIRY_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Check-in" name="checkIn">
           <input type="hidden" name="checkIn" value={checkIn} />
-          <div className="input">
-            <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
-          </div>
+          <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
         </Field>
         <Field label="Check-out" name="checkOut">
           <input type="hidden" name="checkOut" value={checkOut} />
-          <div className="input">
-            <DatePicker
-              value={checkOut}
-              onChange={setCheckOut}
-              min={checkIn}
-              placeholder="Select date"
-            />
-          </div>
+          <DatePicker
+            value={checkOut}
+            onChange={setCheckOut}
+            min={checkIn}
+            placeholder="Select date"
+          />
         </Field>
         <Field label="Guests" name="guests">
           <input

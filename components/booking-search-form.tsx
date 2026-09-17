@@ -75,7 +75,7 @@ export function BookingSearchForm({
     >
       <Field label="Property" className={compact ? 'col-span-2 lg:col-span-1' : ''}>
         <Select value={hotelSlug} onValueChange={setHotelSlug}>
-          <SelectTrigger />
+          <SelectTrigger bare />
           <SelectContent>
             {hotels.map((hotel) => (
               <SelectItem key={hotel.slug} value={hotel.slug}>
@@ -87,11 +87,11 @@ export function BookingSearchForm({
       </Field>
 
       <Field label="Check In">
-        <DatePicker value={checkIn} onChange={handleCheckIn} min={today} />
+        <DatePicker bare value={checkIn} onChange={handleCheckIn} min={today} />
       </Field>
 
       <Field label="Check Out">
-        <DatePicker value={checkOut} onChange={setCheckOut} min={tomorrow} />
+        <DatePicker bare value={checkOut} onChange={setCheckOut} min={tomorrow} />
       </Field>
 
       <Field label="Rooms">
@@ -149,7 +149,7 @@ function NumberSelect({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger />
+      <SelectTrigger bare />
       <SelectContent>
         {options.map((option) => (
           // String, not the number: Radix reads the item's children to render
