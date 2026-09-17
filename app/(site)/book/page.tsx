@@ -1,5 +1,7 @@
+import { BookHotelCard } from '@/components/book-hotel-card';
 import { BookingSearchForm } from '@/components/booking-search-form';
 import { hotels } from '@/content/hotels';
+import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -11,7 +13,13 @@ export const metadata: Metadata = pageMetadata({
   path: '/book',
 });
 
-export default function BookPage() {
+// Staff load rates without a deploy, so the entry prices below cannot be baked
+// in at build time — but they also do not change minute to minute.
+export const revalidate = 600;
+
+export default async function BookPage() {
+  const fromPrices = await fromPricePerHotel();
+
   return (
     <>
       <section className="relative h-[42vh] min-h-[320px] overflow-hidden">
@@ -37,9 +45,34 @@ export default function BookPage() {
         </div>
       </section>
 
-      <section className="px-6">
-        <div className="mx-auto -mt-10 max-w-4xl rounded-xl bg-white p-6 shadow-2xl sm:p-8">
+      {/* Clear of the hero rather than overlapping it. The floating card
+          elsewhere on the site carries stats, which can lose a few pixels to
+          the image; this one carries labelled controls, and the hero is a
+          positioned element that paints over anything pulled underneath it. */}
+      <section className="px-6 pt-10">
+        <div className="mx-auto max-w-4xl rounded-xl bg-white p-6 shadow-2xl sm:p-8">
           <BookingSearchForm hotels={hotels} />
+        </div>
+      </section>
+
+      <section className="px-6 pt-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <h2 className="font-display text-2xl text-forest">Our Properties</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-ink/60">
+              Entry prices are the lowest room-only rate loaded over the next {FROM_PRICE_DAYS}{' '}
+              nights. Choose your dates for the live price.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {hotels.map((hotel) => (
+              <BookHotelCard
+                key={hotel.slug}
+                hotel={hotel}
+                fromPrice={fromPrices.get(hotel.slug)}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
