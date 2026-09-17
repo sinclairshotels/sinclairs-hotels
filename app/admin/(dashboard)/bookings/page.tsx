@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import type { BookingStatus, Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -99,8 +100,8 @@ export default async function BookingsPage({
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Bookings</p>
         <p className="mt-1 text-sm text-ink/60">
-          Direct bookings taken on the website. Rooms are held against the allotment loaded in Rates
-          &amp; Availability.
+          Direct bookings taken on the website. Rooms are held against the allotment loaded in
+          Set-up.
         </p>
 
         <form method="get" className="mt-3 flex flex-nowrap items-center gap-2 overflow-x-auto">
@@ -169,13 +170,17 @@ export default async function BookingsPage({
                   {formatDate(booking.createdAt)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">
+                  <Link href={`/admin/bookings/${booking.id}`} className="text-forest underline">
+                    {booking.reference}
+                  </Link>
                   <a
                     href={`${protocol}://${publicHost}/booking/${booking.viewToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-forest underline"
+                    title="The guest's own page"
+                    className="ml-2 text-xs text-ink/40 hover:text-forest"
                   >
-                    {booking.reference}
+                    guest view
                   </a>
                 </td>
                 <td className="px-4 py-3">{booking.guestName}</td>

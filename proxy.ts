@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
     // A preview serves both halves of the site from one deployment, so only
     // the staff hostname is admin-only.
     if (!isStaffHost) return NextResponse.next();
-    return NextResponse.redirect(new URL('/admin/bookings', request.url));
+    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 
   if (request.nextUrl.pathname.startsWith('/admin/login')) {
@@ -46,10 +46,10 @@ export async function proxy(request: NextRequest) {
   }
 
   // Bare /admin (or /admin/) has no page of its own — only the subroutes below
-  // it do — so send an authenticated visit there to the same default landing
-  // spot as the non-admin-path redirect above, instead of a dead-end 404.
+  // it do — so send an authenticated visit there to the dashboard, the same
+  // landing spot as the non-admin-path redirect above.
   if (request.nextUrl.pathname === '/admin' || request.nextUrl.pathname === '/admin/') {
-    return NextResponse.redirect(new URL('/admin/bookings', request.url));
+    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 
   return NextResponse.next();

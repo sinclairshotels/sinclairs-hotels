@@ -49,12 +49,16 @@ export function DatePicker({
   min,
   placeholder = 'Select date',
   id,
+  label,
 }: {
   value: string;
   onChange: (iso: string) => void;
   min?: string;
   placeholder?: string;
   id?: string;
+  // The trigger is a button, not a form control, so a <label> cannot name it.
+  // This is how it gets an accessible name of its own.
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const minDate = min ? parseISO(min) : undefined;
@@ -75,6 +79,7 @@ export function DatePicker({
         <button
           id={id}
           type="button"
+          aria-label={label}
           className="flex w-full items-center justify-between gap-2 text-left text-sm text-ink outline-none"
         >
           <span className={value ? '' : 'text-ink/40'}>

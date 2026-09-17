@@ -1,5 +1,6 @@
 'use server';
 
+import { recordAudit } from '@/lib/audit';
 import { authorize } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
@@ -30,6 +31,17 @@ export async function cancelBooking(
   // move real money from a button labelled "cancel".
   await prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
 
+  await recordAudit({
+    user: auth.user,
+    action: 'booking.cancelled',
+    entity: 'Booking',
+    entityId: booking.id,
+    hotelSlug: booking.hotelSlug,
+    summary: `${booking.reference} cancelled — the rooms are released, the money is not`,
+    before: { status: booking.status },
+    after: { status: 'CANCELLED' },
+  });
+
   log.info('booking.cancelled', {
     reference: booking.reference,
     hotel: booking.hotelSlug,
@@ -38,6 +50,8 @@ export async function cancelBooking(
   });
 
   revalidatePath('/admin/bookings');
+  revalidatePath(`/admin/bookings/${booking.id}`);
+  revalidatePath('/admin/dashboard');
 
   return {
     status: 'success',

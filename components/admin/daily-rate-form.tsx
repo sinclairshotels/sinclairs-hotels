@@ -4,7 +4,6 @@ import { type DailyRateState, saveDailyRate } from '@/app/admin/(dashboard)/rate
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { dateKey, todayUtc } from '@/lib/booking';
-import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 
 const initialState: DailyRateState = { status: 'idle' };
@@ -17,7 +16,6 @@ export interface DailyHotel {
 
 export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   const [state, formAction, pending] = useActionState(saveDailyRate, initialState);
-  const router = useRouter();
 
   const [hotelSlug, setHotelSlug] = useState(hotels[0]?.slug ?? '');
   const [roomTypeId, setRoomTypeId] = useState(hotels[0]?.rooms[0]?.roomTypeId ?? '');
@@ -45,20 +43,22 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   const selectedRoom =
     hotel?.rooms.find((room) => room.roomTypeId === roomTypeId) ?? hotel?.rooms[0];
 
+  // No router.refresh() on success: it remounts this form, which loses the
+  // property and room the person just chose along with the very message
+  // saying the save worked. The action revalidates the page, so the list of
+  // recent overrides is right again on the next visit.
   useEffect(() => {
     if (state.status !== 'idle') setTouchedSince(false);
   }, [state]);
 
-  useEffect(() => {
-    if (state.status === 'success') router.refresh();
-  }, [state.status, router]);
-
+  // The controls sit outside the <form> on purpose. React resets a form once
+  // its action resolves, and that reset reaches the Radix Selects inside it —
+  // which then report the reset back through onValueChange, losing the
+  // property and room the person picked and marking the form dirty again, so
+  // the message saying the save worked disappears with them. Everything posts
+  // through hidden inputs instead; see booking-widget.tsx for the same shape.
   return (
-    <form action={formAction} className="rounded-lg border border-ink/10 bg-white p-6">
-      <input type="hidden" name="hotelSlug" value={hotel?.slug ?? ''} />
-      <input type="hidden" name="roomTypeId" value={selectedRoom?.roomTypeId ?? ''} />
-      <input type="hidden" name="date" value={date} />
-
+    <div className="rounded-lg border border-ink/10 bg-white p-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Property">
           <Select
@@ -95,7 +95,12 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         </Field>
 
         <Field label="Date">
-          <DatePicker value={date} onChange={change(setDate)} min={dateKey(todayUtc())} />
+          <DatePicker
+            value={date}
+            onChange={change(setDate)}
+            min={dateKey(todayUtc())}
+            label="Night to override"
+          />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
@@ -104,7 +109,6 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
               type="number"
               min={0}
               max={500}
-              name="roomsOnSale"
               value={roomsOnSale}
               onChange={(event) => change(setRoomsOnSale)(event.target.value)}
               placeholder="unchanged"
@@ -116,7 +120,6 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
             <input
               type="number"
               min={0}
-              name="rate"
               value={rate}
               onChange={(event) => change(setRate)(event.target.value)}
               placeholder="unchanged"
@@ -143,14 +146,21 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-5 rounded bg-forest px-6 py-2.5 text-sm uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
-      >
-        {pending ? 'Saving…' : 'Save this night'}
-      </button>
-    </form>
+      <form action={formAction}>
+        <input type="hidden" name="hotelSlug" value={hotel?.slug ?? ''} />
+        <input type="hidden" name="roomTypeId" value={selectedRoom?.roomTypeId ?? ''} />
+        <input type="hidden" name="date" value={date} />
+        <input type="hidden" name="roomsOnSale" value={roomsOnSale} />
+        <input type="hidden" name="rate" value={rate} />
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-5 rounded bg-forest px-6 py-2.5 text-sm uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
+        >
+          {pending ? 'Saving…' : 'Save this night'}
+        </button>
+      </form>
+    </div>
   );
 }
 

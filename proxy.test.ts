@@ -84,7 +84,7 @@ describe('proxy', () => {
       const proxy = await proxyUnder('production');
       const response = await proxy(request(STAFF_HOST, '/hotels'));
 
-      expect(redirectedTo(response)).toContain('/admin/bookings');
+      expect(redirectedTo(response)).toContain('/admin/dashboard');
     });
 
     it('lets the sign-in page through without a session', async () => {
@@ -98,7 +98,7 @@ describe('proxy', () => {
       const proxy = await proxyUnder('production');
       const response = await proxy(request(STAFF_HOST, '/admin', 'a-token'));
 
-      expect(redirectedTo(response)).toContain('/admin/bookings');
+      expect(redirectedTo(response)).toContain('/admin/dashboard');
     });
   });
 });

@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 // who may see what from one definition. Hiding a link is presentation only —
 // the page and its actions check again.
 const NAV_ITEMS: Array<{ label: string; href: string; capability: Capability }> = [
+  { label: 'Today', href: '/admin/dashboard', capability: 'bookings:read' },
   { label: 'Bookings', href: '/admin/bookings', capability: 'bookings:read' },
   { label: 'Rates', href: '/admin/rates', capability: 'rates:read' },
   { label: 'Vouchers', href: '/admin/vouchers', capability: 'vouchers:read' },

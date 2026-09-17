@@ -85,7 +85,7 @@ export async function login(
     });
 
     await startSession(admin.id, ip, headerList.get('user-agent'));
-    redirect('/admin/bookings');
+    redirect('/admin/dashboard');
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -107,7 +107,7 @@ export async function login(
   log.info('auth.login', { user_id: user.id, role: user.role });
 
   await startSession(user.id, ip, headerList.get('user-agent'));
-  redirect('/admin/bookings');
+  redirect('/admin/dashboard');
 }
 
 export type SetPasswordState = {
@@ -155,5 +155,5 @@ export async function setPassword(
   log.info('auth.password_set', { user_id: user.id });
 
   await startSession(user.id, ip, headerList.get('user-agent'));
-  redirect('/admin/bookings');
+  redirect('/admin/dashboard');
 }

@@ -83,9 +83,7 @@ test.describe('rates screens (staff)', () => {
     await page.getByRole('combobox').nth(1).click();
     await page.getByRole('option', { name: ROOM, exact: true }).click();
 
-    // Scoped to this form: the sidebar's Sign Out is a form with a button too.
-    const form = page.locator('form').filter({ hasText: 'Save this night' });
-    await form.getByRole('button').first().click();
+    await page.getByRole('button', { name: 'Night to override' }).click();
     const target = new Date(`${isoDay(3)}T00:00:00.000Z`);
     await page
       .getByRole('dialog')
@@ -142,8 +140,7 @@ test.describe('rates screens (staff)', () => {
     await page.getByRole('combobox').nth(1).click();
     await page.getByRole('option', { name: ROOM, exact: true }).click();
 
-    const form = page.locator('form').filter({ hasText: 'Save this night' });
-    await form.getByRole('button').first().click();
+    await page.getByRole('button', { name: 'Night to override' }).click();
     const target = new Date(`${isoDay(2)}T00:00:00.000Z`);
     await page
       .getByRole('dialog')

@@ -20,9 +20,9 @@ test.describe('voucher issuance (staff)', () => {
     await page.locator('#email').fill(E2E_ADMIN_EMAIL);
     await page.locator('#password').fill(ADMIN_PASSWORD ?? '');
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page).toHaveURL(/\/admin\/bookings$/);
+    await expect(page).toHaveURL(/\/admin\/dashboard$/);
 
-    // Sign-in now lands on Bookings rather than Vouchers.
+    // Sign-in lands on the dashboard rather than Vouchers.
     await page.goto(`${STAFF_BASE_URL}/admin/vouchers`);
     await page.getByRole('link', { name: 'New Voucher' }).click();
     await expect(page).toHaveURL(/\/admin\/vouchers\/new$/);
