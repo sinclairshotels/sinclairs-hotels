@@ -24,6 +24,17 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   const [date, setDate] = useState(dateKey(todayUtc()));
   const [roomsOnSale, setRoomsOnSale] = useState('');
   const [rate, setRate] = useState('');
+  // The success line describes the values that were saved. The moment any of
+  // them moves it is describing something that is no longer on screen, so it
+  // goes rather than sitting there looking like the state of the form.
+  const [touchedSince, setTouchedSince] = useState(false);
+  const settled = state.status !== 'idle' && !touchedSince;
+  const change =
+    <T,>(set: (value: T) => void) =>
+    (value: T) => {
+      setTouchedSince(true);
+      set(value);
+    };
 
   const hotel = hotels.find((h) => h.slug === hotelSlug) ?? hotels[0];
 
@@ -33,6 +44,10 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   // the form posting nothing — see CLAUDE.md.
   const selectedRoom =
     hotel?.rooms.find((room) => room.roomTypeId === roomTypeId) ?? hotel?.rooms[0];
+
+  useEffect(() => {
+    if (state.status !== 'idle') setTouchedSince(false);
+  }, [state]);
 
   useEffect(() => {
     if (state.status === 'success') router.refresh();
@@ -49,6 +64,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
           <Select
             value={hotelSlug}
             onValueChange={(value) => {
+              setTouchedSince(true);
               setHotelSlug(value);
               const next = hotels.find((h) => h.slug === value);
               setRoomTypeId(next?.rooms[0]?.roomTypeId ?? '');
@@ -66,7 +82,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         </Field>
 
         <Field label="Room">
-          <Select value={selectedRoom?.roomTypeId ?? ''} onValueChange={setRoomTypeId}>
+          <Select value={selectedRoom?.roomTypeId ?? ''} onValueChange={change(setRoomTypeId)}>
             <SelectTrigger />
             <SelectContent>
               {(hotel?.rooms ?? []).map((room) => (
@@ -79,7 +95,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         </Field>
 
         <Field label="Date">
-          <DatePicker value={date} onChange={setDate} min={dateKey(todayUtc())} />
+          <DatePicker value={date} onChange={change(setDate)} min={dateKey(todayUtc())} />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
@@ -90,7 +106,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
               max={500}
               name="roomsOnSale"
               value={roomsOnSale}
-              onChange={(event) => setRoomsOnSale(event.target.value)}
+              onChange={(event) => change(setRoomsOnSale)(event.target.value)}
               placeholder="unchanged"
               aria-label="Rooms on sale"
               className="input"
@@ -102,7 +118,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
               min={0}
               name="rate"
               value={rate}
-              onChange={(event) => setRate(event.target.value)}
+              onChange={(event) => change(setRate)(event.target.value)}
               placeholder="unchanged"
               aria-label="Price per night"
               className="input"
@@ -116,12 +132,12 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         month around it is saved again — unless someone chooses to replace overrides.
       </p>
 
-      {state.status === 'error' && state.message && (
+      {settled && state.status === 'error' && state.message && (
         <p className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {state.message}
         </p>
       )}
-      {state.status === 'success' && state.message && (
+      {settled && state.status === 'success' && state.message && (
         <p className="mt-4 rounded border border-forest/30 bg-forest/5 px-4 py-3 text-sm text-forest">
           {state.message}
         </p>

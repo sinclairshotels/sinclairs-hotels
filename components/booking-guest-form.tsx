@@ -126,6 +126,9 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
         You&rsquo;ll be taken to ICICI Bank&rsquo;s secure payment page. Your room is held while you
         pay and confirmed the moment the payment clears.
       </p>
+      <p className="text-center text-xs font-medium leading-relaxed text-ink/70">
+        This booking is non-refundable. Once payment clears it cannot be cancelled or refunded.
+      </p>
     </form>
   );
 }

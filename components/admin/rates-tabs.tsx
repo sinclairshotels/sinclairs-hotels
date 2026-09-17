@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 const TABS = [
   { href: '/admin/rates', label: 'Calendar', hint: 'what is loaded' },
-  { href: '/admin/rates/monthly', label: 'Monthly', hint: 'a month at a time' },
+  { href: '/admin/rates/monthly', label: 'Set-up', hint: 'rooms and monthly rates' },
   { href: '/admin/rates/daily', label: 'Daily', hint: 'one night' },
 ];
 

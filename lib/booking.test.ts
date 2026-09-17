@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  GST_RATE,
   bookingReference,
   dateKey,
   eachNight,
@@ -8,6 +7,7 @@ import {
   nightsBetween,
   parseDateOnly,
   quoteStay,
+  taxForNight,
   todayUtc,
 } from './booking';
 
@@ -60,26 +60,44 @@ describe('nights', () => {
   });
 });
 
+describe('taxForNight', () => {
+  it('takes the lower rate at or below the threshold — the threshold is inclusive', () => {
+    expect(taxForNight(7000)).toBe(350);
+    expect(taxForNight(7500)).toBe(375);
+  });
+
+  it('takes the higher rate one rupee above it', () => {
+    expect(taxForNight(7501)).toBeCloseTo(1350.18, 2);
+  });
+
+  it('follows a slab staff have changed', () => {
+    const slab = { threshold: 5000, lowRate: 0.12, highRate: 0.28 };
+    expect(taxForNight(5000, slab)).toBe(600);
+    expect(taxForNight(5001, slab)).toBeCloseTo(1400.28, 2);
+  });
+});
+
 describe('quoteStay', () => {
   it('prices each night at its own rate and multiplies by rooms', () => {
     const quote = quoteStay([4000, 5000], 2);
     expect(quote.nights).toBe(2);
     expect(quote.roomTotal).toBe(18000);
-    expect(quote.taxTotal).toBe(3240);
-    expect(quote.total).toBe(21240);
+    // both nights sit under the threshold, so both are taxed at 5%
+    expect(quote.taxTotal).toBe(900);
+    expect(quote.total).toBe(18900);
   });
 
-  it('taxes every night at the same rate whatever the tariff', () => {
-    expect(GST_RATE).toBe(0.18);
+  it('taxes a stay that crosses the threshold at both rates', () => {
     const quote = quoteStay([7000, 9000], 1);
-    expect(quote.taxTotal).toBe(2880);
+    // 5% of 7,000 plus 18% of 9,000 — the test the flat rate could not fail
+    expect(quote.taxTotal).toBe(1970);
   });
 
   it('rounds money to paise rather than carrying float error', () => {
     const quote = quoteStay([3333.33], 3);
     expect(quote.roomTotal).toBe(9999.99);
-    expect(quote.taxTotal).toBe(1800);
-    expect(quote.total).toBe(11799.99);
+    expect(quote.taxTotal).toBe(500);
+    expect(quote.total).toBe(10499.99);
   });
 });
 

@@ -191,3 +191,46 @@ export const dailyRateSchema = z.object({
 });
 
 export type DailyRateInput = z.infer<typeof dailyRateSchema>;
+
+// The Set-up screen: one hotel-wide field, plus a room's name and occupancy.
+export const hotelSetupSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  breakfastSupplement: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().min(0).max(100_000).default(0),
+  ),
+});
+
+export const roomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  roomTypeId: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(2, 'A room needs a name').max(80),
+  baseOccupancy: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(10)),
+  maxAdults: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(10)),
+  maxChildren: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10)),
+  extraAdultCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+  extraChildCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+});
+
+export const addRoomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  name: z.string().trim().min(2, 'A room needs a name').max(80),
+});
+
+export const deactivateRoomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  roomTypeId: z.string().trim().min(1).max(40),
+});
+
+// GST. Admin-only, and audited, because a typo here re-prices every quote
+// made after it.
+export const taxSettingSchema = z.object({
+  threshold: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000)),
+  lowRate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(100)),
+  highRate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(100)),
+  effectiveFrom: dateOnlyField('Pick the date it takes effect'),
+});
+
+export type HotelSetupInput = z.infer<typeof hotelSetupSchema>;
+export type RoomTypeInput = z.infer<typeof roomTypeSchema>;
+export type TaxSettingInput = z.infer<typeof taxSettingSchema>;

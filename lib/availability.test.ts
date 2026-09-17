@@ -67,11 +67,16 @@ async function createBooking(overrides: {
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await clearNights(HOTEL, RANGE);
-  // planFor() activates a plan to test it; left on, it would change what every
-  // later test sees on offer.
+  // The breakfast supplement is what puts With Breakfast on offer now, so it
+  // is the switch a test has to put back rather than the plan's active flag.
+  await prisma.hotelSettings.upsert({
+    where: { hotelSlug: HOTEL },
+    update: { breakfastSupplement: 0 },
+    create: { hotelSlug: HOTEL, breakfastSupplement: 0 },
+  });
   await prisma.ratePlan.updateMany({
-    where: { hotelSlug: HOTEL, code: { not: 'EP' } },
-    data: { active: false },
+    where: { hotelSlug: HOTEL, code: 'CP' },
+    data: { active: true },
   });
 }
 
@@ -100,7 +105,8 @@ describe('roomOffers', () => {
     expect(offer?.roomTypeName).toBe(ROOM);
     expect(offer?.nightlyRates).toEqual([4000, 4000, 4000]);
     expect(offer?.quote.roomTotal).toBe(12000);
-    expect(offer?.quote.taxTotal).toBe(2160);
+    // 4,000 is under the ₹7,500 threshold, so every night takes the 5% rate
+    expect(offer?.quote.taxTotal).toBe(600);
     expect(offer?.roomsLeft).toBe(3);
   });
 
@@ -134,7 +140,7 @@ describe('roomOffers', () => {
     const [offer] = await roomOffers(prisma, { ...query, rooms: 2 });
 
     expect(offer?.quote.roomTotal).toBe(24000);
-    expect(offer?.quote.total).toBe(28320);
+    expect(offer?.quote.total).toBe(25200);
   });
 
   it('lists room types in their configured order', async () => {
@@ -147,15 +153,12 @@ describe('roomOffers', () => {
     ]);
   });
 
-  it('offers each active rate plan separately, sharing the room’s inventory', async () => {
+  it('derives With Breakfast from Room Only and the hotel’s supplement', async () => {
     await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
-    const breakfastPlanId = await planFor(room.roomTypeId, 'CP');
-    // Same roomsOnSale: loadNights upserts the shared inventory row, so a
-    // different value here would silently re-open the room rather than add a
-    // plan to it.
-    await loadNights({ ...room, ratePlanId: breakfastPlanId }, HOTEL, nights(3), {
-      rate: 4600,
-      roomsOnSale: 2,
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 400 },
+      create: { hotelSlug: HOTEL, breakfastSupplement: 400 },
     });
 
     const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
@@ -164,20 +167,33 @@ describe('roomOffers', () => {
     // The same two rooms back both plans — a room is sold once, whatever it
     // was sold on.
     expect(offers.every((offer) => offer.roomsLeft === 2)).toBe(true);
-    expect(offers.map((o) => o.nightlyRates[0]).sort()).toEqual([4000, 4600]);
+    // 400 a head times the room's two base guests
+    expect(offers.map((o) => o.nightlyRates[0]).sort()).toEqual([4000, 4800]);
   });
 
-  it('drops a plan with an unpriced night without dropping the room', async () => {
-    await loadNights(room, HOTEL, nights(3), { rate: 4000 });
-    const breakfastPlanId = await planFor(room.roomTypeId, 'CP');
-    await loadNights({ ...room, ratePlanId: breakfastPlanId }, HOTEL, nights(2), {
-      rate: 4600,
-      roomsOnSale: 3,
+  it('offers Room Only alone when no breakfast supplement is set', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 0 },
+      create: { hotelSlug: HOTEL, breakfastSupplement: 0 },
     });
 
     const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
     expect(offers).toHaveLength(1);
     expect(offers[0]?.ratePlanCode).toBe('EP');
+  });
+
+  it('drops the room when Room Only has an unpriced night, since every plan rests on it', async () => {
+    await loadNights(room, HOTEL, nights(2), { rate: 4000 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 400 },
+      create: { hotelSlug: HOTEL, breakfastSupplement: 400 },
+    });
+
+    const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
+    expect(offers).toHaveLength(0);
   });
 });
 

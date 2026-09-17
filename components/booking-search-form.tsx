@@ -12,8 +12,7 @@ const ROOM_OPTIONS = [1, 2, 3, 4, 5];
 const ADULT_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 const CHILD_OPTIONS = [0, 1, 2, 3, 4];
 
-// Unlike BookingWidget (which hands the guest off to STAAH), this searches
-// the allotment this site sells itself — see lib/availability.ts.
+// Searches the allotment this site sells itself — see lib/availability.ts.
 export function BookingSearchForm({
   hotels,
   defaultHotel,

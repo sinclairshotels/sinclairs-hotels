@@ -64,7 +64,7 @@ const ROLE_CAPABILITIES: Record<UserRole, Capability[]> = {
   // Sets what rooms sell for and reads how that performed. Deliberately cannot
   // touch a booking or move money.
   REVENUE: [...READ_ONLY, 'rates:write', 'setup:write', 'audit:read'],
-  // Runs the desk: takes and changes bookings, keeps STAAH in step. No rate
+  // Runs the desk: takes and changes bookings. No rate
   // editing, and refunds stay with an Admin.
   RESERVATIONS: [...READ_ONLY, 'bookings:write', 'staah:write', 'vouchers:write'],
   // Same as Reservations but only for their own property, enforced separately

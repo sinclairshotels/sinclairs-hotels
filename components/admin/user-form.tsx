@@ -10,7 +10,7 @@ const initialState: UserFormState = { status: 'idle' };
 const ROLES = [
   { value: 'ADMIN', label: 'Admin', blurb: 'Everything, including users and refunds.' },
   { value: 'REVENUE', label: 'Revenue', blurb: 'Rates, setup and reports. No bookings.' },
-  { value: 'RESERVATIONS', label: 'Reservations', blurb: 'Bookings and the STAAH queue.' },
+  { value: 'RESERVATIONS', label: 'Reservations', blurb: 'Bookings and guest details.' },
   { value: 'HOTEL', label: 'Hotel', blurb: 'Their own property only. No rate editing.' },
   { value: 'VIEWER', label: 'Viewer', blurb: 'Read-only.' },
 ];

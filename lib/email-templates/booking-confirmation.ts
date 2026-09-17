@@ -59,7 +59,8 @@ export function bookingConfirmationHtml({
   const intro = forStaff
     ? `<p style="font-size:14px; margin:0 0 20px;">A direct booking was taken on the website and paid in full. It is confirmed and holding inventory.</p>`
     : `<p style="font-size:14px; margin:0 0 16px;">Dear ${escapeHtml(booking.guestName)},</p>
-       <p style="font-size:14px; margin:0 0 20px;">Thank you for booking with us &mdash; your payment has cleared and your room is confirmed. Please quote your reference on arrival.</p>`;
+       <p style="font-size:14px; margin:0 0 20px;">Thank you for booking with us &mdash; your payment has cleared and your room is confirmed. Please quote your reference on arrival.</p>
+       <p style="font-size:13px; margin:0 0 20px; color:#404040;"><strong>This booking is non-refundable.</strong> It cannot be cancelled or refunded.</p>`;
 
   const bodyHtml = `
     ${intro}

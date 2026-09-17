@@ -16,6 +16,7 @@ const NAV_ITEMS: Array<{ label: string; href: string; capability: Capability }> 
   { label: 'Enquiries', href: '/admin/enquiries', capability: 'enquiries:read' },
   { label: 'Newsletter', href: '/admin/newsletter', capability: 'enquiries:read' },
   { label: 'Users', href: '/admin/users', capability: 'users:manage' },
+  { label: 'Tax', href: '/admin/tax', capability: 'users:manage' },
   { label: 'Audit', href: '/admin/audit', capability: 'audit:read' },
 ];
 

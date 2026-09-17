@@ -23,14 +23,13 @@ import { hotels } from '../content/hotels';
 
 const prisma = new PrismaClient();
 
+// Two plans, not four. With Breakfast has no calendar of its own — it is Room
+// Only plus the hotel's breakfast supplement — so the second row exists to be
+// named and sold, not priced.
 const RATE_PLANS: Array<{ code: RatePlanCode; name: string; sortOrder: number }> = [
   { code: 'EP', name: 'Room Only', sortOrder: 0 },
   { code: 'CP', name: 'With Breakfast', sortOrder: 1 },
-  { code: 'MAP', name: 'Breakfast + Dinner', sortOrder: 2 },
-  { code: 'AP', name: 'All Meals', sortOrder: 3 },
 ];
-
-const DEFAULT_RELEASE_WINDOW_DAYS = 3;
 
 async function main() {
   let createdRooms = 0;
@@ -41,7 +40,7 @@ async function main() {
     await prisma.hotelSettings.upsert({
       where: { hotelSlug: hotel.slug },
       update: {},
-      create: { hotelSlug: hotel.slug, releaseWindowDays: DEFAULT_RELEASE_WINDOW_DAYS },
+      create: { hotelSlug: hotel.slug },
     });
 
     for (const [index, room] of hotel.rooms.entries()) {
@@ -66,14 +65,21 @@ async function main() {
 
       if (!existing) createdRooms++;
 
-      // Every room type gets the full set of plans up front, inactive beyond
-      // EP. Staff turn a plan on in Setup rather than having to create it, and
-      // a plan that exists but is off cannot be sold.
+      // Both plans, both active: Room Only carries the calendar and With
+      // Breakfast is derived from it, so neither needs turning on.
       for (const plan of RATE_PLANS) {
         const existingPlan = await prisma.ratePlan.findUnique({
           where: { roomTypeId_code: { roomTypeId: roomType.id, code: plan.code } },
         });
-        if (existingPlan) continue;
+        if (existingPlan) {
+          if (!existingPlan.active) {
+            await prisma.ratePlan.update({
+              where: { id: existingPlan.id },
+              data: { active: true },
+            });
+          }
+          continue;
+        }
 
         await prisma.ratePlan.create({
           data: {
@@ -82,11 +88,17 @@ async function main() {
             code: plan.code,
             name: plan.name,
             sortOrder: plan.sortOrder,
-            active: plan.code === 'EP',
           },
         });
         createdPlans++;
       }
+
+      // Meal plans this site no longer sells. Deactivated rather than deleted:
+      // deleting would take any historical booking's rate plan with it.
+      await prisma.ratePlan.updateMany({
+        where: { roomTypeId: roomType.id, code: { in: ['MAP', 'AP'] }, active: true },
+        data: { active: false },
+      });
     }
 
     // Room types still in the database that content no longer declares. Not

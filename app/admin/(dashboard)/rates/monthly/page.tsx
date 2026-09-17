@@ -1,6 +1,8 @@
+import { AddRoomTypeRow } from '@/components/admin/add-room-type-row';
+import { BreakfastSupplementForm } from '@/components/admin/breakfast-supplement-form';
 import { type MonthlyBaseline, MonthlyRatesTable } from '@/components/admin/monthly-rates-table';
 import { RatesTabs } from '@/components/admin/rates-tabs';
-import { hotels } from '@/content/hotels';
+import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { dateKey, todayUtc } from '@/lib/booking';
 import { prisma } from '@/lib/db';
@@ -99,44 +101,58 @@ export default async function MonthlyRatesPage({
     (visibleHotels[0]?.slug as string);
 
   const months = monthsAhead(todayUtc(), MONTHS_AHEAD);
-  const roomTypes = await prisma.roomType.findMany({
-    where: { hotelSlug: selected, active: true },
-    orderBy: { sortOrder: 'asc' },
-    select: { id: true, name: true },
-  });
+  const [roomTypes, settings] = await Promise.all([
+    prisma.roomType.findMany({
+      where: { hotelSlug: selected, active: true },
+      orderBy: { sortOrder: 'asc' },
+    }),
+    prisma.hotelSettings.findUnique({ where: { hotelSlug: selected } }),
+  ]);
   const { baseline, overriddenByMonth } = await monthlyBaseline(selected, months);
+
+  // A room added in the back office has no entry in content/hotels, so the
+  // website has no photograph for it until one is added there.
+  const photographed = new Set(getHotelBySlug(selected)?.rooms.map((room) => room.name) ?? []);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
-        <p className="font-display text-xl text-forest">Monthly Rates</p>
+        <p className="font-display text-xl text-forest">Set-up: rooms and monthly rates</p>
         <p className="mt-1 text-sm text-ink/60">
-          The baseline for a whole month at a time. One save applies each value to every night of
-          that month.
+          The rooms this property sells and what they cost. A month is the baseline — one save
+          applies each value to every night of it.
         </p>
         <RatesTabs active="/admin/rates/monthly" />
       </div>
 
       <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
-        <form method="get" className="flex flex-nowrap items-center gap-2">
-          <select
-            name="hotel"
-            defaultValue={selected}
-            className="select w-auto shrink-0 py-1.5 text-sm"
-          >
-            {visibleHotels.map((hotel) => (
-              <option key={hotel.slug} value={hotel.slug}>
-                {hotel.name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="shrink-0 rounded bg-forest px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-forest-dark"
-          >
-            Show
-          </button>
-        </form>
+        <div className="flex flex-wrap items-end gap-6">
+          <form method="get" className="flex flex-nowrap items-center gap-2">
+            <select
+              name="hotel"
+              defaultValue={selected}
+              className="select w-auto shrink-0 py-1.5 text-sm"
+            >
+              {visibleHotels.map((hotel) => (
+                <option key={hotel.slug} value={hotel.slug}>
+                  {hotel.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="shrink-0 rounded bg-forest px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-forest-dark"
+            >
+              Show
+            </button>
+          </form>
+
+          <BreakfastSupplementForm
+            key={selected}
+            hotelSlug={selected}
+            amount={settings?.breakfastSupplement.toNumber() ?? 0}
+          />
+        </div>
 
         <div className="mt-4 pb-6">
           {roomTypes.length === 0 ? (
@@ -147,12 +163,25 @@ export default async function MonthlyRatesPage({
             <MonthlyRatesTable
               key={selected}
               hotelSlug={selected}
-              rooms={roomTypes.map((room) => ({ roomTypeId: room.id, roomName: room.name }))}
+              rooms={roomTypes.map((room) => ({
+                roomTypeId: room.id,
+                roomName: room.name,
+                baseOccupancy: room.baseOccupancy,
+                maxAdults: room.maxAdults,
+                maxChildren: room.maxChildren,
+                extraAdultCharge: room.extraAdultCharge.toNumber(),
+                extraChildCharge: room.extraChildCharge.toNumber(),
+                hasPhoto: photographed.has(room.contentKey),
+              }))}
               months={months}
               baseline={baseline}
               overriddenByMonth={overriddenByMonth}
             />
           )}
+
+          <div className="mt-4">
+            <AddRoomTypeRow key={selected} hotelSlug={selected} />
+          </div>
 
           <p className="mt-6 text-xs text-ink/50">
             Setting a single night instead?{' '}

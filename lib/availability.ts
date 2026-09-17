@@ -9,6 +9,7 @@ import {
   quoteStay,
 } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { currentTaxSlab } from '@/lib/tax';
 import type { Prisma, PrismaClient, RatePlanCode } from '@prisma/client';
 
 // Accepts either the shared client or an interactive transaction client, so
@@ -90,7 +91,7 @@ export async function availability(
     (getHotelBySlug(hotelSlug)?.rooms ?? []).map((room) => [room.name, room]),
   );
 
-  const [roomTypes, inventory, prices, heldBookings] = await Promise.all([
+  const [roomTypes, inventory, prices, heldBookings, settings, slab] = await Promise.all([
     db.roomType.findMany({
       where: { hotelSlug, active: true },
       include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
@@ -113,7 +114,11 @@ export async function availability(
       },
       select: { roomTypeId: true, rooms: true, checkIn: true, checkOut: true },
     }),
+    db.hotelSettings.findUnique({ where: { hotelSlug } }),
+    currentTaxSlab(now),
   ]);
+
+  const breakfast = settings?.breakfastSupplement.toNumber() ?? 0;
 
   const inventoryByRoom = new Map<string, Map<string, (typeof inventory)[number]>>();
   for (const row of inventory) {
@@ -200,23 +205,38 @@ export async function availability(
       continue;
     }
 
-    for (const plan of roomType.ratePlans) {
-      const planPrices = priceByPlan.get(plan.id);
-      const nightlyRates: number[] = [];
+    // Only Room Only carries a calendar of its own. With Breakfast is derived
+    // from it — the supplement per person, times the guests the room's rate
+    // covers — so there is no second calendar to keep in step and no way for
+    // the two to drift apart.
+    const roomOnly = roomType.ratePlans.find((plan) => plan.code === 'EP');
+    const withBreakfast = roomType.ratePlans.find((plan) => plan.code === 'CP');
+    if (!roomOnly) continue;
 
-      for (const night of nights) {
-        const amount = planPrices?.get(dateKey(night));
-        if (amount === undefined) {
-          nightlyRates.length = 0;
-          break;
-        }
-        nightlyRates.push(amount);
+    const planPrices = priceByPlan.get(roomOnly.id);
+    const baseRates: number[] = [];
+    for (const night of nights) {
+      const amount = planPrices?.get(dateKey(night));
+      if (amount === undefined) {
+        baseRates.length = 0;
+        break;
       }
+      baseRates.push(amount);
+    }
 
-      // A gap in a plan's calendar makes that plan unsellable, not the room:
-      // EP can be on sale while MAP has not been priced yet.
-      if (nightlyRates.length !== stayLength) continue;
+    // A gap in the calendar is an unpriced night, not a night to guess a
+    // price for, so the whole stay drops out of the results.
+    if (baseRates.length !== stayLength) continue;
 
+    const sellable: Array<{ plan: (typeof roomType.ratePlans)[number]; rates: number[] }> = [
+      { plan: roomOnly, rates: baseRates },
+    ];
+    if (withBreakfast && breakfast > 0) {
+      const perNight = breakfast * roomType.baseOccupancy;
+      sellable.push({ plan: withBreakfast, rates: baseRates.map((rate) => rate + perNight) });
+    }
+
+    for (const { plan, rates: nightlyRates } of sellable) {
       offers.push({
         roomTypeId: roomType.id,
         roomTypeName: roomType.name,
@@ -226,7 +246,7 @@ export async function availability(
         ratePlanName: plan.name,
         roomsLeft,
         nightlyRates,
-        quote: quoteStay(nightlyRates, rooms),
+        quote: quoteStay(nightlyRates, rooms, slab),
       });
     }
 

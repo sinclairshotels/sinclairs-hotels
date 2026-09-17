@@ -55,9 +55,25 @@ export function eachNight(checkIn: Date, checkOut: Date): Date[] {
   return Array.from({ length: Math.max(0, count) }, (_, i) => addDays(checkIn, i));
 }
 
-// GST on hotel accommodation, charged per room per night against that
-// night's tariff rather than against the booking total.
-export const GST_RATE = 0.18;
+// GST on hotel accommodation is a slab, charged per room per night against
+// that night's rate rather than against the booking total: a stay priced
+// below the threshold on weeknights and above it at the weekend pays both
+// rates inside one booking. The threshold is inclusive — a night at exactly
+// the threshold takes the lower rate.
+export interface TaxSlab {
+  threshold: number;
+  lowRate: number;
+  highRate: number;
+}
+
+// What the slab was before it became editable, and the fallback when no
+// setting has been saved. Finance confirmed 5% up to ₹7,500 and 18% above,
+// effective 22 September 2025.
+export const DEFAULT_TAX_SLAB: TaxSlab = { threshold: 7500, lowRate: 0.05, highRate: 0.18 };
+
+export function taxForNight(rate: number, slab: TaxSlab = DEFAULT_TAX_SLAB): number {
+  return rate * (rate <= slab.threshold ? slab.lowRate : slab.highRate);
+}
 
 export interface StayQuote {
   nights: number;
@@ -70,9 +86,13 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-export function quoteStay(nightlyRates: number[], rooms: number): StayQuote {
+export function quoteStay(
+  nightlyRates: number[],
+  rooms: number,
+  slab: TaxSlab = DEFAULT_TAX_SLAB,
+): StayQuote {
   const perRoom = nightlyRates.reduce((sum, rate) => sum + rate, 0);
-  const perRoomTax = nightlyRates.reduce((sum, rate) => sum + rate * GST_RATE, 0);
+  const perRoomTax = nightlyRates.reduce((sum, rate) => sum + taxForNight(rate, slab), 0);
   const roomTotal = round2(perRoom * rooms);
   const taxTotal = round2(perRoomTax * rooms);
 

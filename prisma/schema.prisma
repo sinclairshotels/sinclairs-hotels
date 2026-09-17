@@ -295,6 +295,10 @@ model RoomType {
   @@index([hotelSlug])
 }
 
+// Only EP and CP are sold. MAP and AP stay in the enum rather than being
+// dropped: a value removed from a Postgres enum cannot be read back, and any
+// historical booking that named one would become unreadable. sync:rooms
+// creates neither, and deactivates any that exist.
 enum RatePlanCode {
   EP
   CP
@@ -302,27 +306,15 @@ enum RatePlanCode {
   AP
 }
 
-// How a hotel prices its non-EP plans: ABSOLUTE gives each plan its own rate
-// in the grid, SUPPLEMENT prices them as a per-person addition to EP. Set per
-// hotel on HotelSettings, because it is a commercial convention a property
-// follows, not something to decide plan by plan.
-enum RatePlanPricing {
-  ABSOLUTE
-  SUPPLEMENT
-}
-
 model RatePlan {
   id                 String       @id @default(cuid())
   hotelSlug          String
   roomTypeId         String
   roomType           RoomType     @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  code               RatePlanCode
-  name               String
-  // Only read when the hotel is on SUPPLEMENT pricing; ignored otherwise.
-  supplementPerAdult Decimal      @default(0) @db.Decimal(10, 2)
-  supplementPerChild Decimal      @default(0) @db.Decimal(10, 2)
-  active             Boolean      @default(true)
-  sortOrder          Int          @default(0)
+  code      RatePlanCode
+  name      String
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
 
   prices   RatePrice[]
   bookings Booking[]
@@ -385,12 +377,28 @@ model RatePrice {
 // Per-property operational settings. Keyed by slug rather than an id because
 // the hotel itself is still content — this table holds only what staff change.
 model HotelSettings {
-  hotelSlug         String          @id
-  // Days before arrival at which unsold website allotment should be handed
-  // back to STAAH. Drives the dashboard's release alert.
-  releaseWindowDays Int             @default(3)
-  ratePlanPricing   RatePlanPricing @default(ABSOLUTE)
-  updatedAt         DateTime        @updatedAt
+  hotelSlug String @id
+  // Per person per night. With Breakfast is Room Only plus this, times the
+  // room's base guests — there is no separate calendar of breakfast prices to
+  // keep in step, which is the whole point of storing one number.
+  breakfastSupplement Decimal  @default(0) @db.Decimal(10, 2)
+  updatedAt           DateTime @updatedAt
+}
+
+// GST on accommodation, per room per night against that night's rate. A
+// booking stores the tax it was priced with, so changing these never alters
+// what a guest has already agreed to pay.
+model TaxSetting {
+  id            String   @id @default(cuid())
+  // Nights at or below this are taxed at lowRate; above it, highRate. The
+  // threshold is inclusive.
+  threshold     Decimal  @db.Decimal(10, 2)
+  lowRate       Decimal  @db.Decimal(5, 4)
+  highRate      Decimal  @db.Decimal(5, 4)
+  effectiveFrom DateTime @db.Date
+  updatedAt     DateTime @updatedAt
+
+  @@index([effectiveFrom])
 }
 
 // Shaded in the rates calendar alongside weekends. hotelSlug null means the

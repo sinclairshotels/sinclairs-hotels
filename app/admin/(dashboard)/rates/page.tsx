@@ -77,8 +77,8 @@ export default async function RatesPage({
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Inventory &amp; Rates</p>
         <p className="mt-1 text-sm text-ink/60">
-          What this website may sell direct. Rooms on sale is the allotment held back from STAAH —
-          anything left on sale in both places can be sold twice.
+          What this website may sell direct. Rooms on sale is the allotment this site holds for a
+          night; availability counts the bookings against it rather than decrementing a counter.
         </p>
         <RatesTabs active="/admin/rates" />
       </div>

@@ -213,7 +213,12 @@ export default async function BookHotelPage({
             })}
           </div>
 
-          <p className="mt-10 text-center text-sm text-ink/60">
+          <p className="mt-8 text-center text-xs text-ink/60">
+            All rates are non-refundable. A booking cannot be cancelled or refunded once payment
+            clears.
+          </p>
+
+          <p className="mt-6 text-center text-sm text-ink/60">
             Prefer to talk it through?{' '}
             <Link
               href={`/enquiry?property=${slug}&type=HOTEL`}

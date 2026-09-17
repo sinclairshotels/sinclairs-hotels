@@ -15,6 +15,7 @@ import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { siteConfig } from '@/content/site';
+import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -53,10 +54,20 @@ const subNav = [
   { href: '#location', label: 'Location' },
 ];
 
+// Staff rename and retire rooms without a deploy, so the room list cannot be
+// baked in at build time — but it changes rarely enough not to be dynamic.
+export const revalidate = 600;
+
 export default async function HotelPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   const hotel = getHotelBySlug(slug);
   if (!hotel) notFound();
+
+  const display = await roomDisplayNames(hotel.slug);
+  const visibleRooms = hotel.rooms
+    .map((room) => ({ ...room, ...(display.get(room.name) ?? { name: room.name, active: true }) }))
+    .filter((room) => room.active)
+    .map((room) => ({ ...room, displayName: room.name }));
 
   const award = awards.find((a) => a.propertySlug === hotel.slug);
   const sections = subNav.filter((item) => {
@@ -144,7 +155,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       <div className="relative z-10 mx-auto -mt-8 w-full max-w-6xl px-6">
         <div className="flex flex-wrap items-center justify-between gap-6 rounded-xl bg-white px-6 py-5 shadow-xl sm:gap-10">
           <div className="flex flex-wrap gap-x-10 gap-y-3">
-            <Stat value={String(hotel.rooms.length)} label="Room Types" />
+            <Stat value={String(visibleRooms.length)} label="Room Types" />
             <Stat value={String(hotel.dining.length)} label="Dining Venues" />
             {hotel.eventSpaces && (
               <Stat value={String(hotel.eventSpaces.venues.length)} label="Event Spaces" />
@@ -206,7 +217,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         )}
       </section>
 
-      {hotel.rooms.length > 0 && (
+      {visibleRooms.length > 0 && (
         <section
           id="rooms"
           className="scroll-mt-32 border-y border-forest/10 bg-white py-10 sm:py-16"
@@ -214,7 +225,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
           <div className="mx-auto max-w-7xl px-6">
             <h2 className="font-display text-2xl text-forest">Rooms &amp; Suites</h2>
             <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {hotel.rooms.map((room) => (
+              {visibleRooms.map((room) => (
                 <div
                   key={room.name}
                   className="group flex flex-col overflow-hidden rounded-lg bg-cream shadow-sm transition hover:shadow-lg"
@@ -224,14 +235,14 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                     alt={room.name}
                   />
                   <div className="flex flex-1 flex-col p-5">
-                    <h3 className="font-display text-lg text-forest">{room.name}</h3>
+                    <h3 className="font-display text-lg text-forest">{room.displayName}</h3>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/70">
                       {room.description}
                     </p>
                     <ReservationLink
                       ctaSource="hotel_room_card"
-                      params={{ hotel: hotel.slug, room: room.name }}
-                      item={{ slug: hotel.slug, name: hotel.name, variant: room.name }}
+                      params={{ hotel: hotel.slug, room: room.displayName }}
+                      item={{ slug: hotel.slug, name: hotel.name, variant: room.displayName }}
                       className="mt-5 block rounded bg-forest-dark py-2.5 text-center text-xs uppercase tracking-wider text-cream transition hover:bg-forest"
                     >
                       Book Now

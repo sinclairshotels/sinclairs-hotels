@@ -5,16 +5,14 @@ import {
   type MonthlyRatesState,
   saveMonthlyRates,
 } from '@/app/admin/(dashboard)/rates/plan-actions';
+import { RoomSetupRow, type SetupRoom } from '@/components/admin/room-setup-row';
 import { monthLabel, monthShortLabel } from '@/lib/rate-plan';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 
 const initialState: MonthlyRatesState = { status: 'idle' };
 
-export interface MonthlyRoom {
-  roomTypeId: string;
-  roomName: string;
-}
+export type MonthlyRoom = SetupRoom;
 
 export interface MonthlyBaseline {
   // "roomTypeId:YYYY-MM" -> what that month already holds, where it holds one
@@ -127,16 +125,7 @@ export function MonthlyRatesTable({
   };
 
   return (
-    <form action={formAction}>
-      <input type="hidden" name="hotelSlug" value={hotelSlug} />
-      <input type="hidden" name="cells" value={payload} />
-      <input
-        type="hidden"
-        name="overrides"
-        value={confirming ? (state.submitted?.overrides as string) : overrides}
-      />
-      <input type="hidden" name="confirmed" value={confirming ? 'on' : ''} />
-
+    <div>
       <div className="max-h-[58vh] overflow-auto rounded-lg border border-ink/10 bg-white">
         <table className="w-full border-collapse text-sm">
           <thead className="sticky top-0 z-20">
@@ -171,9 +160,9 @@ export function MonthlyRatesTable({
               <tr key={room.roomTypeId} className="border-b border-ink/5">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 max-w-[13rem] border-r border-ink/10 bg-white px-4 py-2 text-left font-medium text-ink"
+                  className="sticky left-0 z-10 w-64 min-w-[16rem] border-r border-ink/10 bg-white px-3 py-2 text-left align-top font-normal"
                 >
-                  {room.roomName}
+                  <RoomSetupRow hotelSlug={hotelSlug} room={room} />
                 </th>
                 {months.map((month) => {
                   const key = cellKey(room.roomTypeId, month);
@@ -223,8 +212,8 @@ export function MonthlyRatesTable({
       <p className="mt-2 text-xs text-ink/50">
         Each value applies to <strong>every night of that month</strong>. Leave a box empty to leave
         that half alone — filling only the rooms box changes the allotment without touching the
-        price. Price is the Room Only rate; meal plans keep what they hold. Nights already past are
-        skipped.
+        price. Price is the Room Only rate; With Breakfast follows it automatically. Nights already
+        past are skipped.
       </p>
 
       {state.status === 'error' && state.message && (
@@ -302,7 +291,15 @@ export function MonthlyRatesTable({
         </fieldset>
       )}
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <form action={formAction} className="mt-5 flex flex-wrap items-center gap-3">
+        <input type="hidden" name="hotelSlug" value={hotelSlug} />
+        <input type="hidden" name="cells" value={payload} />
+        <input
+          type="hidden"
+          name="overrides"
+          value={confirming ? (state.submitted?.overrides as string) : overrides}
+        />
+        <input type="hidden" name="confirmed" value={confirming ? 'on' : ''} />
         <button
           type="submit"
           disabled={pending || (!confirming && pendingCells.length === 0)}
@@ -330,7 +327,7 @@ export function MonthlyRatesTable({
             Change something
           </button>
         )}
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
