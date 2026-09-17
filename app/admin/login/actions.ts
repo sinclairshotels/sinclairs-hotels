@@ -71,6 +71,10 @@ export async function login(
         name: 'Administrator',
         role: 'ADMIN',
         passwordHash: await hashPassword(password),
+        // Set here rather than after the branch: the redirect below throws, so
+        // the shared update at the end of this action is never reached and the
+        // founding admin would read as having never signed in.
+        lastLoginAt: new Date(),
       },
     });
 

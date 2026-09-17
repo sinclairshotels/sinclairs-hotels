@@ -25,7 +25,12 @@ export function UserForm({ properties }: { properties: Array<{ slug: string; nam
         <p className="font-display text-lg text-forest">{state.message}</p>
         <p className="mt-3 text-xs uppercase tracking-wider text-ink/60">Setup link</p>
         <code className="mt-1 block break-all rounded border border-ink/10 bg-white px-3 py-2 text-sm text-ink">
-          {state.setupUrl}
+          {/* Absolute, because this gets pasted into an email or a message —
+              a bare path is not something the recipient can open. The origin
+              is whichever staff host the admin is already on. */}
+          {typeof window === 'undefined'
+            ? state.setupUrl
+            : `${window.location.origin}${state.setupUrl}`}
         </code>
         <p className="mt-2 text-xs leading-relaxed text-ink/60">
           Nobody knows their password, including you — they choose it themselves through this link.
