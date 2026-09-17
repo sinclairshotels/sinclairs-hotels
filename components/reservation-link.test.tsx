@@ -10,11 +10,24 @@ describe('ReservationLink', () => {
     window.dataLayer = [];
   });
 
-  it('opens the Staah reservation URL in a new tab safely', () => {
+  it('sends a CTA that names no property to the booking landing page', () => {
     render(<ReservationLink ctaSource="nav">Book Now</ReservationLink>);
     const link = screen.getByRole('link', { name: 'Book Now' });
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveAttribute('href', '/book');
+    // Our own engine, so no new tab and nothing to guard against.
+    expect(link).not.toHaveAttribute('target');
+  });
+
+  it('sends a CTA that knows its property straight to that property', () => {
+    render(
+      <ReservationLink ctaSource="hotel_stat_bar" params={{ hotel: 'darjeeling' }}>
+        Check Availability
+      </ReservationLink>,
+    );
+    expect(screen.getByRole('link', { name: 'Check Availability' })).toHaveAttribute(
+      'href',
+      '/book/darjeeling',
+    );
   });
 
   it('sends an empty items array when the CTA belongs to no single property', () => {

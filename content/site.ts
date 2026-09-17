@@ -8,8 +8,10 @@ export const siteConfig = {
   url: 'https://www.sinclairshotels.com',
 };
 
-// Staah runs reservations end-to-end; every "Book Now" / availability CTA sends
-// guests there instead of handling booking on this site.
+// Staah sells the inventory this site does not: the website sells its own
+// allotment per hotel, room type and night through /book, and Staah sells the
+// rest. No CTA here points at this URL any more — it is kept because Staah is
+// still a live channel staff work in, and a fallback needs somewhere to point.
 export const reservationUrl =
   'https://reservation.sinclairshotels.com/inst/#group?groupId=882Mjkbac8S7wLYqvHyxVFGKNMfaaeRV5yNO8NFk4hB5fg15ZQ3NDc=&JDRN=Y';
 
