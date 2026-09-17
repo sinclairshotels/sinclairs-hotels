@@ -1,5 +1,5 @@
 import { getHotelBySlug } from '@/content/hotels';
-import { formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
+import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -67,6 +67,10 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
           <dl className="mt-6 space-y-2 border-t border-ink/10 pt-6 text-sm">
             <Row label="Property" value={hotel?.name ?? booking.hotelSlug} />
             <Row label="Room" value={booking.roomName} />
+            {booking.planName && <Row label="Rate" value={booking.planName} />}
+            {booking.breakfastGuests > 0 && (
+              <Row label="Includes" value={breakfastLine(booking.breakfastGuests)} />
+            )}
             <Row label="Check in" value={formatStayDate(booking.checkIn)} />
             <Row label="Check out" value={formatStayDate(booking.checkOut)} />
             <Row label="Stay" value={`${nights} ${nights === 1 ? 'night' : 'nights'}`} />

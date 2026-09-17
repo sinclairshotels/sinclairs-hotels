@@ -121,6 +121,10 @@ describe('createBooking', () => {
     expect(booking?.taxTotal.toNumber()).toBe(400);
     expect(booking?.total.toNumber()).toBe(8400);
     expect(booking?.reference).toMatch(/^SNC-/);
+    // Snapshots of what was sold, so the booking still reads correctly after
+    // the plan is renamed.
+    expect(booking?.planName).toBe('Room Only');
+    expect(booking?.breakfastGuests).toBe(0);
     // The payment carries the same amount and points back at the booking.
     expect(booking?.payment?.amount.toNumber()).toBe(8400);
     expect(booking?.payment?.status).toBe('INITIATED');

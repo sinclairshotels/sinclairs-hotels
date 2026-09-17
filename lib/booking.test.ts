@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  allocateExtras,
   bookingReference,
   dateKey,
   eachNight,
@@ -77,9 +78,47 @@ describe('taxForNight', () => {
   });
 });
 
+describe('allocateExtras', () => {
+  it('seats everyone within the rooms booked when they fit', () => {
+    expect(allocateExtras(2, 4, 0, 2)).toEqual([
+      { extraAdults: 0, extraChildren: 0 },
+      { extraAdults: 0, extraChildren: 0 },
+    ]);
+  });
+
+  it('makes the guest beyond the base occupancy an extra', () => {
+    expect(allocateExtras(1, 3, 0, 2)).toEqual([{ extraAdults: 1, extraChildren: 0 }]);
+  });
+
+  it('seats adults first, so the child is the one charged', () => {
+    expect(allocateExtras(1, 2, 1, 2)).toEqual([{ extraAdults: 0, extraChildren: 1 }]);
+  });
+
+  it('spreads extras across rooms rather than piling them into the first', () => {
+    expect(allocateExtras(2, 6, 0, 2)).toEqual([
+      { extraAdults: 1, extraChildren: 0 },
+      { extraAdults: 1, extraChildren: 0 },
+    ]);
+  });
+
+  it('charges nobody when the party is smaller than the rate covers', () => {
+    expect(allocateExtras(1, 1, 0, 2)).toEqual([{ extraAdults: 0, extraChildren: 0 }]);
+  });
+});
+
+const basePricing = {
+  rooms: 1,
+  adults: 2,
+  children: 0,
+  baseOccupancy: 2,
+  extraAdultCharge: 1500,
+  extraChildCharge: 800,
+  breakfastPerExtraGuest: 0,
+};
+
 describe('quoteStay', () => {
   it('prices each night at its own rate and multiplies by rooms', () => {
-    const quote = quoteStay([4000, 5000], 2);
+    const quote = quoteStay({ ...basePricing, nightlyRates: [4000, 5000], rooms: 2, adults: 4 });
     expect(quote.nights).toBe(2);
     expect(quote.roomTotal).toBe(18000);
     // both nights sit under the threshold, so both are taxed at 5%
@@ -88,13 +127,51 @@ describe('quoteStay', () => {
   });
 
   it('taxes a stay that crosses the threshold at both rates', () => {
-    const quote = quoteStay([7000, 9000], 1);
+    const quote = quoteStay({ ...basePricing, nightlyRates: [7000, 9000] });
     // 5% of 7,000 plus 18% of 9,000 — the test the flat rate could not fail
     expect(quote.taxTotal).toBe(1970);
   });
 
+  it('charges an extra adult on Room Only without a breakfast', () => {
+    const quote = quoteStay({ ...basePricing, nightlyRates: [4000], adults: 3 });
+    expect(quote.extraAdults).toBe(1);
+    expect(quote.extrasTotal).toBe(1500);
+    expect(quote.roomTotal).toBe(5500);
+  });
+
+  it('charges an extra adult on With Breakfast one breakfast as well', () => {
+    const quote = quoteStay({
+      ...basePricing,
+      // the plan's own rate already feeds the two base guests
+      nightlyRates: [4900],
+      adults: 3,
+      breakfastPerExtraGuest: 450,
+    });
+    expect(quote.extrasTotal).toBe(1950);
+    expect(quote.roomTotal).toBe(6850);
+  });
+
+  it('charges an extra child at the child rate, plus breakfast on that plan', () => {
+    const quote = quoteStay({
+      ...basePricing,
+      nightlyRates: [4900],
+      adults: 2,
+      children: 1,
+      breakfastPerExtraGuest: 450,
+    });
+    expect(quote.extraChildren).toBe(1);
+    expect(quote.extrasTotal).toBe(1250);
+  });
+
+  it('taxes the room on what the extra guest pushed it to', () => {
+    // 7,000 alone is under the threshold; with a 1,500 extra adult it is not
+    const quote = quoteStay({ ...basePricing, nightlyRates: [7000], adults: 3 });
+    expect(quote.roomTotal).toBe(8500);
+    expect(quote.taxTotal).toBe(1530);
+  });
+
   it('rounds money to paise rather than carrying float error', () => {
-    const quote = quoteStay([3333.33], 3);
+    const quote = quoteStay({ ...basePricing, nightlyRates: [3333.33], rooms: 3, adults: 6 });
     expect(quote.roomTotal).toBe(9999.99);
     expect(quote.taxTotal).toBe(500);
     expect(quote.total).toBe(10499.99);

@@ -223,6 +223,11 @@ model Booking {
   rooms      Int
   adults     Int
   children   Int       @default(0)
+  // Snapshots, like roomName: what was sold, readable long after a rate plan
+  // is renamed or a room retired.
+  planName        String?
+  // How many guests this booking includes breakfast for. Zero on Room Only.
+  breakfastGuests Int    @default(0)
 
   guestName       String
   guestEmail      String

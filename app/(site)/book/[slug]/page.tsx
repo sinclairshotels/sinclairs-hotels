@@ -5,6 +5,7 @@ import {
   MAX_BOOKING_HORIZON_DAYS,
   MAX_NIGHTS,
   addDays,
+  breakfastLine,
   dateKey,
   formatInr,
   formatStayDate,
@@ -70,7 +71,7 @@ export default async function BookHotelPage({
   const stayError = validateStay(checkIn, checkOut, today);
   const offers =
     checkIn && checkOut && !stayError
-      ? await roomOffers(prisma, { hotelSlug: slug, checkIn, checkOut, rooms })
+      ? await roomOffers(prisma, { hotelSlug: slug, checkIn, checkOut, rooms, adults, children })
       : [];
   const bookable = offers.filter((offer) => offer.roomsLeft >= rooms);
 
@@ -182,6 +183,25 @@ export default async function BookHotelPage({
                       <p className="text-xs uppercase tracking-wider text-gold-dark">
                         {offer.ratePlanName}
                       </p>
+                      {offer.breakfastGuests > 0 && (
+                        <p className="mt-0.5 text-xs text-ink/60">
+                          {breakfastLine(offer.breakfastGuests)}
+                        </p>
+                      )}
+                      {offer.quote.extrasTotal > 0 && (
+                        <p className="mt-0.5 text-xs text-ink/60">
+                          Includes{' '}
+                          {[
+                            offer.quote.extraAdults > 0 &&
+                              `${offer.quote.extraAdults} extra adult${offer.quote.extraAdults === 1 ? '' : 's'}`,
+                            offer.quote.extraChildren > 0 &&
+                              `${offer.quote.extraChildren} extra child${offer.quote.extraChildren === 1 ? '' : 'ren'}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' and ')}{' '}
+                          at {formatInr(offer.quote.extrasTotal)}
+                        </p>
+                      )}
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
                         {offer.content?.description}
                       </p>

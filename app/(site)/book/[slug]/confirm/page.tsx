@@ -2,6 +2,7 @@ import { BookingGuestForm } from '@/components/booking-guest-form';
 import { getHotelBySlug } from '@/content/hotels';
 import { roomOffer } from '@/lib/availability';
 import {
+  breakfastLine,
   dateKey,
   formatInr,
   formatStayDate,
@@ -74,6 +75,8 @@ export default async function ConfirmBookingPage({
     checkIn,
     checkOut,
     rooms,
+    adults,
+    children,
   });
 
   if (!offer || offer.roomsLeft < rooms) {
@@ -132,6 +135,11 @@ export default async function ConfirmBookingPage({
               <p className="mt-1 text-sm text-ink/70">{offer.roomTypeName}</p>
               <p className="text-xs uppercase tracking-wider text-gold-dark">
                 {offer.ratePlanName}
+                {offer.breakfastGuests > 0 && (
+                  <span className="mt-0.5 block text-xs normal-case tracking-normal text-ink/60">
+                    {breakfastLine(offer.breakfastGuests)}
+                  </span>
+                )}
               </p>
 
               <dl className="mt-5 space-y-2 border-t border-ink/10 pt-5 text-sm">

@@ -107,6 +107,8 @@ export async function createBooking(
           checkIn,
           checkOut,
           rooms: d.rooms,
+          adults: d.adults,
+          children: d.children,
         });
 
         if (!offer || offer.roomsLeft < d.rooms) throw new RoomsGoneError();
@@ -136,6 +138,8 @@ export async function createBooking(
             // Stored as well as linked: the name is what the guest agreed to,
             // and it must keep reading correctly if the room type is renamed.
             roomName: offer.roomTypeName,
+            planName: offer.ratePlanName,
+            breakfastGuests: offer.breakfastGuests,
             checkIn,
             checkOut,
             rooms: d.rooms,

@@ -1,5 +1,5 @@
 import type { Hotel } from '@/content/types';
-import { formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
+import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import type { Booking } from '@prisma/client';
 import { buttonHtml, emailLayout, escapeHtml, fieldRowsHtml } from './layout';
 
@@ -27,6 +27,9 @@ export function bookingFields(booking: Booking, hotel?: Hotel): Array<[string, s
     ['Email', booking.guestEmail],
     ...(booking.specialRequests
       ? ([['Special Requests', booking.specialRequests]] as Array<[string, string]>)
+      : []),
+    ...(booking.breakfastGuests > 0
+      ? [['Includes', breakfastLine(booking.breakfastGuests)] as [string, string]]
       : []),
     ['Room Charges', formatInr(booking.roomTotal.toNumber())],
     ['Taxes (GST)', formatInr(booking.taxTotal.toNumber())],

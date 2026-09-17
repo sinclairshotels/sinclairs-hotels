@@ -21,6 +21,14 @@ export async function findRoom(hotelSlug: string, contentKey: string): Promise<L
     include: { ratePlans: true },
   });
 
+  // The Set-up screen lets staff rename a room, and offers carry the display
+  // name. Put it back to the content key so a suite asserting on the name is
+  // testing the code rather than whoever last used the admin.
+  if (roomType.name !== contentKey) {
+    await prisma.roomType.update({ where: { id: roomType.id }, data: { name: contentKey } });
+    roomType.name = contentKey;
+  }
+
   const plan = roomType.ratePlans.find((p) => p.code === 'EP');
   if (!plan) throw new Error(`${hotelSlug}/${contentKey} has no EP rate plan`);
 

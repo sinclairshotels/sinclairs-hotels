@@ -28,6 +28,8 @@ export interface RoomOffer {
   ratePlanName: string;
   roomsLeft: number;
   nightlyRates: number[];
+  // Guests this plan feeds. Zero on Room Only.
+  breakfastGuests: number;
   quote: StayQuote;
 }
 
@@ -51,6 +53,10 @@ export interface AvailabilityQuery {
   checkIn: Date;
   checkOut: Date;
   rooms: number;
+  // Who is staying. Guests beyond the rooms' base occupancy are charged, so a
+  // quote cannot be made without them; both default to the common case.
+  adults?: number;
+  children?: number;
   now?: Date;
   // A booking to leave out of the held count — used when re-checking
   // availability *for* a specific booking, so it cannot block itself.
@@ -82,7 +88,16 @@ export interface AvailabilityResult {
 
 export async function availability(
   db: Db,
-  { hotelSlug, checkIn, checkOut, rooms, now = new Date(), excludeBookingId }: AvailabilityQuery,
+  {
+    hotelSlug,
+    checkIn,
+    checkOut,
+    rooms,
+    adults = rooms * 2,
+    children = 0,
+    now = new Date(),
+    excludeBookingId,
+  }: AvailabilityQuery,
 ): Promise<AvailabilityResult> {
   const nights = eachNight(checkIn, checkOut);
   if (nights.length === 0) return { offers: [], blocked: [] };
@@ -228,15 +243,26 @@ export async function availability(
     // price for, so the whole stay drops out of the results.
     if (baseRates.length !== stayLength) continue;
 
-    const sellable: Array<{ plan: (typeof roomType.ratePlans)[number]; rates: number[] }> = [
-      { plan: roomOnly, rates: baseRates },
-    ];
+    // The plan's rate covers the room's base guests. On With Breakfast that
+    // means breakfast for them too; an extra guest then pays their extra-guest
+    // charge plus one more breakfast, which is the only difference between the
+    // two plans once a room is over-occupied.
+    const sellable: Array<{
+      plan: (typeof roomType.ratePlans)[number];
+      rates: number[];
+      breakfastPerExtraGuest: number;
+    }> = [{ plan: roomOnly, rates: baseRates, breakfastPerExtraGuest: 0 }];
+
     if (withBreakfast && breakfast > 0) {
       const perNight = breakfast * roomType.baseOccupancy;
-      sellable.push({ plan: withBreakfast, rates: baseRates.map((rate) => rate + perNight) });
+      sellable.push({
+        plan: withBreakfast,
+        rates: baseRates.map((rate) => rate + perNight),
+        breakfastPerExtraGuest: breakfast,
+      });
     }
 
-    for (const { plan, rates: nightlyRates } of sellable) {
+    for (const { plan, rates: nightlyRates, breakfastPerExtraGuest } of sellable) {
       offers.push({
         roomTypeId: roomType.id,
         roomTypeName: roomType.name,
@@ -246,7 +272,20 @@ export async function availability(
         ratePlanName: plan.name,
         roomsLeft,
         nightlyRates,
-        quote: quoteStay(nightlyRates, rooms, slab),
+        // Zero on Room Only, so a quote can say "with breakfast for N guests"
+        // without asking which plan it is looking at.
+        breakfastGuests: breakfastPerExtraGuest > 0 ? adults + children : 0,
+        quote: quoteStay({
+          nightlyRates,
+          rooms,
+          adults,
+          children,
+          baseOccupancy: roomType.baseOccupancy,
+          extraAdultCharge: roomType.extraAdultCharge.toNumber(),
+          extraChildCharge: roomType.extraChildCharge.toNumber(),
+          breakfastPerExtraGuest,
+          slab,
+        }),
       });
     }
 

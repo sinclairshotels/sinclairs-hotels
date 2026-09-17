@@ -50,7 +50,15 @@ async function hasRoomsLeftFor(
   db: Parameters<typeof roomOffer>[0],
   booking: Pick<
     Booking,
-    'id' | 'hotelSlug' | 'roomTypeId' | 'ratePlanId' | 'checkIn' | 'checkOut' | 'rooms'
+    | 'id'
+    | 'hotelSlug'
+    | 'roomTypeId'
+    | 'ratePlanId'
+    | 'checkIn'
+    | 'checkOut'
+    | 'rooms'
+    | 'adults'
+    | 'children'
   >,
 ): Promise<boolean> {
   // A booking with no room type is one whose room no longer exists at all, so
@@ -66,6 +74,8 @@ async function hasRoomsLeftFor(
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     rooms: booking.rooms,
+    adults: booking.adults,
+    children: booking.children,
     excludeBookingId: booking.id,
   });
   return Boolean(offer && offer.roomsLeft >= booking.rooms);
