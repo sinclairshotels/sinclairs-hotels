@@ -20,7 +20,7 @@ function isoDay(offset: number): string {
 const asDate = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const WINDOW = { gte: asDate(isoDay(0)), lt: asDate(isoDay(14)) };
 
-test.describe('rates calendar (staff)', () => {
+test.describe('rates screens (staff)', () => {
   // Serial: these share one property's visible window and rewrite it, and the
   // admin sign-in is rate limited per address.
   test.describe.configure({ mode: 'serial' });
@@ -51,7 +51,6 @@ test.describe('rates calendar (staff)', () => {
       Array.from({ length: 14 }, (_, i) => asDate(isoDay(i))),
       { rate: 5000, roomsOnSale: 4 },
     );
-    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=14`);
   });
 
   test.afterAll(async () => {
@@ -61,53 +60,59 @@ test.describe('rates calendar (staff)', () => {
     await prisma.$disconnect();
   });
 
-  const cell = (page: Page, date: string) =>
-    page.getByRole('button', { name: new RegExp(`${ROOM}, Room Only, ${date}`) }).first();
+  const cellText = (page: Page, date: string) =>
+    page.getByText(new RegExp(`${ROOM}, Room Only, ${date}`)).first();
 
-  test('shows the selected property’s calendar', async ({ page }) => {
+  test('the calendar shows what is loaded, and is read-only', async ({ page }) => {
+    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=14`);
+
     await expect(page.getByRole('rowheader', { name: new RegExp(ROOM) }).first()).toBeVisible();
-    await expect(cell(page, isoDay(0))).toContainText('₹5,000');
-    await expect(cell(page, isoDay(0))).toContainText('4 on sale');
+    await expect(cellText(page, isoDay(0))).toContainText('5000 rupees');
+    await expect(cellText(page, isoDay(0))).toContainText('4 on sale');
+
+    // No cell is a control any more — rates are set on Monthly and Daily.
+    const grid = page.getByRole('table');
+    await expect(grid.getByRole('button')).toHaveCount(0);
   });
 
-  test('takes a block of nights on shift-click and edits them together', async ({ page }) => {
-    await cell(page, isoDay(1)).click();
-    await expect(page.getByText('1 night selected')).toBeVisible();
+  test('a daily override saves one night and is marked on the calendar', async ({ page }) => {
+    await page.goto(`${STAFF_BASE_URL}/admin/rates/daily`);
 
-    await cell(page, isoDay(4)).click({ modifiers: ['Shift'] });
-    await expect(page.getByText('4 nights selected')).toBeVisible();
+    await page.getByRole('combobox').first().click();
+    await page.getByRole('option', { name: HOTEL_LABEL }).click();
+    await page.getByRole('combobox').nth(1).click();
+    await page.getByRole('option', { name: ROOM, exact: true }).click();
 
-    // Raise the rate ten percent across the block. The mode has to be chosen
-    // first — the value input stays disabled while the field is set to
-    // "leave unchanged", which is what stops an empty box writing a zero.
+    // Scoped to this form: the sidebar's Sign Out is a form with a button too.
+    const form = page.locator('form').filter({ hasText: 'Save this night' });
+    await form.getByRole('button').first().click();
+    const target = new Date(`${isoDay(3)}T00:00:00.000Z`);
     await page
-      .locator('form')
-      .filter({ hasText: 'nights selected' })
-      .locator('[role="combobox"]')
+      .getByRole('dialog')
+      .getByRole('button', {
+        name: new RegExp(
+          `${target.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })} ${target.getUTCDate()}`,
+        ),
+      })
       .first()
       .click();
-    await page.locator('[role="listbox"]').getByRole('option', { name: 'Increase by %' }).click();
-    await page.getByLabel('Rate value').fill('10');
 
-    await page.getByRole('button', { name: /review changes/i }).click();
-    await expect(page.getByText(/4 nights actually change/)).toBeVisible();
+    await page.getByLabel('Price per night').fill('9500');
+    await page.getByRole('button', { name: /save this night/i }).click();
+    await expect(page.getByText(/overridden. It will survive/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /apply to 4 nights/i }).click();
-    // The grid refreshes in place, so the new price appearing in the cell is
-    // the visible proof the write landed.
-    await expect(cell(page, isoDay(1))).toContainText('₹5,500');
-
-    const prices = await prisma.ratePrice.findMany({
-      where: {
-        ratePlanId: room.ratePlanId,
-        date: { gte: asDate(isoDay(1)), lt: asDate(isoDay(5)) },
-      },
+    const written = await prisma.ratePrice.findFirst({
+      where: { ratePlanId: room.ratePlanId, date: asDate(isoDay(3)) },
     });
-    expect(prices).toHaveLength(4);
-    expect(prices.every((row) => row.amount.toNumber() === 5500)).toBe(true);
+    expect(written?.amount.toNumber()).toBe(9500);
+    expect(written?.source).toBe('DAILY');
+
+    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=14`);
+    await expect(cellText(page, isoDay(3))).toContainText('set daily');
+    await expect(cellText(page, isoDay(2))).not.toContainText('set daily');
   });
 
-  test('refuses to cut the allotment below what is already sold', async ({ page }) => {
+  test('the daily screen refuses a night below what is already sold', async ({ page }) => {
     await prisma.booking.create({
       data: {
         reference: `E2E-${Date.now()}`,
@@ -130,40 +135,82 @@ test.describe('rates calendar (staff)', () => {
         status: 'CONFIRMED',
       },
     });
-    await page.reload();
 
-    await cell(page, isoDay(2)).click();
+    await page.goto(`${STAFF_BASE_URL}/admin/rates/daily`);
+    await page.getByRole('combobox').first().click();
+    await page.getByRole('option', { name: HOTEL_LABEL }).click();
+    await page.getByRole('combobox').nth(1).click();
+    await page.getByRole('option', { name: ROOM, exact: true }).click();
+
+    const form = page.locator('form').filter({ hasText: 'Save this night' });
+    await form.getByRole('button').first().click();
+    const target = new Date(`${isoDay(2)}T00:00:00.000Z`);
     await page
-      .locator('form')
-      .filter({ hasText: 'night selected' })
-      .locator('[role="combobox"]')
-      .nth(1)
+      .getByRole('dialog')
+      .getByRole('button', {
+        name: new RegExp(
+          `${target.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })} ${target.getUTCDate()}`,
+        ),
+      })
+      .first()
       .click();
-    await page.locator('[role="listbox"]').getByRole('option', { name: 'Set to' }).click();
+
     await page.getByLabel('Rooms on sale').fill('1');
+    await page.getByRole('button', { name: /save this night/i }).click();
 
-    await page.getByRole('button', { name: /review changes/i }).click();
-
-    await expect(page.getByText(/already sold beyond that allotment/i)).toBeVisible();
-    const inventory = await prisma.roomInventory.findFirst({
+    await expect(page.getByText(/already sold that night/i)).toBeVisible();
+    const untouched = await prisma.roomInventory.findFirst({
       where: { roomTypeId: room.roomTypeId, date: asDate(isoDay(2)) },
     });
-    expect(inventory?.roomsOnSale).toBe(4);
+    expect(untouched?.roomsOnSale).toBe(4);
+  });
+
+  test('the monthly screen previews before it writes, then writes what it previewed', async ({
+    page,
+  }) => {
+    await page.goto(`${STAFF_BASE_URL}/admin/rates/monthly?hotel=${HOTEL_SLUG}`);
+    await page.waitForSelector('table');
+
+    // The last of the twelve months on offer: nothing else in the suite
+    // touches it, so the counts are unambiguous.
+    const lastMonthColumn = page
+      .getByRole('row')
+      .filter({ hasText: ROOM })
+      .first()
+      .getByRole('spinbutton');
+    const count = await lastMonthColumn.count();
+    await lastMonthColumn.nth(count - 2).fill('3');
+    await lastMonthColumn.nth(count - 1).fill('7200');
+
+    await page.getByRole('button', { name: /review changes/i }).click();
+    await expect(page.getByText(/nights actually change/)).toBeVisible();
+
+    await page.getByRole('button', { name: /save \d+ nights/i }).click();
+    await expect(page.getByText(/nights updated across/i)).toBeVisible();
+
+    const written = await prisma.ratePrice.findFirst({
+      where: { ratePlanId: room.ratePlanId, amount: 7200 },
+    });
+    expect(written?.source).toBe('MONTHLY');
+
+    await prisma.ratePrice.deleteMany({ where: { ratePlanId: room.ratePlanId, amount: 7200 } });
   });
 
   test('switches between the 14, 30 and 60 day views', async ({ page }) => {
-    await page.locator('select[name="days"]').selectOption('30');
-    await page.getByRole('button', { name: 'Show' }).click();
+    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=14`);
+    await expect(page.getByRole('columnheader')).toHaveCount(15);
 
-    await expect(page).toHaveURL(/days=30/);
-    await expect(cell(page, isoDay(20))).toBeVisible();
+    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=30`);
+    await expect(page.getByRole('columnheader')).toHaveCount(31);
   });
 
   test('offers the property picker and keeps the chosen one', async ({ page }) => {
-    await page.locator('select[name="hotel"]').selectOption('ooty');
-    await page.getByRole('button', { name: 'Show' }).click();
+    await page.goto(`${STAFF_BASE_URL}/admin/rates?hotel=${HOTEL_SLUG}&days=14`);
 
-    await expect(page).toHaveURL(/hotel=ooty/);
-    await expect(page.getByRole('option', { name: HOTEL_LABEL })).not.toBeChecked();
+    const picker = page.locator('select[name="hotel"]');
+    await expect(picker).toHaveValue(HOTEL_SLUG);
+    await picker.selectOption('darjeeling');
+    await page.getByRole('button', { name: 'Show' }).click();
+    await expect(page.locator('select[name="hotel"]')).toHaveValue('darjeeling');
   });
 });

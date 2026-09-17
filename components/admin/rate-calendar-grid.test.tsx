@@ -1,14 +1,7 @@
 import type { CalendarCell, RateCalendar } from '@/lib/rate-calendar';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { RateCalendarGrid } from './rate-calendar-grid';
-
-vi.mock('@/app/admin/(dashboard)/rates/edit-actions', () => ({
-  editRates: vi.fn(),
-  copyWeek: vi.fn(),
-  copyRoomRates: vi.fn(),
-}));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 const cell = (overrides: Partial<CalendarCell> & { date: string }): CalendarCell => ({
   rate: 6800,
@@ -19,6 +12,7 @@ const cell = (overrides: Partial<CalendarCell> & { date: string }): CalendarCell
   minStay: null,
   closedToArrival: false,
   closedToDeparture: false,
+  overridden: false,
   ...overrides,
 });
 
@@ -40,119 +34,65 @@ const calendar: RateCalendar = {
       ],
     },
     {
-      roomTypeId: 'room-family',
-      ratePlanId: 'plan-family-ep',
-      roomName: 'Deluxe Family Room',
+      roomTypeId: 'room-suite',
+      ratePlanId: 'plan-suite-ep',
+      roomName: 'Premier Suite',
       ratePlanName: 'Room Only',
       cells: [
         cell({ date: '2099-06-01', rate: null, onSale: 0, remaining: 0 }),
-        cell({ date: '2099-06-02', rate: 9200, onSale: 2, sold: 0, remaining: 2 }),
-        cell({ date: '2099-06-03', rate: 9200, onSale: 2, sold: 0, remaining: 2 }),
+        cell({ date: '2099-06-02', rate: 9500, overridden: true }),
+        cell({ date: '2099-06-03', rate: 9500 }),
       ],
     },
   ],
 };
 
-const cellAt = (row: number, date: string) =>
-  screen.getAllByRole('button').filter((button) => {
-    const label = button.getAttribute('aria-label') ?? '';
-    return label.includes(calendar.rows[row]?.roomName ?? '') && label.includes(date);
-  })[0] as HTMLElement;
-
 describe('RateCalendarGrid', () => {
-  it('lays rooms and plans down the side and dates across the top', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('lays the nights out across and the room-plan pairs down', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
     expect(screen.getByRole('rowheader', { name: /Deluxe Room/ })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: /Deluxe Family Room/ })).toBeInTheDocument();
-    expect(screen.getAllByRole('columnheader')).toHaveLength(calendar.dates.length + 1);
+    expect(screen.getByRole('rowheader', { name: /Premier Suite/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader')).toHaveLength(4);
   });
 
-  it('shows rate, on sale, sold and left in a loaded cell', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('shows rate, allotment, sold and remaining for a loaded night', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
-    const target = cellAt(0, '2099-06-01');
-    expect(target).toHaveTextContent('₹6,800');
-    expect(target).toHaveTextContent('4 on sale');
-    expect(target).toHaveTextContent('1 sold · 3 left');
+    expect(screen.getByText(/Deluxe Room, Room Only, 2099-06-01: 6800 rupees/)).toHaveTextContent(
+      '4 on sale, 1 sold, 3 left',
+    );
   });
 
-  it('marks an unloaded night as nothing rather than a zero rate', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('says nothing is loaded rather than showing a zero rate', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
-    expect(cellAt(1, '2099-06-01')).toHaveTextContent('—');
-    expect(cellAt(1, '2099-06-01')).not.toHaveTextContent('₹0');
+    expect(
+      screen.getByText('Premier Suite, Room Only, 2099-06-01: nothing loaded'),
+    ).toBeInTheDocument();
   });
 
-  it('shows the restrictions staff set on the cell itself', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('marks a night that a daily save has overridden', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
-    // Minimum stay of three, closed to arrival.
-    expect(cellAt(0, '2099-06-03')).toHaveTextContent('3+ A');
+    expect(screen.getByText(/Premier Suite, Room Only, 2099-06-02:/)).toHaveTextContent(
+      'set daily',
+    );
+    // and the night beside it, written by a monthly save, is not marked
+    expect(screen.getByText(/Premier Suite, Room Only, 2099-06-03:/)).not.toHaveTextContent(
+      'set daily',
+    );
   });
 
-  it('colours a sold-out night differently from one with room left', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('reports a stop-sold night as such', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
-    expect(cellAt(0, '2099-06-02').className).toContain('bg-red-50');
-    expect(cellAt(0, '2099-06-01').className).not.toContain('bg-red-50');
+    expect(screen.getByText(/Deluxe Room, Room Only, 2099-06-03:/)).toHaveTextContent('stop sell');
   });
 
-  it('selects a single night on click', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
+  it('is read-only — rates are set on the Monthly and Daily screens', () => {
+    render(<RateCalendarGrid calendar={calendar} />);
 
-    fireEvent.click(cellAt(0, '2099-06-01'));
-
-    expect(cellAt(0, '2099-06-01')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('1 night selected')).toBeInTheDocument();
-  });
-
-  it('takes the block between two cells on shift-click', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
-
-    fireEvent.click(cellAt(0, '2099-06-01'));
-    fireEvent.click(cellAt(1, '2099-06-03'), { shiftKey: true });
-
-    // Two rows by three dates.
-    expect(screen.getByText('6 nights selected')).toBeInTheDocument();
-    expect(cellAt(1, '2099-06-02')).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('starts a fresh selection on a plain click after a block', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit />);
-
-    fireEvent.click(cellAt(0, '2099-06-01'));
-    fireEvent.click(cellAt(1, '2099-06-03'), { shiftKey: true });
-    fireEvent.click(cellAt(1, '2099-06-02'));
-
-    expect(screen.getByText('1 night selected')).toBeInTheDocument();
-    expect(cellAt(0, '2099-06-01')).toHaveAttribute('aria-pressed', 'false');
-  });
-
-  it('posts every selected row and date to the edit action', () => {
-    const { container } = render(<RateCalendarGrid calendar={calendar} canEdit />);
-
-    fireEvent.click(cellAt(0, '2099-06-01'));
-    fireEvent.click(cellAt(1, '2099-06-02'), { shiftKey: true });
-
-    const hidden = Array.from(container.querySelectorAll('input[type="hidden"]'));
-    const rows = hidden
-      .filter((i) => i.getAttribute('name') === 'rows')
-      .map((i) => i.getAttribute('value'));
-    const dates = hidden
-      .filter((i) => i.getAttribute('name') === 'dates')
-      .map((i) => i.getAttribute('value'));
-
-    expect(rows).toEqual(['room-deluxe:plan-deluxe-ep', 'room-family:plan-family-ep']);
-    expect(dates).toEqual(['2099-06-01', '2099-06-02']);
-  });
-
-  it('offers no editing at all to someone who may only read', () => {
-    render(<RateCalendarGrid calendar={calendar} canEdit={false} />);
-
-    fireEvent.click(cellAt(0, '2099-06-01'));
-
-    expect(screen.queryByText(/night selected/)).not.toBeInTheDocument();
-    expect(cellAt(0, '2099-06-01')).toBeDisabled();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 });

@@ -1,5 +1,5 @@
-import { CopyToolsPanel } from '@/components/admin/copy-tools-panel';
 import { RateCalendarGrid } from '@/components/admin/rate-calendar-grid';
+import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
@@ -32,7 +32,6 @@ export default async function RatesPage({
   const { hotel: hotelParam, from: fromParam, days: daysParam } = await searchParams;
   const today = todayUtc();
   const view = parseCalendarView(daysParam);
-  const canEdit = can(viewer, 'rates:write');
 
   // A Hotel user sees only their own properties, so the picker cannot offer a
   // property whose calendar they would then be refused.
@@ -81,6 +80,7 @@ export default async function RatesPage({
           What this website may sell direct. Rooms on sale is the allotment held back from STAAH —
           anything left on sale in both places can be sold twice.
         </p>
+        <RatesTabs active="/admin/rates" />
       </div>
 
       <div className="mt-5 min-h-0 flex-1 space-y-8 overflow-y-auto pr-1">
@@ -182,7 +182,7 @@ export default async function RatesPage({
 
           <div className="mt-3">
             {calendar && calendar.rows.length > 0 ? (
-              <RateCalendarGrid calendar={calendar} canEdit={canEdit} />
+              <RateCalendarGrid calendar={calendar} />
             ) : (
               <p className="rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
                 This property has no active room types yet. Run <code>pnpm sync:rooms</code> or add
@@ -191,18 +191,6 @@ export default async function RatesPage({
             )}
           </div>
         </section>
-
-        {canEdit && calendar && (
-          <section className="max-w-4xl">
-            <p className="font-display text-lg text-forest">Copy tools</p>
-            <p className="mt-1 text-xs text-ink/50">
-              For patterns that repeat: a week across a season, or one room priced off another.
-            </p>
-            <div className="mt-3">
-              <CopyToolsPanel calendar={calendar} />
-            </div>
-          </section>
-        )}
 
         <section className="max-w-4xl pb-4">
           <p className="font-display text-lg text-forest">Change log</p>

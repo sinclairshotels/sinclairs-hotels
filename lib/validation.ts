@@ -153,110 +153,41 @@ export type BookingInput = z.infer<typeof bookingSchema>;
 const checkboxField = () =>
   z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean());
 
-// One /admin/rates submission writes rate + inventory across a date range
-// for a single room type, which is how staff actually think about a season.
-export const rateGridSchema = z.object({
-  hotelSlug: z.string().trim().min(1, 'Please select a hotel').max(60),
-  roomTypeId: z.string().trim().min(1, 'Please select a room type').max(40),
-  ratePlanId: z.string().trim().min(1, 'Please select a rate plan').max(40),
-  from: dateOnlyField('Please select a start date'),
-  to: dateOnlyField('Please select an end date'),
-  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
-  totalRooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500)),
-  closed: checkboxField(),
-  // 0 (Sunday) to 6. Empty means every night in the range — the common case,
-  // and what a form with no boxes ticked should mean rather than "no nights".
-  weekdays: z.preprocess(
-    (val) => (Array.isArray(val) ? val : val === undefined || val === null ? [] : [val]),
-    z.array(z.coerce.number().int().min(0).max(6)).max(7),
-  ),
-  // Staff see what a load would overwrite before it happens; the write only
-  // goes ahead on the second, confirmed submission.
-  confirmed: checkboxField(),
+// A month of a room's baseline: what every night in it is on sale at, and for
+// how much. Both are optional — filling one and leaving the other blank is how
+// staff change an allotment without touching the price.
+export const monthlyCellSchema = z.object({
+  roomTypeId: z.string().trim().min(1).max(40),
+  month: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}$/, 'Not a month'),
+  roomsOnSale: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
+  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000).optional()),
 });
 
-export type RateGridInput = z.infer<typeof rateGridSchema>;
-
-// How a bulk edit changes each field. "none" leaves it alone, which is what
-// makes one panel able to change only stop-sell across a season without
-// touching a single rate.
-const adjustMode = z.enum([
-  'none',
-  'set',
-  'increaseAmount',
-  'decreaseAmount',
-  'increasePercent',
-  'decreasePercent',
-]);
-const triState = z.enum(['none', 'on', 'off']);
-const optionalNumber = () => z.preprocess(emptyToUndefined, z.coerce.number().optional());
-
-export const rateEditSchema = z.object({
+export const monthlyRatesSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
-  // "roomTypeId:ratePlanId" pairs — the rows of the selected block.
-  rows: z.preprocess(
-    (val) => (Array.isArray(val) ? val : val === undefined || val === null ? [] : [val]),
-    z.array(z.string().trim().min(3).max(90)).min(1, 'Select at least one row').max(80),
-  ),
-  // An explicit selection. When empty the action falls back to from/to.
-  dates: z.preprocess(
-    (val) => (Array.isArray(val) ? val : val === undefined || val === null ? [] : [val]),
-    z
-      .array(
-        z
-          .string()
-          .trim()
-          .regex(/^\d{4}-\d{2}-\d{2}$/),
-      )
-      .max(400),
-  ),
-  from: z.string().trim().max(10).optional().or(z.literal('')),
-  to: z.string().trim().max(10).optional().or(z.literal('')),
-  weekdays: z.preprocess(
-    (val) => (Array.isArray(val) ? val : val === undefined || val === null ? [] : [val]),
-    z.array(z.coerce.number().int().min(0).max(6)).max(7),
-  ),
-
-  rateMode: adjustMode,
-  rateValue: optionalNumber(),
-  roomsMode: z.enum(['none', 'set']),
-  roomsValue: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
-  stopSell: triState,
-  minStayMode: z.enum(['none', 'set', 'clear']),
-  minStayValue: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(30).optional()),
-  closedToArrival: triState,
-  closedToDeparture: triState,
-
+  // One JSON blob rather than parallel arrays: a table of 12 months by up to a
+  // dozen rooms is 288 inputs, and matching them back up by index is how a
+  // silently mismatched row gets written to the wrong month.
+  cells: z.string().min(2).max(200_000),
+  // What to do about dates a daily save has already overridden. Nothing is
+  // written until staff have answered this, which is why it has no default.
+  overrides: z.enum(['keep', 'replace']),
   confirmed: checkboxField(),
 });
 
-export type RateEditInput = z.infer<typeof rateEditSchema>;
+export type MonthlyRatesInput = z.infer<typeof monthlyRatesSchema>;
+export type MonthlyCellInput = z.infer<typeof monthlyCellSchema>;
 
-// Copies one week of loaded values forward across a range, so a pattern set
-// once ("weekends cost more") does not have to be re-entered per week.
-export const copyWeekSchema = z.object({
+// One night, overriding whatever the month laid down.
+export const dailyRateSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
   roomTypeId: z.string().trim().min(1).max(40),
-  ratePlanId: z.string().trim().min(1).max(40),
-  sourceWeekStart: dateOnlyField('Pick the week to copy from'),
-  targetFrom: dateOnlyField('Pick where to start copying'),
-  targetTo: dateOnlyField('Pick where to stop copying'),
-  confirmed: checkboxField(),
+  date: dateOnlyField('Pick a date'),
+  roomsOnSale: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
+  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000).optional()),
 });
 
-export type CopyWeekInput = z.infer<typeof copyWeekSchema>;
-
-// Copies one room type's prices onto another, optionally at a difference —
-// "the suite is always two thousand more than the deluxe".
-export const copyRoomSchema = z.object({
-  hotelSlug: z.string().trim().min(1).max(60),
-  sourceRatePlanId: z.string().trim().min(1).max(40),
-  targetRatePlanId: z.string().trim().min(1).max(40),
-  from: dateOnlyField('Pick a start date'),
-  to: dateOnlyField('Pick an end date'),
-  differenceMode: z.enum(['same', 'amount', 'percent']),
-  differenceValue: optionalNumber(),
-  confirmed: checkboxField(),
-});
-
-export type CopyRoomInput = z.infer<typeof copyRoomSchema>;
+export type DailyRateInput = z.infer<typeof dailyRateSchema>;

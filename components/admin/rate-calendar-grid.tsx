@@ -1,19 +1,4 @@
-'use client';
-
 import type { CalendarCell, CalendarRow, RateCalendar } from '@/lib/rate-calendar';
-import { useMemo, useState } from 'react';
-import { RateEditPanel } from './rate-edit-panel';
-
-export interface Selection {
-  rowFrom: number;
-  rowTo: number;
-  colFrom: number;
-  colTo: number;
-}
-
-function normalise(a: number, b: number): [number, number] {
-  return a <= b ? [a, b] : [b, a];
-}
 
 function dayLabel(iso: string) {
   const date = new Date(`${iso}T00:00:00.000Z`);
@@ -48,44 +33,10 @@ function restrictionMarks(cell: CalendarCell): string {
   return marks.join(' ');
 }
 
-export function RateCalendarGrid({
-  calendar,
-  canEdit,
-}: {
-  calendar: RateCalendar;
-  canEdit: boolean;
-}) {
-  const [selection, setSelection] = useState<Selection | null>(null);
-  const [anchor, setAnchor] = useState<{ row: number; col: number } | null>(null);
-
-  const handleClick = (row: number, col: number, shiftKey: boolean) => {
-    if (!canEdit) return;
-
-    if (shiftKey && anchor) {
-      const [rowFrom, rowTo] = normalise(anchor.row, row);
-      const [colFrom, colTo] = normalise(anchor.col, col);
-      setSelection({ rowFrom, rowTo, colFrom, colTo });
-      return;
-    }
-
-    setAnchor({ row, col });
-    setSelection({ rowFrom: row, rowTo: row, colFrom: col, colTo: col });
-  };
-
-  const isSelected = (row: number, col: number) =>
-    selection !== null &&
-    row >= selection.rowFrom &&
-    row <= selection.rowTo &&
-    col >= selection.colFrom &&
-    col <= selection.colTo;
-
-  const selected = useMemo(() => {
-    if (!selection) return null;
-    const rows = calendar.rows.slice(selection.rowFrom, selection.rowTo + 1);
-    const dates = calendar.dates.slice(selection.colFrom, selection.colTo + 1);
-    return { rows, dates };
-  }, [selection, calendar]);
-
+// Read-only on purpose: rates are set on the Monthly and Daily screens, and a
+// grid that both displays a year and edits it was the thing that made the old
+// panel hard to reason about. A server component, so no hydration at all.
+export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
   return (
     <>
       <div className="max-h-[60vh] overflow-auto rounded-lg border border-ink/10 bg-white">
@@ -125,7 +76,7 @@ export function RateCalendarGrid({
             </tr>
           </thead>
           <tbody>
-            {calendar.rows.map((row, rowIndex) => (
+            {calendar.rows.map((row) => (
               <tr key={`${row.roomTypeId}:${row.ratePlanId}`} className="border-b border-ink/5">
                 <th
                   scope="row"
@@ -134,15 +85,9 @@ export function RateCalendarGrid({
                   {row.roomName}
                   <span className="block text-xs font-normal text-ink/50">{row.ratePlanName}</span>
                 </th>
-                {row.cells.map((cell, colIndex) => (
+                {row.cells.map((cell) => (
                   <td key={cell.date} className="p-0.5 align-top">
-                    <CellButton
-                      cell={cell}
-                      row={row}
-                      selected={isSelected(rowIndex, colIndex)}
-                      disabled={!canEdit}
-                      onSelect={(shiftKey) => handleClick(rowIndex, colIndex, shiftKey)}
-                    />
+                    <Cell cell={cell} row={row} />
                   </td>
                 ))}
               </tr>
@@ -153,11 +98,9 @@ export function RateCalendarGrid({
 
       <p className="mt-2 text-xs leading-relaxed text-ink/50">
         Each cell shows the nightly rate, then rooms on sale, sold and left. Colour is how much of
-        the allotment is still sellable.{' '}
-        <strong>
-          Click a night to select it, shift-click another to take the block between them
-        </strong>
-        , then edit them together.{' '}
+        the allotment is still sellable. A{' '}
+        <span className="rounded-sm bg-forest px-1 py-0.5 font-medium text-cream">•</span> marks a
+        night set on the Daily screen, which a monthly save leaves alone.{' '}
         <span className="whitespace-nowrap">
           <code className="text-ink/60">3+</code> is a minimum stay,
         </span>{' '}
@@ -165,63 +108,42 @@ export function RateCalendarGrid({
         <code className="text-ink/60">D</code> closed to departure. Gold columns are weekends;
         starred ones are holidays.
       </p>
-
-      {canEdit && selected && (
-        <div className="mt-4">
-          <RateEditPanel
-            hotelSlug={calendar.hotelSlug}
-            rows={selected.rows}
-            dates={selected.dates}
-            onClear={() => {
-              setSelection(null);
-              setAnchor(null);
-            }}
-          />
-        </div>
-      )}
     </>
   );
 }
 
-function CellButton({
-  cell,
-  row,
-  selected,
-  disabled,
-  onSelect,
-}: {
-  cell: CalendarCell;
-  row: CalendarRow;
-  selected: boolean;
-  disabled: boolean;
-  onSelect: (shiftKey: boolean) => void;
-}) {
+function Cell({ cell, row }: { cell: CalendarCell; row: CalendarRow }) {
   const unloaded = cell.rate === null && cell.onSale === 0;
   const marks = restrictionMarks(cell);
 
+  const description = unloaded
+    ? `${row.roomName}, ${row.ratePlanName}, ${cell.date}: nothing loaded`
+    : `${row.roomName}, ${row.ratePlanName}, ${cell.date}: ${
+        cell.rate === null ? 'no rate' : `${cell.rate} rupees`
+      }, ${cell.onSale} on sale, ${cell.sold} sold, ${cell.remaining} left${
+        cell.closed ? ', stop sell' : ''
+      }${cell.overridden ? ', set daily' : ''}`;
+
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={(event) => onSelect(event.shiftKey)}
-      className={`w-full rounded px-1.5 py-1.5 text-center transition ${cellTone(cell)} ${
-        selected ? 'ring-2 ring-forest ring-offset-1' : 'hover:ring-2 hover:ring-forest/30'
-      } ${disabled ? 'cursor-default' : ''}`}
-      aria-pressed={selected}
-      aria-label={
-        unloaded
-          ? `${row.roomName}, ${row.ratePlanName}, ${cell.date}: nothing loaded`
-          : `${row.roomName}, ${row.ratePlanName}, ${cell.date}: ${
-              cell.rate === null ? 'no rate' : `${cell.rate} rupees`
-            }, ${cell.onSale} on sale, ${cell.sold} sold, ${cell.remaining} left${
-              cell.closed ? ', stop sell' : ''
-            }`
-      }
+    <div
+      className={`relative w-full rounded px-1.5 py-1.5 text-center ${cellTone(cell)} ${
+        cell.overridden ? 'ring-1 ring-forest/40' : ''
+      }`}
+      title={description}
     >
+      <span className="sr-only">{description}</span>
+      {cell.overridden && (
+        <span
+          aria-hidden="true"
+          className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-forest"
+        />
+      )}
       {unloaded ? (
-        <span className="block py-2 text-xs">—</span>
+        <span className="block py-2 text-xs" aria-hidden="true">
+          —
+        </span>
       ) : (
-        <>
+        <div aria-hidden="true">
           <span className={`block text-xs font-medium ${cell.closed ? 'line-through' : ''}`}>
             {cell.rate === null ? '—' : `₹${cell.rate.toLocaleString('en-IN')}`}
           </span>
@@ -234,8 +156,8 @@ function CellButton({
               {marks}
             </span>
           )}
-        </>
+        </div>
       )}
-    </button>
+    </div>
   );
 }

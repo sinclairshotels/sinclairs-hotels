@@ -13,6 +13,9 @@ export interface CalendarCell {
   minStay: number | null;
   closedToArrival: boolean;
   closedToDeparture: boolean;
+  // A night a daily save has pinned. The monthly screen steps around these
+  // unless staff ask for them to be replaced, so the calendar marks them.
+  overridden: boolean;
 }
 
 export interface CalendarRow {
@@ -92,10 +95,10 @@ export async function rateCalendar({
     inventoryByRoom.set(row.roomTypeId, byNight);
   }
 
-  const priceByPlan = new Map<string, Map<string, number>>();
+  const priceByPlan = new Map<string, Map<string, (typeof prices)[number]>>();
   for (const row of prices) {
-    const byNight = priceByPlan.get(row.ratePlanId) ?? new Map<string, number>();
-    byNight.set(dateKey(row.date), row.amount.toNumber());
+    const byNight = priceByPlan.get(row.ratePlanId) ?? new Map<string, (typeof prices)[number]>();
+    byNight.set(dateKey(row.date), row);
     priceByPlan.set(row.ratePlanId, byNight);
   }
 
@@ -122,12 +125,13 @@ export async function rateCalendar({
         cells: dates.map((date) => {
           const key = dateKey(date);
           const row = inventoryByRoom.get(roomType.id)?.get(key);
+          const price = priceByPlan.get(plan.id)?.get(key);
           const sold = soldByRoom.get(roomType.id)?.get(key) ?? 0;
           const onSale = row?.roomsOnSale ?? 0;
 
           return {
             date: key,
-            rate: priceByPlan.get(plan.id)?.get(key) ?? null,
+            rate: price ? price.amount.toNumber() : null,
             onSale,
             sold,
             remaining: Math.max(0, onSale - sold),
@@ -135,6 +139,7 @@ export async function rateCalendar({
             minStay: row?.minStay ?? null,
             closedToArrival: row?.closedToArrival ?? false,
             closedToDeparture: row?.closedToDeparture ?? false,
+            overridden: row?.source === 'DAILY' || price?.source === 'DAILY',
           };
         }),
       });

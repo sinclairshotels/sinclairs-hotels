@@ -333,6 +333,14 @@ model RatePlan {
 
 // One row per room type per night: how many rooms this website may sell, and
 // the restrictions on selling them. Never per rate plan — see the note above.
+// Which screen wrote a night. A monthly save lays down a baseline across a
+// whole month; a daily save overrides one date and must survive the next
+// monthly save unless staff explicitly ask to replace their overrides.
+enum RateSource {
+  MONTHLY
+  DAILY
+}
+
 model RoomInventory {
   id         String   @id @default(cuid())
   roomTypeId String
@@ -351,7 +359,8 @@ model RoomInventory {
   closedToArrival   Boolean @default(false)
   closedToDeparture Boolean @default(false)
 
-  updatedAt DateTime @updatedAt
+  source    RateSource @default(MONTHLY)
+  updatedAt DateTime   @updatedAt
 
   @@unique([roomTypeId, date])
   @@index([hotelSlug, date])
@@ -364,9 +373,10 @@ model RatePrice {
   ratePlanId String
   ratePlan   RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
   hotelSlug  String
-  date       DateTime @db.Date
-  amount     Decimal  @db.Decimal(10, 2)
-  updatedAt  DateTime @updatedAt
+  date       DateTime   @db.Date
+  amount     Decimal    @db.Decimal(10, 2)
+  source     RateSource @default(MONTHLY)
+  updatedAt  DateTime   @updatedAt
 
   @@unique([ratePlanId, date])
   @@index([hotelSlug, date])
