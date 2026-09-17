@@ -106,7 +106,9 @@ export default async function BookHotelPage({
         </div>
       </section>
 
-      <section className="px-6">
+      {/* relative + z-10: the hero above is positioned, so it paints over a
+          statically-positioned sibling and slices the top off this card. */}
+      <section className="relative z-10 px-6">
         <div className="mx-auto -mt-8 max-w-5xl rounded-xl bg-white p-5 shadow-2xl sm:p-6">
           <BookingSearchForm
             hotels={hotels}
