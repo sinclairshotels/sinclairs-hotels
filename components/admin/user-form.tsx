@@ -74,7 +74,10 @@ export function UserForm({ properties }: { properties: Array<{ slug: string; nam
 
       <div>
         <span className="text-xs uppercase tracking-wider text-ink/60">Role</span>
-        <div className="mt-1">
+        {/* .input draws the box: SelectTrigger is deliberately border-0 and
+            transparent so the booking card can sit it inside its own cell, so
+            every other caller has to supply one — see voucher-form. */}
+        <div className="input mt-1">
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger />
             <SelectContent>

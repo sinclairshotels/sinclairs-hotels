@@ -60,7 +60,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   return (
     <div className="rounded-lg border border-ink/10 bg-white p-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Property">
+        <Field label="Property" boxed>
           <Select
             value={hotelSlug}
             onValueChange={(value) => {
@@ -81,7 +81,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
           </Select>
         </Field>
 
-        <Field label="Room">
+        <Field label="Room" boxed>
           <Select value={selectedRoom?.roomTypeId ?? ''} onValueChange={change(setRoomTypeId)}>
             <SelectTrigger />
             <SelectContent>
@@ -94,7 +94,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
           </Select>
         </Field>
 
-        <Field label="Date">
+        <Field label="Date" boxed>
           <DatePicker
             value={date}
             onChange={change(setDate)}
@@ -164,11 +164,18 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// `boxed` draws the .input border around the control. Opt-in rather than
+// always-on because this also wraps plain <input className="input"> elements,
+// which would then sit in a box inside a box.
+function Field({
+  label,
+  boxed = false,
+  children,
+}: { label: string; boxed?: boolean; children: React.ReactNode }) {
   return (
     <div>
       <span className="block text-xs uppercase tracking-wider text-ink/60">{label}</span>
-      <div className="mt-1">{children}</div>
+      <div className={boxed ? 'input mt-1' : 'mt-1'}>{children}</div>
     </div>
   );
 }
