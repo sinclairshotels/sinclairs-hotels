@@ -153,8 +153,11 @@ function NumberSelect({
       <SelectTrigger />
       <SelectContent>
         {options.map((option) => (
+          // String, not the number: Radix reads the item's children to render
+          // the trigger's value, and a bare 0 is falsy — "Children: 0" came
+          // out as an empty box.
           <SelectItem key={option} value={String(option)}>
-            {option}
+            {String(option)}
           </SelectItem>
         ))}
       </SelectContent>
