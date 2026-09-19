@@ -21,66 +21,66 @@ enum EnquiryType {
 }
 
 model Enquiry {
-  id            String        @id @default(cuid())
-  name          String
-  email         String
-  phone         String
-  property      String
-  type          EnquiryType   @default(GENERAL)
-  checkIn       DateTime?
-  checkOut      DateTime?
-  guests        Int?
-  message       String
-  status        EnquiryStatus @default(NEW)
-  userIp        String?
-  legacyTicket  String?       @unique
-  createdAt     DateTime      @default(now())
+  id           String        @id @default(cuid())
+  name         String
+  email        String
+  phone        String
+  property     String
+  type         EnquiryType   @default(GENERAL)
+  checkIn      DateTime?
+  checkOut     DateTime?
+  guests       Int?
+  message      String
+  status       EnquiryStatus @default(NEW)
+  userIp       String?
+  legacyTicket String?       @unique
+  createdAt    DateTime      @default(now())
 
   @@index([createdAt])
   @@index([property])
 }
 
 model Voucher {
-  id                  String    @id @default(cuid())
-  voucherNo           Int       @unique @default(autoincrement())
-  viewToken           String    @unique
+  id        String @id @default(cuid())
+  voucherNo Int    @unique @default(autoincrement())
+  viewToken String @unique
 
-  hotelSlug           String
+  hotelSlug String
 
-  guestName           String
-  guestPhone          String
-  guestEmail          String
-  billingAddress      String
+  guestName      String
+  guestPhone     String
+  guestEmail     String
+  billingAddress String
 
-  travelAgentName     String?
-  travelAgentPan      String?
-  travelAgentGstin    String?
-  travelAgentState    String?
-  commissionPct       Decimal?  @db.Decimal(5, 2)
-  tdsPct              Decimal?  @db.Decimal(5, 2)
+  travelAgentName  String?
+  travelAgentPan   String?
+  travelAgentGstin String?
+  travelAgentState String?
+  commissionPct    Decimal? @db.Decimal(5, 2)
+  tdsPct           Decimal? @db.Decimal(5, 2)
 
-  rooms               Int
-  checkIn             DateTime
-  checkOut            DateTime
-  rate                Decimal   @db.Decimal(10, 2)
-  taxes               Decimal   @db.Decimal(10, 2)
+  rooms    Int
+  checkIn  DateTime
+  checkOut DateTime
+  rate     Decimal  @db.Decimal(10, 2)
+  taxes    Decimal  @db.Decimal(10, 2)
 
-  depositAmount       Decimal?  @db.Decimal(10, 2)
-  depositReceiptNo    String?
-  depositReceiptDate  DateTime?
+  depositAmount      Decimal?  @db.Decimal(10, 2)
+  depositReceiptNo   String?
+  depositReceiptDate DateTime?
 
   billingInstructions String?
   arrivalDetails      String?
   otherServices       String?
   specialInstructions String?
 
-  issuerName          String
-  issuerPhone         String
-  bookingOffice       String
+  issuerName    String
+  issuerPhone   String
+  bookingOffice String
 
-  legacyId            Int?      @unique
+  legacyId Int? @unique
 
-  createdAt           DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([hotelSlug])
   @@index([createdAt])
@@ -140,10 +140,14 @@ model Payment {
   // value: those predate this gateway and have to be settled with the bank.
   legacySource   String?
   userIp         String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  refunds        Refund[]
+  refunds Refund[]
+  // Set when this payment was taken for a direct booking rather than from
+  // the standalone /ipay page — the link PLAN.md flags as missing for
+  // voucher/payment reconciliation, now present for bookings at least.
+  booking Booking?
 
   @@index([hotelSlug])
   @@index([createdAt])
@@ -174,4 +178,338 @@ model Refund {
   createdAt       DateTime     @default(now())
 
   @@index([paymentId])
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  PAYMENT_FAILED
+  CANCELLED
+  // Paid for, but the room was gone by the time the gateway's callback
+  // arrived — see app/api/ipay/callback/route.ts. Holds no inventory and
+  // owes the guest their money back; staff settle it from /admin/payments.
+  REFUND_DUE
+}
+
+// A direct booking made on this site, as opposed to one that came through
+// STAAH or an OTA. Inventory is only ever released against RoomRate.totalRooms,
+// so whatever is loaded there must be an allotment held back from STAAH —
+// this app cannot see STAAH's own sales (see PLAN.md → STAAH integration).
+//
+// Created PENDING_PAYMENT before the guest is redirected to ICICI and moved
+// to CONFIRMED only from the gateway's own signed callback, never from a
+// redirect query param — same trust boundary as Payment. A PENDING_PAYMENT
+// row holds its rooms for HOLD_MINUTES (lib/booking.ts) so a guest mid-payment
+// can't be oversold, then stops counting on its own; nothing has to sweep it.
+model Booking {
+  id        String @id @default(cuid())
+  // Guest-facing, quotable over the phone. viewToken is the unguessable
+  // half: /booking/<token> is reachable without a login, so the reference
+  // must never be enough to open someone else's booking.
+  reference String @unique
+  viewToken String @unique
+
+  hotelSlug  String
+  // The room type this booking consumes. Nullable only so the migration can
+  // backfill it; roomName stays as the durable snapshot of what was sold, so
+  // history still reads correctly if a room type is later renamed or removed.
+  roomTypeId String?
+  roomType   RoomType? @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+  ratePlanId String?
+  ratePlan   RatePlan? @relation(fields: [ratePlanId], references: [id], onDelete: SetNull)
+  roomName   String
+  checkIn    DateTime  @db.Date
+  checkOut   DateTime  @db.Date
+  rooms      Int
+  adults     Int
+  children   Int       @default(0)
+  // Snapshots, like roomName: what was sold, readable long after a rate plan
+  // is renamed or a room retired.
+  planName        String?
+  // How many guests this booking includes breakfast for. Zero on Room Only.
+  breakfastGuests Int    @default(0)
+
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  billingAddress  String
+  specialRequests String?
+
+  // Priced once, at booking time, from the RoomRate rows for each night —
+  // stored rather than recomputed so a later tariff edit never changes what
+  // a guest already agreed to pay.
+  roomTotal Decimal @db.Decimal(10, 2)
+  taxTotal  Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
+  status BookingStatus @default(PENDING_PAYMENT)
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  userIp    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hotelSlug, checkIn])
+  @@index([roomTypeId, checkIn])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Inventory and rates
+//
+// Replaces the old single RoomRate row, which carried rate and inventory
+// together. That works only while every room has one price. With rate plans
+// (EP/CP/MAP/AP) it breaks, because a room is sold once whatever meal plan it
+// was sold on — so inventory belongs to the room type and price belongs to the
+// rate plan. Fusing them would let one room be sold four times.
+// ---------------------------------------------------------------------------
+
+// The operational half of a room type. The marketing half — description,
+// photos, the copy on the hotel page — stays in content/hotels/*.ts, and
+// contentKey is what joins the two. Staff edit occupancy and charges here
+// without a deploy; nobody edits room photography from a form.
+model RoomType {
+  id         String @id @default(cuid())
+  hotelSlug  String
+  // Matches RoomType.name in the content file. scripts/sync-room-types.ts
+  // keeps these in step; a room type whose key no longer matches any content
+  // room simply stops being offered rather than disappearing.
+  contentKey String
+  name       String
+  sortOrder  Int    @default(0)
+
+  baseOccupancy    Int     @default(2)
+  maxAdults        Int     @default(3)
+  maxChildren      Int     @default(2)
+  maxTotal         Int     @default(4)
+  extraAdultCharge Decimal @default(0) @db.Decimal(10, 2)
+  extraChildCharge Decimal @default(0) @db.Decimal(10, 2)
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratePlans RatePlan[]
+  inventory RoomInventory[]
+  bookings  Booking[]
+
+  @@unique([hotelSlug, contentKey])
+  @@index([hotelSlug])
+}
+
+// Only EP and CP are sold. MAP and AP stay in the enum rather than being
+// dropped: a value removed from a Postgres enum cannot be read back, and any
+// historical booking that named one would become unreadable. sync:rooms
+// creates neither, and deactivates any that exist.
+enum RatePlanCode {
+  EP
+  CP
+  MAP
+  AP
+}
+
+model RatePlan {
+  id                 String       @id @default(cuid())
+  hotelSlug          String
+  roomTypeId         String
+  roomType           RoomType     @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  code      RatePlanCode
+  name      String
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  prices   RatePrice[]
+  bookings Booking[]
+
+  @@unique([roomTypeId, code])
+  @@index([hotelSlug])
+}
+
+// One row per room type per night: how many rooms this website may sell, and
+// the restrictions on selling them. Never per rate plan — see the note above.
+// Which screen wrote a night. A monthly save lays down a baseline across a
+// whole month; a daily save overrides one date and must survive the next
+// monthly save unless staff explicitly ask to replace their overrides.
+enum RateSource {
+  MONTHLY
+  DAILY
+}
+
+model RoomInventory {
+  id         String   @id @default(cuid())
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  hotelSlug  String
+  date       DateTime @db.Date
+
+  // The allotment held back from STAAH. This app cannot see STAAH's sales, so
+  // anything counted here and also left on sale there is sold twice.
+  roomsOnSale       Int
+  // The room exists and is priced, but is off sale for this night. Distinct
+  // from roomsOnSale = 0, which reads as "sold out".
+  stopSell          Boolean @default(false)
+  // Minimum nights a stay must run to include this night. Null means none.
+  minStay           Int?
+  closedToArrival   Boolean @default(false)
+  closedToDeparture Boolean @default(false)
+
+  source    RateSource @default(MONTHLY)
+  updatedAt DateTime   @updatedAt
+
+  @@unique([roomTypeId, date])
+  @@index([hotelSlug, date])
+}
+
+// One row per rate plan per night. A night with no row is unpriced, which
+// means not bookable — never a night to guess a price for.
+model RatePrice {
+  id         String   @id @default(cuid())
+  ratePlanId String
+  ratePlan   RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+  hotelSlug  String
+  date       DateTime   @db.Date
+  amount     Decimal    @db.Decimal(10, 2)
+  source     RateSource @default(MONTHLY)
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([ratePlanId, date])
+  @@index([hotelSlug, date])
+}
+
+// Per-property operational settings. Keyed by slug rather than an id because
+// the hotel itself is still content — this table holds only what staff change.
+model HotelSettings {
+  hotelSlug String @id
+  // Per person per night. With Breakfast is Room Only plus this, times the
+  // room's base guests — there is no separate calendar of breakfast prices to
+  // keep in step, which is the whole point of storing one number.
+  breakfastSupplement Decimal  @default(0) @db.Decimal(10, 2)
+  updatedAt           DateTime @updatedAt
+}
+
+// GST on accommodation, per room per night against that night's rate. A
+// booking stores the tax it was priced with, so changing these never alters
+// what a guest has already agreed to pay.
+model TaxSetting {
+  id            String   @id @default(cuid())
+  // Nights at or below this are taxed at lowRate; above it, highRate. The
+  // threshold is inclusive.
+  threshold     Decimal  @db.Decimal(10, 2)
+  lowRate       Decimal  @db.Decimal(5, 4)
+  highRate      Decimal  @db.Decimal(5, 4)
+  effectiveFrom DateTime @db.Date
+  updatedAt     DateTime @updatedAt
+
+  @@index([effectiveFrom])
+}
+
+// Shaded in the rates calendar alongside weekends. hotelSlug null means the
+// date applies to every property; a regional holiday sets one.
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  name      String
+  hotelSlug String?
+
+  @@unique([date, hotelSlug])
+  @@index([date])
+}
+
+// ---------------------------------------------------------------------------
+// Staff accounts
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  REVENUE
+  RESERVATIONS
+  HOTEL
+  VIEWER
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  role         UserRole
+  // Null until the user sets one on first sign-in. A null hash can never
+  // match, so an un-set account cannot be signed into by guessing.
+  passwordHash String?
+  // Cleared once they choose their own password.
+  setupToken   String?   @unique
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  hotels      UserHotel[]
+  sessions    Session[]
+  auditEvents AuditEvent[]
+
+  @@index([role])
+}
+
+// Which properties a user may see and act on. No rows means every property —
+// the central team — which is why the check is "restricted to these" rather
+// than "allowed only these".
+model UserHotel {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotelSlug String
+
+  @@unique([userId, hotelSlug])
+  @@index([hotelSlug])
+}
+
+// Server-side sessions, so an account can be disabled or a session revoked
+// without waiting for a signed cookie to expire — which the previous
+// HMAC-only cookie could not do. The cookie carries a random token; only its
+// hash is stored, so a leaked database does not hand over live sessions.
+model Session {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Idle timeout is measured from here, the absolute cap from createdAt.
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  ip         String?
+  userAgent  String?
+
+  @@index([userId])
+  @@index([lastSeenAt])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+// One row per change staff make, across rates, inventory, setup and bookings.
+// Replaces RateChange, which only knew about rates and could only name the
+// shared login. actorLabel is stored alongside the FK so the log still reads
+// correctly after a user is deleted.
+model AuditEvent {
+  id          String   @id @default(cuid())
+  at          DateTime @default(now())
+  actorUserId String?
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorLabel  String
+  action      String
+  entity      String
+  entityId    String?
+  hotelSlug   String?
+  summary     String?
+  before      Json?
+  after       Json?
+  ip          String?
+
+  @@index([at])
+  @@index([entity, entityId])
+  @@index([hotelSlug, at])
+  @@index([actorUserId, at])
 }

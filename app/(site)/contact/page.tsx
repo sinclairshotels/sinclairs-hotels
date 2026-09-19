@@ -1,22 +1,9 @@
 import { ContactLink } from '@/components/contact-link';
-import { EmailText } from '@/components/email-text';
 import { hotels } from '@/content/hotels';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-
-const propertyEmails: Record<string, string> = {
-  burdwan: 'burdwan@sinclairshotels.com',
-  darjeeling: 'darjeeling@sinclairshotels.com',
-  dooars: 'dooars@sinclairshotels.com',
-  gangtok: 'gangtok@sinclairshotels.com',
-  kalimpong: 'kalimpong@sinclairshotels.com',
-  ooty: 'ooty@sinclairshotels.com',
-  'port-blair': 'portblair@sinclairshotels.com',
-  siliguri: 'siliguri@sinclairshotels.com',
-  udaipur: 'palace.udaipur@sinclairshotels.com',
-};
 
 export const metadata: Metadata = pageMetadata({
   title: 'Contact Us',
@@ -49,8 +36,8 @@ export default function ContactPage() {
             </div>
             <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">Contact Us</h1>
             <p className="mt-4 max-w-xl text-base text-cream/85">
-              Reach our reservations and sales teams, or connect directly with any of our nine
-              properties across India.
+              Reach our reservations team by phone, or send an enquiry and we&rsquo;ll come back to
+              you — whichever of our nine properties you have in mind.
             </p>
           </div>
         </div>
@@ -63,32 +50,35 @@ export default function ContactPage() {
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-xs uppercase tracking-wider text-ink/50">Toll Free</dt>
-                <dd className="mt-1">1800 120 267 000</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-ink/50">Reservations</dt>
                 <dd className="mt-1">
                   <ContactLink
-                    method="email"
-                    href="mailto:reservations@sinclairshotels.com"
+                    method="phone"
+                    href="tel:1800120267000"
                     ctaSource="contact_page_reservations"
-                    className="break-words hover:text-gold"
+                    className="hover:text-gold"
                   >
-                    <EmailText email="reservations@sinclairshotels.com" />
+                    1800 120 267 000
                   </ContactLink>
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wider text-ink/50">Sales</dt>
+                <dt className="text-xs uppercase tracking-wider text-ink/50">WhatsApp</dt>
                 <dd className="mt-1">
-                  <ContactLink
-                    method="email"
-                    href="mailto:sales@sinclairshotels.com"
-                    ctaSource="contact_page_sales"
-                    className="break-words hover:text-gold"
+                  <a
+                    href="https://wa.me/919257108784"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gold"
                   >
-                    <EmailText email="sales@sinclairshotels.com" />
-                  </ContactLink>
+                    +91 92571 08784
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-ink/50">Everything else</dt>
+                <dd className="mt-1 text-ink/70">
+                  Use the enquiry form and the right team will answer — it reaches reservations,
+                  sales and the property itself.
                 </dd>
               </div>
             </dl>
@@ -101,35 +91,40 @@ export default function ContactPage() {
           </div>
 
           <div className="rounded-lg border border-forest/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <h2 className="font-display text-xl text-forest">Property Contacts</h2>
+            <h2 className="font-display text-xl text-forest">Our Properties</h2>
             <ul className="mt-4 divide-y divide-forest/10 text-sm">
-              {hotels.map((hotel) => {
-                const email = propertyEmails[hotel.slug];
-                return (
-                  <li
-                    key={hotel.slug}
-                    className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-                  >
-                    <div>
-                      <p className="text-ink/90">{hotel.name}</p>
-                      <p className="text-xs text-ink/50">
-                        {hotel.location}, {hotel.state}
-                      </p>
-                    </div>
-                    {email && (
+              {hotels.map((hotel) => (
+                <li
+                  key={hotel.slug}
+                  className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                >
+                  <div>
+                    <p className="text-ink/90">{hotel.name}</p>
+                    <p className="text-xs text-ink/50">
+                      {hotel.location}, {hotel.state}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-4">
+                    {hotel.contact && (
                       <ContactLink
-                        method="email"
-                        href={`mailto:${email}`}
+                        method="phone"
+                        href={`tel:${hotel.contact.phone.replace(/\s/g, '')}`}
                         ctaSource="contact_page_property"
                         hotel={hotel.slug}
-                        className="shrink-0 break-words text-gold-dark hover:text-gold"
+                        className="text-ink/70 hover:text-gold"
                       >
-                        <EmailText email={email} />
+                        {hotel.contact.phone}
                       </ContactLink>
                     )}
-                  </li>
-                );
-              })}
+                    <Link
+                      href={`/enquiry?property=${hotel.slug}&type=hotel`}
+                      className="text-gold-dark hover:text-gold"
+                    >
+                      Enquire
+                    </Link>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

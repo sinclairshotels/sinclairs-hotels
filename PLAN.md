@@ -179,6 +179,10 @@ repo on 2026-09-10.
   by that transaction." Needs: a schema link, ICICI's Transaction Status +
   Settlement Summary/Details calls (both still deferred in
   `GO_LIVE_CHECKLIST.md` → i-Pay), and a reconciliation view in `/admin`.
+  *Updated 2026-09-16:* the booking engine's `Booking.paymentId` is exactly
+  that link for direct bookings, and `Payment.reservationNo` carries the
+  booking reference back the other way — so the gap is now specifically
+  `Voucher`'s, not payments in general.
 - **Legacy host decommission** — no work in this repo; blocked entirely on
   cutover (DNS + final catch-up import). The daily legacy sync script retires
   at the same moment.
@@ -215,6 +219,30 @@ repo on 2026-09-10.
   slotting it anywhere; do not treat it as a Phase 2 line item alongside a
   careers page.
 
+  **Partly overtaken by events (2026-09-16).** A direct booking engine now
+  exists — `/book`, with staff-managed rates and inventory on `/admin/rates`,
+  and payment through the existing i-Pay gateway (see CLAUDE.md → Booking
+  engine). It answers the "a guest cannot book online" half of the problem
+  without STAAH, and it links `Payment` to a real reservation via
+  `Booking.paymentId`. It does **not** answer the distribution half, and it
+  introduces the one thing STAAH exists to prevent: this app and STAAH can sell
+  the same room, because neither can see the other's inventory. The engine is
+  therefore safe only while `RoomRate.totalRooms` is an allotment deliberately
+  held back from STAAH.
+
+  What still needs scoping is consequently narrower than it was: either a real
+  two-way STAAH integration (its API becomes the source of truth and `RoomRate`
+  retires), or an explicit decision that direct and STAAH inventory stay
+  manually partitioned. That is still a commercial decision, not a ticket — but
+  it is now a decision about *reconciling* two booking paths rather than about
+  whether to have one at all.
+
+  Also note: every "Book Now" CTA on the site still points at STAAH. The new
+  engine is reachable at `/book` only, deliberately, so that a property with no
+  allotment loaded is not a dead end. Repointing those CTAs is the switch that
+  makes direct booking the default, and it should be thrown per-property, once
+  real allotments exist.
+
 ### Parked, deliberately
 
 - **AI integration** and **further visual redesign**. Position of record: refine
@@ -237,6 +265,58 @@ repo on 2026-09-10.
 Content pages (cheap, no dependencies) → offers/pricing → reconciliation →
 conversion dashboard → web check-in. Decommission slots in whenever cutover
 completes.
+
+## Back office — decisions log
+
+Decisions taken on the back-office build (`/admin`), recorded here because they
+are answers from people rather than facts recoverable from the code, and a
+chat thread is not somewhere they survive. Each one is settled unless a later
+entry supersedes it.
+
+**Phasing.** A0 (schema, staff accounts, roles) → A1 (Inventory & Rates) → A2
+(dashboard, bookings, STAAH sync queue) → B (Setup, cancellation policies,
+modify/cancel, manual bookings). One branch and one PR per phase.
+**Phase C is dropped** — Guests (Module 6) and Reports (Module 7) are out of
+scope, confirmed 17 Sep 2026. That removes the phase, not work from B.
+
+**Operating model.** The website sells its own allotment per hotel, room type
+and night; STAAH sells the rest. There is no STAAH integration — staff mirror
+website bookings into STAAH by hand, which is why `RoomInventory.roomsOnSale`
+has to be an allotment *held back* from STAAH rather than the room's true
+count.
+
+**Production data.** There are no live bookings and no rate rows in
+production (confirmed 17 Sep 2026), so **no backfill is needed** and the A0
+migration's data-preservation path never fires in practice. It stays in the
+migration because it cost nothing to write correctly and proves out on a
+scratch database; it is simply not load-bearing.
+
+**Holidays.** Staff enter the movable festivals themselves — Holi, Eid,
+Dussehra, Diwali, Guru Nanak Jayanti — and `content/holidays.ts` seeds only
+the fixed-date national holidays. Do not seed a guessed festival date: those
+are exactly the nights a property prices its peak season around, and a wrong
+column in shade invites a season to be loaded against it.
+
+**GST — the slab, confirmed by finance 17 Sep 2026.** Per room, per night,
+against that night's rate: **5% up to ₹7,500, 18% above**, effective
+**22 Sep 2025**, and editable thereafter. Three details, all confirmed, all
+worth a rupee or several:
+
+- **₹7,500 is inclusive** — a room at exactly ₹7,500 is taxed at 5%.
+- **Extra-adult and child charges count toward the ₹7,500 test.** On a ₹7,000
+  room with a ₹1,000 extra adult, the night is tested at ₹8,000 and taxed at
+  18%, not 5%.
+- **The threshold is tested night by night, never on the booking total.** A
+  stay priced ₹7,000 on weeknights and ₹9,000 at the weekend pays both rates
+  inside one booking; a six-room-night stay at ₹6,000 pays 5% throughout,
+  whatever it sums to.
+
+A booking stores the tax it was priced with, so moving the slab — now or when
+finance moves it again — only affects quotes made after the change and never
+re-prices a guest who has already agreed to pay. The screen that edits it is
+**Admin-only and writes an `AuditEvent`**: a typo there re-prices every future
+quote, which makes it a different kind of control from a rate edit. This lands
+in Phase B.
 
 ## Working agreement
 

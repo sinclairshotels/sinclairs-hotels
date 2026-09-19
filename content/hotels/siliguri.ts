@@ -63,6 +63,7 @@ export const siliguriHotel: Hotel = {
       name: 'The Palms',
       description:
         'Serves classic favourites in international and local cuisine, with soothing views of the poolside and gardens and a bar offering a variety of premium drinks. Multicuisine, casual dress code, open 7.30 AM to 10.30 PM.',
+      images: ['/images/hotels/siliguri/dining/Sinclairs-Siliguri-The-Palms-Restaurant.webp'],
     },
   ],
   gallery: [
@@ -140,7 +141,7 @@ export const siliguriHotel: Hotel = {
   contact: {
     address: 'P.O. Pradhan Nagar, Siliguri 734003, West Bengal, India',
     phone: '+91 97334 62777',
-    email: 'siliguri@sinclairshotels.com',
+    notificationEmail: 'siliguri@sinclairshotels.com',
   },
 };
 

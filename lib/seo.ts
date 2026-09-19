@@ -6,23 +6,35 @@ export function pageMetadata({
   description,
   path,
   image,
+  robots,
 }: {
   title: string;
   description: string;
   path: string;
   image?: string;
+  // Only for pages that exist but shouldn't be indexed — a live availability
+  // result, for instance, where the hotel's own page is the indexable one.
+  robots?: Metadata['robots'];
 }): Metadata {
   // No standalone social-share graphic exists yet, so pages without a more
   // specific image (a hotel's own heroImage) fall back to this real photo
   // rather than a placeholder.
   const ogImage = image ?? '/images/hotels/port-blair/destination/SinclairsBayviewAerielView.webp';
 
+  // The root layout appends the brand through a title template. A page whose own
+  // title already carries it — every hotel page, since the brand is part of the
+  // property's name — would otherwise read "Sinclairs Gangtok — Sinclairs", so
+  // those opt out of the template rather than say it twice.
+  const repeatsBrand = title.includes(siteConfig.shortName);
+  const fullTitle = repeatsBrand ? title : `${title} — ${siteConfig.shortName}`;
+
   return {
-    title,
+    title: repeatsBrand ? { absolute: title } : title,
     description,
     alternates: { canonical: path },
+    ...(robots ? { robots } : {}),
     openGraph: {
-      title,
+      title: fullTitle,
       description,
       url: `${siteConfig.url}${path}`,
       siteName: siteConfig.name,
@@ -34,7 +46,7 @@ export function pageMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: fullTitle,
       description,
       images: [ogImage],
     },

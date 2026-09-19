@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { prisma } from '../lib/db';
+import { ensureE2EAdmin } from '../test-utils/auth';
 
 // The admin/voucher tool only exists on the staff.* hostname (see proxy.ts) —
 // ".localhost" resolves to loopback in every major browser regardless of the
@@ -7,16 +8,22 @@ import { prisma } from '../lib/db';
 const STAFF_BASE_URL = 'http://staff.localhost:3000';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const E2E_ADMIN_EMAIL = 'e2e-admin@sinclairshotels.test';
 
 test.describe('voucher issuance (staff)', () => {
   test.skip(!ADMIN_PASSWORD, 'ADMIN_PASSWORD not set in this environment');
 
   test('staff can log in, issue a voucher, and the guest can view it', async ({ page }) => {
+    await ensureE2EAdmin(E2E_ADMIN_EMAIL, ADMIN_PASSWORD ?? '');
+
     await page.goto(`${STAFF_BASE_URL}/admin/login`);
+    await page.locator('#email').fill(E2E_ADMIN_EMAIL);
     await page.locator('#password').fill(ADMIN_PASSWORD ?? '');
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page).toHaveURL(/\/admin\/vouchers$/);
+    await expect(page).toHaveURL(/\/admin\/dashboard$/);
 
+    // Sign-in lands on the dashboard rather than Vouchers.
+    await page.goto(`${STAFF_BASE_URL}/admin/vouchers`);
     await page.getByRole('link', { name: 'New Voucher' }).click();
     await expect(page).toHaveURL(/\/admin\/vouchers\/new$/);
 

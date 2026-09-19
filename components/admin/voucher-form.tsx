@@ -45,50 +45,42 @@ export function VoucherForm({
         <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">Booking</legend>
         <Field label="Hotel" name="hotelSlug" error={fieldError('hotelSlug')}>
           <input type="hidden" name="hotelSlug" value={hotelSlug} />
-          <div className="input">
-            <Select value={hotelSlug} onValueChange={setHotelSlug}>
-              <SelectTrigger id="hotelSlug" placeholder="Select a hotel" />
-              <SelectContent>
-                {hotels.map((hotel) => (
-                  <SelectItem key={hotel.slug} value={hotel.slug}>
-                    {hotel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={hotelSlug} onValueChange={setHotelSlug}>
+            <SelectTrigger id="hotelSlug" placeholder="Select a hotel" />
+            <SelectContent>
+              {hotels.map((hotel) => (
+                <SelectItem key={hotel.slug} value={hotel.slug}>
+                  {hotel.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Booking Office" name="bookingOffice" error={fieldError('bookingOffice')}>
           <input type="hidden" name="bookingOffice" value={bookingOffice} />
-          <div className="input">
-            <Select value={bookingOffice} onValueChange={setBookingOffice}>
-              <SelectTrigger id="bookingOffice" placeholder="Select a booking office" />
-              <SelectContent>
-                {bookingOffices.map((office) => (
-                  <SelectItem key={office.name} value={office.name}>
-                    {office.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={bookingOffice} onValueChange={setBookingOffice}>
+            <SelectTrigger id="bookingOffice" placeholder="Select a booking office" />
+            <SelectContent>
+              {bookingOffices.map((office) => (
+                <SelectItem key={office.name} value={office.name}>
+                  {office.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Check-in" name="checkIn" error={fieldError('checkIn')}>
           <input type="hidden" name="checkIn" value={checkIn} />
-          <div className="input">
-            <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
-          </div>
+          <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
         </Field>
         <Field label="Check-out" name="checkOut" error={fieldError('checkOut')}>
           <input type="hidden" name="checkOut" value={checkOut} />
-          <div className="input">
-            <DatePicker
-              value={checkOut}
-              onChange={setCheckOut}
-              min={checkIn}
-              placeholder="Select date"
-            />
-          </div>
+          <DatePicker
+            value={checkOut}
+            onChange={setCheckOut}
+            min={checkIn}
+            placeholder="Select date"
+          />
         </Field>
         <Field label="No. of Rooms" name="rooms" error={fieldError('rooms')}>
           <input
@@ -200,13 +192,11 @@ export function VoucherForm({
         </Field>
         <Field label="Receipt Date" name="depositReceiptDate">
           <input type="hidden" name="depositReceiptDate" value={depositReceiptDate} />
-          <div className="input">
-            <DatePicker
-              value={depositReceiptDate}
-              onChange={setDepositReceiptDate}
-              placeholder="Select date"
-            />
-          </div>
+          <DatePicker
+            value={depositReceiptDate}
+            onChange={setDepositReceiptDate}
+            placeholder="Select date"
+          />
         </Field>
         <Field label="Billing Instructions" name="billingInstructions">
           <textarea

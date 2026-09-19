@@ -2,9 +2,9 @@
 
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { reservationUrl } from '@/content/site';
 import type { Hotel } from '@/content/types';
 import { hotelItem, pushEcommerceEvent } from '@/lib/analytics';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 function todayISO(offsetDays = 0): string {
@@ -14,6 +14,7 @@ function todayISO(offsetDays = 0): string {
 }
 
 export function BookingWidget({ hotels }: { hotels: Hotel[] }) {
+  const router = useRouter();
   const [property, setProperty] = useState(hotels[0]?.slug ?? '');
   const [checkIn, setCheckIn] = useState(todayISO(0));
   const [checkOut, setCheckOut] = useState(todayISO(1));
@@ -27,9 +28,16 @@ export function BookingWidget({ hotels }: { hotels: Hotel[] }) {
       { items: selected ? [hotelItem(selected.slug, selected.name)] : [] },
       { cta_source: 'homepage_widget', hotel: property },
     );
-    // Staah runs the actual reservation search end-to-end; property/dates/guests
-    // picked here are just for a familiar UI, guests re-select them on Staah.
-    window.open(reservationUrl, '_blank', 'noopener,noreferrer');
+    // What the guest picked here is the search — it carries straight into the
+    // engine's own results rather than being asked for a second time.
+    const query = new URLSearchParams({
+      checkIn,
+      checkOut,
+      rooms: '1',
+      adults: String(guests),
+      children: '0',
+    });
+    router.push(`/book/${property}?${query}`);
   }
 
   return (
@@ -41,7 +49,7 @@ export function BookingWidget({ hotels }: { hotels: Hotel[] }) {
         <span className="block text-xs uppercase tracking-wider text-ink/50">Select Property</span>
         <div className="mt-1">
           <Select value={property} onValueChange={setProperty}>
-            <SelectTrigger />
+            <SelectTrigger bare />
             <SelectContent>
               {hotels.map((hotel) => (
                 <SelectItem key={hotel.slug} value={hotel.slug}>
@@ -56,14 +64,14 @@ export function BookingWidget({ hotels }: { hotels: Hotel[] }) {
       <div className="px-4 py-2 sm:py-3">
         <span className="block text-xs uppercase tracking-wider text-ink/50">Check In</span>
         <div className="mt-1 w-full sm:w-32">
-          <DatePicker value={checkIn} onChange={setCheckIn} min={todayISO(0)} />
+          <DatePicker bare value={checkIn} onChange={setCheckIn} min={todayISO(0)} />
         </div>
       </div>
 
       <div className="px-4 py-2 sm:py-3">
         <span className="block text-xs uppercase tracking-wider text-ink/50">Check Out</span>
         <div className="mt-1 w-full sm:w-32">
-          <DatePicker value={checkOut} onChange={setCheckOut} min={checkIn} />
+          <DatePicker bare value={checkOut} onChange={setCheckOut} min={checkIn} />
         </div>
       </div>
 

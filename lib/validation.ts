@@ -105,3 +105,132 @@ export const refundSchema = z.object({
 });
 
 export type RefundInput = z.infer<typeof refundSchema>;
+
+const phoneField = (message = 'Please enter a valid phone number') =>
+  z
+    .string()
+    .trim()
+    .min(7, message)
+    .max(20)
+    .regex(/^[0-9+()\-\s]+$/, message);
+
+const dateOnlyField = (message: string) =>
+  z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, message);
+
+// The stay itself, shared by the availability page's query string and the
+// booking submission — both are guest-supplied and neither is trusted.
+// Whether the dates make sense relative to each other and to today is
+// checked against real rate rows in lib/availability.ts, not here.
+export const staySchema = z.object({
+  hotelSlug: z.string().trim().min(1, 'Please select a property').max(60),
+  checkIn: dateOnlyField('Please select a check-in date'),
+  checkOut: dateOnlyField('Please select a check-out date'),
+  rooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(5).catch(1)),
+  adults: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).catch(2)),
+  children: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(20).catch(0)),
+});
+
+export type StayInput = z.infer<typeof staySchema>;
+
+export const bookingSchema = staySchema.extend({
+  // Ids, not names: a room type can be renamed between the guest seeing it and
+  // submitting, and the booking must still land on the room they picked.
+  roomTypeId: z.string().trim().min(1, 'Please choose a room').max(40),
+  ratePlanId: z.string().trim().min(1, 'Please choose a rate').max(40),
+  guestName: z.string().trim().min(2, 'Please enter your full name').max(120),
+  guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
+  guestPhone: phoneField(),
+  billingAddress: z.string().trim().min(5, 'Please enter your address').max(500),
+  specialRequests: optionalTrimmed(1000),
+  company: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
+});
+
+export type BookingInput = z.infer<typeof bookingSchema>;
+
+const checkboxField = () =>
+  z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean());
+
+// A month of a room's baseline: what every night in it is on sale at, and for
+// how much. Both are optional — filling one and leaving the other blank is how
+// staff change an allotment without touching the price.
+export const monthlyCellSchema = z.object({
+  roomTypeId: z.string().trim().min(1).max(40),
+  month: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}$/, 'Not a month'),
+  roomsOnSale: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
+  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000).optional()),
+});
+
+export const monthlyRatesSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  // One JSON blob rather than parallel arrays: a table of 12 months by up to a
+  // dozen rooms is 288 inputs, and matching them back up by index is how a
+  // silently mismatched row gets written to the wrong month.
+  cells: z.string().min(2).max(200_000),
+  // What to do about dates a daily save has already overridden. Nothing is
+  // written until staff have answered this, which is why it has no default.
+  overrides: z.enum(['keep', 'replace']),
+  confirmed: checkboxField(),
+});
+
+export type MonthlyRatesInput = z.infer<typeof monthlyRatesSchema>;
+export type MonthlyCellInput = z.infer<typeof monthlyCellSchema>;
+
+// One night, overriding whatever the month laid down.
+export const dailyRateSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  roomTypeId: z.string().trim().min(1).max(40),
+  date: dateOnlyField('Pick a date'),
+  roomsOnSale: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
+  rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000).optional()),
+});
+
+export type DailyRateInput = z.infer<typeof dailyRateSchema>;
+
+// The Set-up screen: one hotel-wide field, plus a room's name and occupancy.
+export const hotelSetupSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  breakfastSupplement: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().min(0).max(100_000).default(0),
+  ),
+});
+
+export const roomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  roomTypeId: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(2, 'A room needs a name').max(80),
+  baseOccupancy: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(10)),
+  maxAdults: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(10)),
+  maxChildren: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10)),
+  extraAdultCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+  extraChildCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+});
+
+export const addRoomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  name: z.string().trim().min(2, 'A room needs a name').max(80),
+});
+
+export const deactivateRoomTypeSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  roomTypeId: z.string().trim().min(1).max(40),
+});
+
+// GST. Admin-only, and audited, because a typo here re-prices every quote
+// made after it.
+export const taxSettingSchema = z.object({
+  threshold: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000)),
+  lowRate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(100)),
+  highRate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(100)),
+  effectiveFrom: dateOnlyField('Pick the date it takes effect'),
+});
+
+export type HotelSetupInput = z.infer<typeof hotelSetupSchema>;
+export type RoomTypeInput = z.infer<typeof roomTypeSchema>;
+export type TaxSettingInput = z.infer<typeof taxSettingSchema>;

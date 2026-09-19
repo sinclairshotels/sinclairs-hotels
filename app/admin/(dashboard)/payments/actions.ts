@@ -2,7 +2,7 @@
 
 import crypto from 'node:crypto';
 import { getHotelBySlug } from '@/content/hotels';
-import { ADMIN_COOKIE_NAME, verifySessionCookieValue } from '@/lib/admin-auth';
+import { authorize } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { refundConfirmationHtml } from '@/lib/email-templates/refund-confirmation';
 import { callRefund, iciciConfig, isRefundAccepted } from '@/lib/icici';
@@ -34,10 +34,8 @@ export async function refundPayment(
   _prevState: RefundFormState,
   formData: FormData,
 ): Promise<RefundFormState> {
-  const authed = await verifySessionCookieValue((await cookies()).get(ADMIN_COOKIE_NAME)?.value);
-  if (!authed) {
-    return { status: 'error', message: 'Session expired, please sign in again.' };
-  }
+  const auth = await authorize('payments:refund');
+  if (!auth.ok) return { status: 'error', message: auth.message };
 
   const headerList = await headers();
   const ip = clientIp(headerList);

@@ -3,8 +3,10 @@ import type { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
 
 // Never belong in the index, on any host: the admin dashboard and its login,
-// the payment flow, and voucher pages addressed by a one-off token.
-const PRIVATE_PATHS = ['/admin', '/api', '/ipay', '/v'];
+// the payment flow, and voucher/booking pages addressed by a one-off token.
+// /book itself is crawlable — it is the public entry point — but everything
+// under it is a live availability result, which is not a page to index.
+const PRIVATE_PATHS = ['/admin', '/api', '/ipay', '/v', '/booking'];
 
 // Keyed on the requested host rather than on an env var, because this project
 // answers on several hostnames with the same build at once —

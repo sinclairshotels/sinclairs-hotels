@@ -1,9 +1,20 @@
 const WINDOW_MS = 60_000;
+
+// Suits the public, unauthenticated endpoints — an enquiry, a newsletter
+// signup, a payment — where a handful a minute from one address is already
+// more than a real person does.
 const MAX_REQUESTS_PER_WINDOW = 5;
+
+// Authenticated admin work is a different shape: loading a season is two
+// requests (preview, then confirm), so a signed-in member of staff editing
+// several seasons in a minute would lock themselves out of their own screen
+// at the public limit. Still bounded, because a stolen admin session should
+// not get an unmetered write loop.
+export const ADMIN_REQUESTS_PER_WINDOW = 30;
 
 const hits = new Map<string, number[]>();
 
-export function isRateLimited(key: string): boolean {
+export function isRateLimited(key: string, maxPerWindow = MAX_REQUESTS_PER_WINDOW): boolean {
   const now = Date.now();
   const timestamps = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
   timestamps.push(now);
@@ -16,7 +27,7 @@ export function isRateLimited(key: string): boolean {
     if (v.every((t) => now - t >= WINDOW_MS)) hits.delete(k);
   }
 
-  return timestamps.length > MAX_REQUESTS_PER_WINDOW;
+  return timestamps.length > maxPerWindow;
 }
 
 // Vercel's edge sets x-real-ip and x-forwarded-for from the actual

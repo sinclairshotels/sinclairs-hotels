@@ -1,13 +1,8 @@
-import { createSessionCookieValue } from '@/lib/admin-auth';
 import { prisma } from '@/lib/db';
 import { sendMail } from '@/lib/mail';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
 import { createVoucher } from './actions';
-
-// createSessionCookieValue() needs this set — locally it comes from .env.local
-// (loaded by vitest.config.ts), but CI has no such file, so this test must not
-// depend on the ambient environment for it.
-const originalAdminSecret = process.env.ADMIN_SESSION_SECRET;
 
 const mockState = vi.hoisted(() => ({
   cookieValue: undefined as string | undefined,
@@ -17,7 +12,7 @@ const mockState = vi.hoisted(() => ({
 vi.mock('next/headers', () => ({
   cookies: async () => ({
     get: (name: string) =>
-      name === 'admin_session' && mockState.cookieValue
+      name === 'staff_session' && mockState.cookieValue
         ? { value: mockState.cookieValue }
         : undefined,
   }),
@@ -59,9 +54,7 @@ function voucherFormData(overrides: Record<string, string> = {}): FormData {
 }
 
 describe('createVoucher', () => {
-  beforeAll(() => {
-    process.env.ADMIN_SESSION_SECRET = 'test-secret-do-not-use-in-production';
-  });
+  beforeAll(() => {});
 
   beforeEach(() => {
     mockState.cookieValue = undefined;
@@ -71,13 +64,6 @@ describe('createVoucher', () => {
 
   afterAll(async () => {
     await prisma.voucher.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
-
-    if (originalAdminSecret === undefined) {
-      // biome-ignore lint/performance/noDelete: process.env stringifies assignments; delete is required here
-      delete process.env.ADMIN_SESSION_SECRET;
-    } else {
-      process.env.ADMIN_SESSION_SECRET = originalAdminSecret;
-    }
   });
 
   it('rejects an unauthenticated request without creating a row', async () => {
@@ -89,13 +75,13 @@ describe('createVoucher', () => {
     );
 
     expect(result.status).toBe('error');
-    expect(result.message).toMatch(/session expired/i);
+    expect(result.message).toMatch(/session has ended/i);
     expect(await prisma.voucher.count()).toBe(before);
     expect(sendMail).not.toHaveBeenCalled();
   });
 
   it('rejects invalid input with field errors and does not create a row', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
     const before = await prisma.voucher.count();
 
     const result = await createVoucher(
@@ -110,7 +96,7 @@ describe('createVoucher', () => {
   });
 
   it('creates a voucher row and emails the guest and office copies', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
     const guestEmail = `created-${Math.random()}@${TEST_EMAIL_DOMAIN}`;
 
     const result = await createVoucher({ status: 'idle' }, voucherFormData({ guestEmail }));
@@ -131,7 +117,7 @@ describe('createVoucher', () => {
   });
 
   it('rate-limits repeated submissions from the same IP', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
     mockState.ip = `actions-test-rate-limit-${Math.random()}`;
 
     const attempts = await Promise.all(
