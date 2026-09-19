@@ -100,8 +100,11 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
 
           {hotel?.contact && (
             <p className="mt-8 border-t border-ink/10 pt-6 text-xs leading-relaxed text-ink/60">
-              Need to change something? Call {hotel.name} on {hotel.contact.phone} or email{' '}
-              {hotel.contact.email}, quoting {booking.reference}.
+              Need to change something? Call {hotel.name} on {hotel.contact.phone}, or{' '}
+              <Link href="/enquiry" className="underline hover:text-forest">
+                send us an enquiry
+              </Link>
+              , quoting {booking.reference}.
             </p>
           )}
 

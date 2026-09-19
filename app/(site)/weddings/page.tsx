@@ -1,5 +1,6 @@
 import { ClosingCta } from '@/components/closing-cta';
 import { HeroCarousel } from '@/components/hero-carousel';
+import { SectionHeading } from '@/components/section-heading';
 import {
   CakeIcon,
   CameraIcon,
@@ -8,9 +9,11 @@ import {
   HeartIcon,
   MusicIcon,
 } from '@/components/service-icons';
+import { VenueDirectory } from '@/components/venue-directory';
 import { WeddingVenueCard } from '@/components/wedding-venue-card';
 import { hotels } from '@/content/hotels';
 import { pageMetadata } from '@/lib/seo';
+import { totalEventSpaces, venuesByHotel } from '@/lib/venues';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
@@ -76,7 +79,7 @@ const services = [
 ];
 
 const weddingHotels = hotels.filter((hotel) => hotel.weddings);
-const totalVenues = hotels.reduce((sum, h) => sum + (h.eventSpaces?.venues.length ?? 0), 0);
+const totalVenues = totalEventSpaces(hotels);
 const totalSqFt = hotels.reduce((sum, h) => sum + (h.eventSpaces?.totalSqFt ?? 0), 0);
 const largestCapacity = Math.max(...hotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
 
@@ -156,11 +159,12 @@ export default function WeddingsPage() {
 
       <section className="border-y border-forest/10 bg-white py-12">
         <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-center font-display text-2xl text-forest">Wedding Destinations</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-ink/70">
-            From Himalayan hilltops to a Rajasthani palace to an oceanfront in the Andamans — nine
-            settings, each with its own character.
-          </p>
+          <SectionHeading
+            align="center"
+            eyebrow="Where"
+            title="Wedding Destinations"
+            lede="From Himalayan hilltops to a Rajasthani palace to an oceanfront in the Andamans — nine settings, each with its own character."
+          />
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {weddingHotels.map((hotel) => (
               <WeddingVenueCard key={hotel.slug} hotel={hotel} />
@@ -169,9 +173,23 @@ export default function WeddingsPage() {
         </div>
       </section>
 
+      <section className="py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <SectionHeading
+            align="center"
+            eyebrow="Every Room, Every Property"
+            title="All Our Venues"
+            lede="The full list, so you can find the one room that seats your guest list without opening nine pages."
+          />
+          <div className="mt-10">
+            <VenueDirectory groups={venuesByHotel(hotels)} />
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <h2 className="text-center font-display text-2xl text-forest">Wedding Events</h2>
-        <p className="mx-auto mt-4 max-w-3xl text-center text-sm leading-loose text-ink/70">
+        <SectionHeading align="center" title="Wedding Events" />
+        <p className="mx-auto mt-6 max-w-3xl text-center text-sm leading-loose text-ink/70">
           {occasions.map((occasion, i) => (
             <span key={occasion}>
               {occasion}
@@ -180,8 +198,8 @@ export default function WeddingsPage() {
           ))}
         </p>
 
-        <h2 className="mt-14 text-center font-display text-2xl text-forest">Our Services</h2>
-        <div className="mx-auto mt-6 grid max-w-2xl grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+        <SectionHeading align="center" className="mt-14" title="Our Services" />
+        <div className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
           {services.map((service) => (
             <div key={service.label} className="flex items-center gap-2.5">
               <service.icon className="h-5 w-5 shrink-0 stroke-current fill-none stroke-2 text-gold" />

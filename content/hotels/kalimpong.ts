@@ -242,7 +242,7 @@ export const kalimpongHotel: Hotel = {
     venues: [
       { name: 'The Orchid', areaSqFt: 2700, capacity: 300 },
       { name: 'The Fern', areaSqFt: 875, capacity: 70 },
-      { name: 'The Juniper', areaSqFt: 253, capacity: 10 },
+      { name: 'The Juniper', areaSqFt: 253, capacity: 10, kind: 'boardroom' },
     ],
   },
   weddings: {
@@ -306,7 +306,7 @@ export const kalimpongHotel: Hotel = {
   contact: {
     address: '6th Mile, Purbong Basti, PO Kalimpong, Dist Kalimpong 734301, West Bengal, India',
     phone: '+91 97322 77760',
-    email: 'kalimpong@sinclairshotels.com',
+    notificationEmail: 'kalimpong@sinclairshotels.com',
   },
 };
 

@@ -24,6 +24,9 @@ export interface EventVenue {
   name: string;
   areaSqFt: number;
   capacity: number;
+  // A boardroom is a meeting room, not an event space — it is listed with the
+  // venues but never counted in a property's "Event Spaces" figure.
+  kind?: 'boardroom';
 }
 
 export interface EventSpaces {
@@ -35,7 +38,11 @@ export interface EventSpaces {
 export interface ContactInfo {
   address: string;
   phone: string;
-  email: string;
+  // Where staff mail about this property is routed. Deliberately not called
+  // `email`: no guest-facing surface shows a property address any more, so a
+  // field that reads like one on a hotel page is a trap. Every guest contact
+  // point is the enquiry form.
+  notificationEmail: string;
 }
 
 export interface BookingOffice {

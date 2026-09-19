@@ -562,6 +562,10 @@ each domain points at, and is the quickest way to tell them apart.
 
 ## Source content
 
+Team corrections and content requests are tracked in `docs/CONTENT_BACKLOG.md` —
+check it before editing `content/` or `public/`, and tick items off in the same PR
+that resolves them.
+
 Reference material lives outside this repo, on the local machine only (never commit
 it): `~/Desktop/sinclairs-wp-backup/`. As of 2026-09-10 that path holds exactly two
 things:

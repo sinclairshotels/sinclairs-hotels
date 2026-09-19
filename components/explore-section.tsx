@@ -1,46 +1,25 @@
-import { GalleryLightbox } from '@/components/gallery-lightbox';
+import { ExploreGrid } from '@/components/explore-grid';
 import { Reveal } from '@/components/reveal';
+import { SectionHeading } from '@/components/section-heading';
 import type { Hotel } from '@/content/types';
 
 export function ExploreSection({ hotel }: { hotel: Hotel }) {
   if (hotel.sightseeing.length === 0) return null;
 
-  const withImage = hotel.sightseeing.filter((spot) => spot.image);
-  const withoutImage = hotel.sightseeing.filter((spot) => !spot.image);
-
   return (
     <section id="explore" className="scroll-mt-32 py-10 sm:py-16">
       <div className="mx-auto max-w-7xl px-6">
         <Reveal>
-          <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Nearby</p>
-          <h2 className="mt-3 font-display text-2xl text-forest sm:text-3xl">
-            Explore {hotel.location}
-          </h2>
+          <SectionHeading
+            eyebrow="Nearby"
+            title={`Explore ${hotel.location}`}
+            lede={`What the ${hotel.name} team sends guests out to see, in the order they recommend it.`}
+          />
         </Reveal>
 
-        {withImage.length > 0 && (
-          <div className="mt-8">
-            <GalleryLightbox
-              images={withImage.map((spot) => ({ src: spot.image as string, alt: spot.name }))}
-            />
-          </div>
-        )}
-
-        {withoutImage.length > 0 && (
-          <div className={withImage.length > 0 ? 'mt-6' : 'mt-8'}>
-            <p className="text-xs uppercase tracking-wider text-ink/40">Also Nearby</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {withoutImage.map((spot) => (
-                <span
-                  key={spot.name}
-                  className="rounded-full border border-forest/15 px-3 py-1.5 text-sm text-ink/80"
-                >
-                  {spot.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="mt-10">
+          <ExploreGrid spots={hotel.sightseeing} />
+        </div>
       </div>
     </section>
   );

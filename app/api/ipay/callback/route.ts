@@ -294,7 +294,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
       });
 
-      const hotelInbox = hotel?.contact?.email ?? STAFF_NOTIFY_EMAIL;
+      const hotelInbox = hotel?.contact?.notificationEmail ?? STAFF_NOTIFY_EMAIL;
       await sendMail({
         to: hotelInbox,
         bcc: hotelInbox === STAFF_NOTIFY_EMAIL ? undefined : STAFF_NOTIFY_EMAIL,

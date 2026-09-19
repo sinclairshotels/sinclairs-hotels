@@ -122,19 +122,6 @@ body {
   animation: fade-up 0.8s ease-out forwards;
 }
 
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 42s linear infinite;
-}
-
 @keyframes hero-zoom-loop {
   from {
     transform: scale(1.02);

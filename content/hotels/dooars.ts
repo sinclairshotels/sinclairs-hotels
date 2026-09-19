@@ -40,7 +40,7 @@ export const dooarsHotel: Hotel = {
     {
       name: 'Deluxe Room',
       description:
-        'Functional and contemporary, these rooms offer the ultimate in luxurious seclusion with a view of the main lawns. Room size 345 sq. ft., with an attached bath with hot and cold shower, herbal bathroom amenities, a queen or twin bed, writing desk, private balcony, electronic safe and tea/coffee set.',
+        'Functional and contemporary, these rooms offer the ultimate in luxurious seclusion with a view of the main lawns. Room size 345 sq. ft., with an attached bath with hot and cold shower, herbal bathroom amenities, two queen beds, writing desk, private balcony, electronic safe and tea/coffee set.',
       images: [
         '/images/hotels/dooars/accommodations/deluxe-room/DSC_1114.webp',
         '/images/hotels/dooars/accommodations/deluxe-room/DSC_1005.webp',
@@ -199,12 +199,14 @@ export const dooarsHotel: Hotel = {
     { name: 'Alipurduar (112 km)', image: '/images/hotels/dooars/explore/alipurduar.webp' },
   ],
   eventSpaces: {
-    totalSqFt: 7750,
+    totalSqFt: 10270,
     maxCapacity: 500,
     venues: [
       { name: 'The Iris', areaSqFt: 5000, capacity: 500 },
+      { name: 'The Pavilion', areaSqFt: 1800, capacity: 120 },
       { name: 'The Hibiscus', areaSqFt: 1560, capacity: 110 },
       { name: 'The Carnation', areaSqFt: 1190, capacity: 90 },
+      { name: 'The Lilac', areaSqFt: 720, capacity: 35 },
     ],
   },
   weddings: {
@@ -272,7 +274,7 @@ export const dooarsHotel: Hotel = {
   contact: {
     address: 'Chalsa Hill Top, Jalpaiguri 735206, West Bengal, India',
     phone: '+91 98008 60282',
-    email: 'dooars@sinclairshotels.com',
+    notificationEmail: 'dooars@sinclairshotels.com',
   },
 };
 

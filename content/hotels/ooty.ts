@@ -265,7 +265,7 @@ export const ootyHotel: Hotel = {
   contact: {
     address: '444 Gorishola Road, Next to Tea Factory, Ooty 643001, Tamil Nadu, India',
     phone: '+91 63829 46457',
-    email: 'ooty@sinclairshotels.com',
+    notificationEmail: 'ooty@sinclairshotels.com',
   },
 };
 

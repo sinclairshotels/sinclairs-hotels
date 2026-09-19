@@ -96,7 +96,7 @@ export async function createVoucher(
   );
 
   await sendMail({
-    to: hotel?.contact?.email ?? VOUCHER_OFFICE_EMAIL,
+    to: hotel?.contact?.notificationEmail ?? VOUCHER_OFFICE_EMAIL,
     kind: 'voucher-office',
     bcc: officeCopyBcc,
     subject: `[Office Copy] Voucher #${voucher.voucherNo} — ${voucher.guestName}`,

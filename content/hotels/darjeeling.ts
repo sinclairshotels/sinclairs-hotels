@@ -33,7 +33,6 @@ export const darjeelingHotel: Hotel = {
     'Heating',
     'Free Wi-Fi',
     'Sightseeing Tours',
-    'Barbeques',
     'Business Centre',
     'Car Hire',
     'Express Check-In/Check-Out',
@@ -102,6 +101,17 @@ export const darjeelingHotel: Hotel = {
     },
   ],
   dining: [
+    {
+      name: 'Kanchenjunga Restaurant',
+      description:
+        'The hotel\u2019s multicuisine restaurant, serving Indian, Continental and Chinese through the day, with the Kanchenjunga range filling the windows at breakfast.',
+    },
+    {
+      name: 'Mount View Caf\u00e9',
+      description:
+        'A casual all-day caf\u00e9 for tea, coffee and light plates between sightseeing runs.',
+      images: ['/images/hotels/darjeeling/amenities/Sinclairs-Darjeeling-Lobby-Balcony.webp'],
+    },
     {
       name: 'The Dorjee Lounge',
       description:
@@ -261,7 +271,7 @@ export const darjeelingHotel: Hotel = {
   contact: {
     address: '18/1 Gandhi Road, Darjeeling 734101, West Bengal, India',
     phone: '+91 97359 41719',
-    email: 'darjeeling@sinclairshotels.com',
+    notificationEmail: 'darjeeling@sinclairshotels.com',
   },
 };
 

@@ -55,7 +55,7 @@ export function bookingConfirmationHtml({
     ? `<p style="font-size:12px; color:#404040; margin:16px 0;">
         <strong>${escapeHtml(hotel.name)}</strong><br>
         ${escapeHtml(hotel.contact.address)}<br>
-        Phone: ${escapeHtml(hotel.contact.phone)} &middot; Email: ${escapeHtml(hotel.contact.email)}
+        Phone: ${escapeHtml(hotel.contact.phone)}
       </p>`
     : '';
 

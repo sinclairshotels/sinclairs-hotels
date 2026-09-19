@@ -2,7 +2,6 @@ import { ContactLink } from '@/components/contact-link';
 import { hotels } from '@/content/hotels';
 import { siteConfig, socialLinks } from '@/content/site';
 import Link from 'next/link';
-import { EmailText } from './email-text';
 import { NewsletterForm } from './newsletter-form';
 import { FacebookIcon, InstagramIcon, TwitterIcon } from './social-icons';
 
@@ -126,16 +125,11 @@ export function Footer() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-cream/50">Email</dt>
+                <dt className="text-xs text-cream/50">Enquiries</dt>
                 <dd className="mt-0.5">
-                  <ContactLink
-                    method="email"
-                    href="mailto:reservations@sinclairshotels.com"
-                    ctaSource="footer"
-                    className="break-words transition hover:text-gold-light"
-                  >
-                    <EmailText email="reservations@sinclairshotels.com" />
-                  </ContactLink>
+                  <Link href="/enquiry" className="transition hover:text-gold-light">
+                    Send an enquiry
+                  </Link>
                 </dd>
               </div>
               <div>

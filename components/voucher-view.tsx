@@ -28,7 +28,7 @@ export function VoucherView({ voucher, hotel }: { voucher: Voucher; hotel?: Hote
           <br />
           {hotel.contact.address}
           <br />
-          Phone: {hotel.contact.phone} &middot; Email: {hotel.contact.email}
+          Phone: {hotel.contact.phone}
         </p>
       )}
 

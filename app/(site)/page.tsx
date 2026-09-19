@@ -1,15 +1,19 @@
 import { AwardsSection } from '@/components/awards-section';
+import { BookDirect } from '@/components/book-direct';
 import { BookingWidget } from '@/components/booking-widget';
+import { DiningShowcase } from '@/components/dining-showcase';
 import { ExperiencesCarousel } from '@/components/experiences-carousel';
-import { FoodStrip } from '@/components/food-strip';
 import { HotelCard } from '@/components/hotel-card';
 import { JourneyHero } from '@/components/journey-hero';
 import { Reveal } from '@/components/reveal';
+import { SectionHeading } from '@/components/section-heading';
 import { SpotlightGallery } from '@/components/spotlight-gallery';
 import { awards } from '@/content/awards';
 import { experiences } from '@/content/experiences';
 import { hotels } from '@/content/hotels';
 import { reviews } from '@/content/reviews';
+import { diningPhotos } from '@/lib/dining';
+import { totalEventSpaces } from '@/lib/venues';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -23,52 +27,18 @@ const sightseeingPhotos = hotels.flatMap((hotel) =>
     })),
 );
 
-const cuisineDishes = [
-  {
-    src: '/images/hotels/dooars/dining/Candle light dinner.webp',
-    alt: 'Candlelit Dinners Under the Stars, Sinclairs Retreat Dooars',
-  },
-  {
-    src: '/images/hotels/burdwan/dining/BengaliThali1.webp',
-    alt: 'A Traditional Bengali Thali, Sinclairs Burdwan',
-  },
-  {
-    src: '/images/hotels/kalimpong/dining/Momos1.webp',
-    alt: 'Steamed Momos with House Chutneys, Sinclairs Retreat Kalimpong',
-  },
-  {
-    src: '/images/hotels/gangtok/dining/GangtokSizzler.webp',
-    alt: 'Sizzlers Fresh off the Grill, Sinclairs Gangtok',
-  },
-  {
-    src: '/images/hotels/burdwan/dining/BurdwanMithai.webp',
-    alt: "Bengal's Sweet Traditions, Sinclairs Burdwan",
-  },
-  {
-    src: '/images/hotels/kalimpong/dining/Thukpa.webp',
-    alt: 'Warming Thukpa, a Himalayan Classic',
-  },
-  {
-    src: '/images/hotels/dooars/dining/DSC_1449.webp',
-    alt: 'Kebabs Rolled Tableside, Sinclairs Retreat Dooars',
-  },
-  {
-    src: '/images/hotels/gangtok/dining/GangtokCandlelightdinner.webp',
-    alt: 'An Evening Table with a Mountain View, Sinclairs Gangtok',
-  },
-];
-
 export default function HomePage() {
   const [, , secondaryBottom] = hotels;
   const states = new Set(hotels.map((h) => h.state)).size;
   const totalDining = hotels.reduce((sum, h) => sum + h.dining.length, 0);
-  const totalEventSpaces = hotels.reduce((sum, h) => sum + (h.eventSpaces?.venues.length ?? 0), 0);
+  const eventSpaces = totalEventSpaces(hotels);
+  const largestCapacity = Math.max(...hotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
 
   const stats = [
     { value: String(hotels.length), label: 'Destinations' },
     { value: String(states), label: 'States Across India' },
     { value: String(totalDining), label: 'Restaurants & Bars' },
-    { value: String(totalEventSpaces), label: 'Event Spaces' },
+    { value: String(eventSpaces), label: 'Event Spaces' },
   ];
 
   return (
@@ -120,6 +90,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      <BookDirect />
+
       <section className="bg-forest py-14 sm:py-20 text-cream">
         <Reveal className="mx-auto max-w-3xl px-6 text-center">
           <div className="flex items-center justify-center gap-3">
@@ -141,12 +113,13 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-14 sm:py-20">
-        <Reveal className="mb-12 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Featured Properties</p>
-          <h2 className="mt-4 font-display text-3xl text-forest sm:text-4xl">Hotels and Resorts</h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-ink/70">
-            Whether staying for business or leisure, discover our properties across India.
-          </p>
+        <Reveal className="mb-12">
+          <SectionHeading
+            align="center"
+            eyebrow="Featured Properties"
+            title="Hotels and Resorts"
+            lede="Whether staying for business or leisure, discover our properties across India."
+          />
         </Reveal>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {hotels.map((hotel, i) => (
@@ -158,53 +131,53 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-10">
-        <Reveal className="mb-6 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Nearby Every Property</p>
-          <h2 className="mt-3 font-display text-3xl text-forest sm:text-4xl">
-            A World to Explore, Just Outside
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-ink/70">
-            From misty tea gardens to royal forts, ancient monasteries to island beaches — a glimpse
-            of what&rsquo;s waiting near every Sinclairs address.
-          </p>
+        <Reveal className="mb-6">
+          <SectionHeading
+            align="center"
+            eyebrow="Nearby Every Property"
+            title="A World to Explore, Just Outside"
+            lede="From misty tea gardens to royal forts, ancient monasteries to island beaches — a glimpse of what’s waiting near every Sinclairs address."
+          />
         </Reveal>
         <SpotlightGallery images={sightseeingPhotos} />
       </section>
 
       <section className="border-y border-forest/10 bg-white py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-6">
-          <Reveal className="mb-10 text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">
-              Signature Experiences
-            </p>
-            <h2 className="mt-4 font-display text-3xl text-forest sm:text-4xl">
-              Memories that last a lifetime
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm text-ink/70">
-              From misty mountain railways to island sunsets — unforgettable experiences await.
-            </p>
+          <Reveal className="mb-10">
+            <SectionHeading
+              align="center"
+              eyebrow="Signature Experiences"
+              title="Memories that last a lifetime"
+              lede="From misty mountain railways to island sunsets — unforgettable experiences await."
+            />
           </Reveal>
           <ExperiencesCarousel experiences={experiences} />
         </div>
       </section>
 
-      <FoodStrip
-        eyebrow="Culinary Journey"
-        title="A Journey of Delectable Flavours"
-        body="At Sinclairs Hotels, dining is not just a meal — it's an experience, from grab-and-go counters to candlelit, chef-plated feasts across every property."
-        images={cuisineDishes}
-      />
+      <section className="border-y border-forest/10 bg-forest-dark py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <SectionHeading
+            tone="dark"
+            eyebrow="Culinary Journey"
+            title="A Journey of Delectable Flavours"
+            lede="Every property cooks for its own place — a Bengali thali in Burdwan, thukpa in the hills, seafood off the Andaman coast. Open a hotel to see what it serves."
+          />
+          <div className="mt-10">
+            <DiningShowcase entries={diningPhotos(hotels)} />
+          </div>
+        </div>
+      </section>
 
       <section className="mx-auto max-w-6xl px-6 py-14 sm:py-20">
-        <Reveal className="mb-10 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Celebrate With Us</p>
-          <h2 className="mt-4 font-display text-3xl text-forest sm:text-4xl">
-            Unforgettable Events and Weddings Await You
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-ink/70">
-            From an intimate boardroom to a 700-guest reception, every property comes with the
-            venues, catering and service to match the occasion.
-          </p>
+        <Reveal className="mb-10">
+          <SectionHeading
+            align="center"
+            eyebrow="Celebrate With Us"
+            title="Unforgettable Events and Weddings Await You"
+            lede={`From an intimate boardroom to a ${largestCapacity.toLocaleString('en-IN')}-guest reception, every property comes with the venues, catering and service to match the occasion.`}
+          />
         </Reveal>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div className="group overflow-hidden rounded-lg border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -259,17 +232,13 @@ export default function HomePage() {
 
       <section className="bg-forest/5 py-10 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <Reveal className="text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">
-              Recognised Excellence
-            </p>
-            <h2 className="mt-1.5 font-display text-2xl text-forest sm:mt-4 sm:text-4xl">
-              Awards and Recognitions
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-xs text-ink/70 sm:mt-4 sm:text-sm">
-              Six of our properties have been honoured with Tripadvisor&rsquo;s Travellers&rsquo;
-              Choice Award 2026, ranking among the top hotels reviewed by travellers worldwide.
-            </p>
+          <Reveal>
+            <SectionHeading
+              align="center"
+              eyebrow="Recognised Excellence"
+              title="Awards and Recognitions"
+              lede="Six of our properties have been honoured with Tripadvisor’s Travellers’ Choice Award 2026, ranking among the top hotels reviewed by travellers worldwide."
+            />
           </Reveal>
           <Reveal className="mt-8 sm:mt-12" delay={150}>
             <AwardsSection awards={awards} reviews={reviews} />
