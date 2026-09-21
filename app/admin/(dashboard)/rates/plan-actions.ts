@@ -299,36 +299,107 @@ export async function saveMonthlyRates(
     };
   }
 
-  await prisma.$transaction(async (tx) => {
-    for (const write of writes) {
-      if (write.value.roomsOnSale !== undefined) {
-        await tx.roomInventory.upsert({
-          where: { roomTypeId_date: { roomTypeId: write.roomTypeId, date: write.date } },
-          update: { roomsOnSale: write.after.roomsOnSale, source: 'MONTHLY' },
-          create: {
-            roomTypeId: write.roomTypeId,
-            hotelSlug: input.hotelSlug,
-            date: write.date,
-            roomsOnSale: write.after.roomsOnSale,
-            source: 'MONTHLY',
-          },
-        });
+  // One upsert per night per table meant two round trips a night: 62 for a
+  // single month, and up to 24,000 at MAX_NIGHTS. Against a local database
+  // that is merely slow; against a network one it overran Prisma's five second
+  // transaction timeout part-way through the loop and failed with P2028
+  // ("Transaction not found"), leaving the save half-applied. It could not show
+  // up locally, which is why it reached dev.
+  //
+  // Every night in one cell resolves to the same values — applyMonthly takes
+  // them from the cell, not from what was there before — so the nights group
+  // into a handful of batches: one updateMany for the rows that exist and one
+  // createMany for the rest. Round trips now scale with cells, not nights.
+  const groups = new Map<
+    string,
+    { roomTypeId: string; ratePlanId: string; writes: typeof writes }
+  >();
+  for (const write of writes) {
+    const key = `${write.roomTypeId}|${write.ratePlanId}|${write.after.roomsOnSale}|${write.after.rate}|${write.value.roomsOnSale !== undefined}|${write.value.rate !== undefined}`;
+    const group = groups.get(key);
+    if (group) group.writes.push(write);
+    else
+      groups.set(key, {
+        roomTypeId: write.roomTypeId,
+        ratePlanId: write.ratePlanId,
+        writes: [write],
+      });
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      const inventoryCreates: Array<{
+        roomTypeId: string;
+        hotelSlug: string;
+        date: Date;
+        roomsOnSale: number;
+        source: 'MONTHLY';
+      }> = [];
+      const priceCreates: Array<{
+        ratePlanId: string;
+        hotelSlug: string;
+        date: Date;
+        amount: number;
+        source: 'MONTHLY';
+      }> = [];
+
+      for (const group of groups.values()) {
+        const sample = group.writes[0] as (typeof writes)[number];
+
+        if (sample.value.roomsOnSale !== undefined) {
+          const existing: Date[] = [];
+          for (const write of group.writes) {
+            if (inventoryByKey.has(`${write.roomTypeId}:${write.key}`)) existing.push(write.date);
+            else
+              inventoryCreates.push({
+                roomTypeId: write.roomTypeId,
+                hotelSlug: input.hotelSlug,
+                date: write.date,
+                roomsOnSale: write.after.roomsOnSale,
+                source: 'MONTHLY',
+              });
+          }
+          if (existing.length > 0) {
+            await tx.roomInventory.updateMany({
+              where: { roomTypeId: group.roomTypeId, date: { in: existing } },
+              data: { roomsOnSale: sample.after.roomsOnSale, source: 'MONTHLY' },
+            });
+          }
+        }
+
+        if (sample.after.rate !== null && sample.value.rate !== undefined) {
+          const existing: Date[] = [];
+          for (const write of group.writes) {
+            if (priceByKey.has(`${write.ratePlanId}:${write.key}`)) existing.push(write.date);
+            else
+              priceCreates.push({
+                ratePlanId: write.ratePlanId,
+                hotelSlug: input.hotelSlug,
+                date: write.date,
+                amount: write.after.rate as number,
+                source: 'MONTHLY',
+              });
+          }
+          if (existing.length > 0) {
+            await tx.ratePrice.updateMany({
+              where: { ratePlanId: group.ratePlanId, date: { in: existing } },
+              data: { amount: sample.after.rate, source: 'MONTHLY' },
+            });
+          }
+        }
       }
-      if (write.after.rate !== null && write.value.rate !== undefined) {
-        await tx.ratePrice.upsert({
-          where: { ratePlanId_date: { ratePlanId: write.ratePlanId, date: write.date } },
-          update: { amount: write.after.rate, source: 'MONTHLY' },
-          create: {
-            ratePlanId: write.ratePlanId,
-            hotelSlug: input.hotelSlug,
-            date: write.date,
-            amount: write.after.rate,
-            source: 'MONTHLY',
-          },
-        });
+
+      if (inventoryCreates.length > 0) {
+        await tx.roomInventory.createMany({ data: inventoryCreates });
       }
-    }
-  });
+      if (priceCreates.length > 0) {
+        await tx.ratePrice.createMany({ data: priceCreates });
+      }
+    },
+    // Batched, a realistic save is a handful of statements. The allowance is
+    // for the far end of MAX_NIGHTS, and for Neon waking from idle.
+    { timeout: 30_000 },
+  );
 
   const months = [...new Set(cells.map((cell) => cell.month))].sort();
   const describedMonths = months.map(monthLabel);
