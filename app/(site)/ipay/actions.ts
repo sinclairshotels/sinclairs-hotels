@@ -1,5 +1,6 @@
 'use server';
 
+import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/db';
 import { generateOrderId, ipayConfigured, requestBaseUrl, startSale } from '@/lib/ipay';
 import { log } from '@/lib/log';
@@ -69,6 +70,7 @@ export async function initiatePayment(
   await prisma.payment.create({
     data: {
       orderId,
+      viewToken: randomBytes(32).toString('base64url'),
       hotelSlug,
       amount,
       guestName,

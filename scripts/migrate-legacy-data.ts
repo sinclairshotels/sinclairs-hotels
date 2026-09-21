@@ -714,6 +714,10 @@ async function migratePayment(): Promise<Report> {
 
     data.push({
       orderId,
+      // An imported transaction still has a receipt page, and that page is
+      // addressed by the token — without one, staff opening a CCAvenue-era
+      // payment from /admin/payments would get "we couldn't find that".
+      viewToken: randomBytes(32).toString('base64url'),
       hotelSlug,
       amount: parseMoney(get('amount')) ?? 0,
       guestName: get('billing_name') ?? '',

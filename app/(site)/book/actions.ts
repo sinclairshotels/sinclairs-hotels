@@ -142,6 +142,7 @@ export async function createBooking(
         const payment = await tx.payment.create({
           data: {
             orderId,
+            viewToken: randomBytes(32).toString('base64url'),
             hotelSlug: d.hotelSlug,
             amount: offer.quote.total,
             guestName: d.guestName,

@@ -108,6 +108,12 @@ enum PaymentStatus {
 model Payment {
   id             String        @id @default(cuid())
   orderId        String        @unique
+  // The unguessable half, same reasoning as Booking.viewToken. /ipay/result
+  // used to be keyed on orderId, which is YYMMDD plus ten hex characters and
+  // travels in receipts and emails — enough that knowing one transaction
+  // number opened that transaction's page. The order number stays what staff
+  // and the guest quote; this is what addresses the page.
+  viewToken      String?       @unique
   hotelSlug      String
   amount         Decimal       @db.Decimal(10, 2)
   guestName      String
