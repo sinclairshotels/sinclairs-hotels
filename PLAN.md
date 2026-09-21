@@ -237,7 +237,8 @@ repo on 2026-09-10.
   it is now a decision about *reconciling* two booking paths rather than about
   whether to have one at all.
 
-  Also note: every "Book Now" CTA on the site still points at STAAH. The new
+  Also note: this was written while every "Book Now" CTA still pointed at
+  STAAH. They point at `/book` as of 22 Sep 2026. The new
   engine is reachable at `/book` only, deliberately, so that a property with no
   allotment loaded is not a dead end. Repointing those CTAs is the switch that
   makes direct booking the default, and it should be thrown per-property, once
@@ -279,11 +280,22 @@ modify/cancel, manual bookings). One branch and one PR per phase.
 **Phase C is dropped** — Guests (Module 6) and Reports (Module 7) are out of
 scope, confirmed 17 Sep 2026. That removes the phase, not work from B.
 
-**Operating model.** The website sells its own allotment per hotel, room type
-and night; STAAH sells the rest. There is no STAAH integration — staff mirror
-website bookings into STAAH by hand, which is why `RoomInventory.roomsOnSale`
-has to be an allotment *held back* from STAAH rather than the room's true
-count.
+**Operating model — superseded 22 Sep 2026: STAAH is out.** The website is now
+the only channel it sells through, so `RoomInventory.roomsOnSale` is the room's
+true sellable count rather than an allotment held back from anyone. The
+`staah:read`/`staah:write` capabilities and the dead `reservationUrl` constant
+were removed the same day; the A2 STAAH sync queue is dropped, not deferred.
+
+What this costs: the double-sell risk is gone, and with it the manual mirroring
+that depended on someone remembering. What it buys the other way is that there
+is no second channel quietly taking bookings — so a property with no rates
+loaded sells *nothing*, rather than falling back. Loading rates stops being a
+sequencing preference and becomes launch-blocking.
+
+*Previously (10–17 Sep 2026): the website sold its own allotment per hotel,
+room type and night and STAAH sold the rest, with staff mirroring website
+bookings into STAAH by hand. Kept here because the allotment-held-back wording
+explains why the schema is shaped the way it is.*
 
 **Production data.** There are no live bookings and no rate rows in
 production (confirmed 17 Sep 2026), so **no backfill is needed** and the A0

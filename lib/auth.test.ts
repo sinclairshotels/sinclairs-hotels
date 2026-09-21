@@ -146,12 +146,7 @@ describe('getSession', () => {
 describe('role capabilities', () => {
   it('gives Admin everything the other roles have', () => {
     for (const role of ['REVENUE', 'RESERVATIONS', 'HOTEL', 'VIEWER'] as const) {
-      for (const capability of [
-        'rates:write',
-        'bookings:write',
-        'staah:write',
-        'setup:write',
-      ] as const) {
+      for (const capability of ['rates:write', 'bookings:write', 'setup:write'] as const) {
         if (can({ role }, capability)) expect(can({ role: 'ADMIN' }, capability)).toBe(true);
       }
     }
@@ -164,9 +159,8 @@ describe('role capabilities', () => {
     expect(can({ role: 'RESERVATIONS' }, 'rates:write')).toBe(false);
   });
 
-  it('lets a Hotel user work bookings and the STAAH queue but not rates', () => {
+  it('lets a Hotel user work bookings but not rates', () => {
     expect(can({ role: 'HOTEL' }, 'bookings:write')).toBe(true);
-    expect(can({ role: 'HOTEL' }, 'staah:write')).toBe(true);
     expect(can({ role: 'HOTEL' }, 'rates:write')).toBe(false);
   });
 
@@ -174,7 +168,6 @@ describe('role capabilities', () => {
     for (const capability of [
       'rates:write',
       'bookings:write',
-      'staah:write',
       'setup:write',
       'payments:refund',
       'users:manage',

@@ -230,8 +230,8 @@ rather than recreating the branch.
 ## Booking engine
 
 `/book` sells a **direct allotment** this site owns, end to end: search → live
-availability → guest details → ICICI i-Pay → confirmation. It is deliberately
-separate from the STAAH handoff, which still exists and is unchanged.
+availability → guest details → ICICI i-Pay → confirmation. Since STAAH was
+dropped on 22 Sep 2026 it is the only way the site sells.
 
 **Inventory and rates are staff data, not content**, and they are four tables,
 not one:
@@ -272,9 +272,11 @@ stay drops out of the results. That is why a property with nothing loaded says
 "not yet bookable online" rather than "no availability" — `/book/[slug]`
 distinguishes the two with a `roomRate.count`, and they need opposite copy.
 
-**`RoomRate.totalRooms` must be an allotment held back from STAAH.** This app
-cannot see STAAH's sales, so anything sold in both places is sold twice. That
-constraint is the engine's one real operational rule.
+**`RoomRate.totalRooms` is the room's true sellable count.** It had to be an
+allotment held back from STAAH, because this app could not see STAAH's sales and
+anything sold in both places was sold twice. STAAH was dropped on 22 Sep 2026 and
+that constraint went with it — the number staff load is now simply what the
+website may sell.
 
 **The rates screen is the ops surface for all of this.** `/admin/rates` has a
 calendar grid (dates across, room types down; each cell shows rate, rooms on
@@ -350,11 +352,12 @@ so changing this rate never alters what an existing guest already agreed to pay
 **Dates are UTC-midnight throughout** (`parseDateOnly`/`dateKey`), matching
 Prisma's `@db.Date`. Local midnight would shift which night a rate belongs to.
 
-**Every "Book Now" CTA still goes to STAAH.** `ReservationLink` and
-`BookingWidget` are untouched, so the engine is reachable at `/book` (linked from
-the sitemap) without a property that has no allotment loaded becoming a dead end.
-Repointing them is a one-line change per component — make it once real allotments
-are loaded for the properties you want selling direct, not before.
+**Every "Book Now" CTA goes to `/book`.** Repointed 22 Sep 2026 when STAAH was
+dropped; `ReservationLink` turns `params.hotel` into the destination, so a CTA
+that knows its property lands on that property's search and the global nav lands
+on `/book` to choose. The warning that used to sit here still applies, just with
+no fallback behind it: a property with no rates loaded is now a dead end rather
+than a handoff, so load rates before pointing traffic at it.
 
 ## Staff accounts and roles
 

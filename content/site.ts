@@ -19,13 +19,6 @@ export const contactNumbers = {
   whatsappHref: 'https://wa.me/919257108784',
 } as const;
 
-// Staah sells the inventory this site does not: the website sells its own
-// allotment per hotel, room type and night through /book, and Staah sells the
-// rest. No CTA here points at this URL any more — it is kept because Staah is
-// still a live channel staff work in, and a fallback needs somewhere to point.
-export const reservationUrl =
-  'https://reservation.sinclairshotels.com/inst/#group?groupId=882Mjkbac8S7wLYqvHyxVFGKNMfaaeRV5yNO8NFk4hB5fg15ZQ3NDc=&JDRN=Y';
-
 export const socialLinks = [
   { label: 'Facebook', href: 'https://www.facebook.com/sinclairshotelsandresorts/' },
   { label: 'Instagram', href: 'https://www.instagram.com/sinclairshotelsandresorts/' },

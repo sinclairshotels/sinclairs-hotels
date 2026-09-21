@@ -22,8 +22,6 @@ export type Capability =
   | 'rates:write'
   | 'bookings:read'
   | 'bookings:write'
-  | 'staah:read'
-  | 'staah:write'
   | 'setup:read'
   | 'setup:write'
   | 'reports:read'
@@ -38,7 +36,6 @@ export type Capability =
 const READ_ONLY: Capability[] = [
   'rates:read',
   'bookings:read',
-  'staah:read',
   'setup:read',
   'reports:read',
   'payments:read',
@@ -54,7 +51,6 @@ const ROLE_CAPABILITIES: Record<UserRole, Capability[]> = {
     ...READ_ONLY,
     'rates:write',
     'bookings:write',
-    'staah:write',
     'setup:write',
     'payments:refund',
     'vouchers:write',
@@ -66,15 +62,13 @@ const ROLE_CAPABILITIES: Record<UserRole, Capability[]> = {
   REVENUE: [...READ_ONLY, 'rates:write', 'setup:write', 'audit:read'],
   // Runs the desk: takes and changes bookings. No rate
   // editing, and refunds stay with an Admin.
-  RESERVATIONS: [...READ_ONLY, 'bookings:write', 'staah:write', 'vouchers:write'],
+  RESERVATIONS: [...READ_ONLY, 'bookings:write', 'vouchers:write'],
   // Same as Reservations but only for their own property, enforced separately
   // by the hotel scope — and no rate editing, which stays central.
   HOTEL: [
     'rates:read',
     'bookings:read',
     'bookings:write',
-    'staah:read',
-    'staah:write',
     'setup:read',
     'vouchers:read',
     'enquiries:read',
