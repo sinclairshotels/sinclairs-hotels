@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { dateKey } from '@/lib/booking';
 import { callInitiateSale, iciciConfig, iciciTimestamp, initiateSaleAccepted } from '@/lib/icici';
 import { errorFields, log } from '@/lib/log';
 
@@ -6,12 +7,17 @@ import { errorFields, log } from '@/lib/log';
 // e.g. "260905ZJGQ8618") purely so a guest comparing an old and new receipt
 // isn't confused by a totally different format — the gateway itself doesn't
 // require this exact shape, any unique reference works.
-export function generateOrderId(): string {
-  const datePart = new Date()
-    .toLocaleDateString('en-GB', { year: '2-digit', month: '2-digit', day: '2-digit' })
-    .split('/')
-    .reverse()
-    .join('');
+//
+// The date is UTC, via the same dateKey() the booking reference is built from.
+// toLocaleDateString without a timeZone reads the server's zone, which made a
+// booking and its own payment disagree: taken at 00:32 IST they came out
+// SNC-260921-… and 260922…, five and a half hours of every night landing on
+// different days. Worse, it disagreed by environment — Vercel runs UTC and
+// would have matched, so the one place it looked wrong was the machine you
+// test on. Reconciling a day's bookings against a day's payments needs them
+// to mean the same day.
+export function generateOrderId(now: Date = new Date()): string {
+  const datePart = dateKey(now).slice(2).replace(/-/g, '');
   const suffix = crypto.randomBytes(6).toString('hex').toUpperCase().slice(0, 10);
   return `${datePart}${suffix}`;
 }
