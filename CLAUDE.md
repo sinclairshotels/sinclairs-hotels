@@ -79,7 +79,20 @@ current phase.
   `frame-src` limited to the Google Maps embed on hotel pages). If you add a new
   external embed, script, or fetch target, it needs an explicit CSP allowance or it'll
   be silently blocked — check the browser console for `Refused to ...` before assuming
-  something else is broken. `lib/rate-limit.ts`'s `clientIp()` helper is the only
+  something else is broken. The Google Maps embed on hotel pages is the one
+  third-party frame, and it is **opt-in per environment**: `components/location-map.tsx`
+  makes the address and an "Open in Google Maps" link the content of that box, and
+  draws the frame over them only where `NEXT_PUBLIC_MAPS_EMBED=on` (`lib/maps.ts`).
+  That is not caution for its own sake — every way the frame can fail (a `frame-src`
+  the CSP does not allow, an ad blocker, a network that won't reach
+  `maps.google.com`) lands on the browser's own error page, which reports an opaque
+  cross-origin document *exactly* as a working map does. There is no onLoad probe
+  that can tell them apart; one was tried against a real Chromium and could not, so
+  don't add one. Turn the variable on for an environment only after opening a hotel
+  page there and seeing a map. There is also **no Maps API key** anywhere — the embed
+  is the keyless `maps.google.com/maps?…&output=embed` form, so a blank map is never
+  a missing key or a referrer restriction; check the console for `Refused to frame`
+  first. `lib/rate-limit.ts`'s `clientIp()` helper is the only
   correct way to key the enquiry endpoint's rate limiter — it prefers Vercel's
   platform-set `x-real-ip` and takes just the first hop of `x-forwarded-for`; keying on
   the raw header is a rate-limit bypass, since a client can vary it on every request.

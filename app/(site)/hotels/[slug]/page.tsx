@@ -6,6 +6,7 @@ import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { HeroCarousel } from '@/components/hero-carousel';
 import { HotelViewTracking } from '@/components/hotel-view-tracking';
 import { JsonLd } from '@/components/json-ld';
+import { LocationMap } from '@/components/location-map';
 import { MeetingsSection } from '@/components/meetings-section';
 import { ReservationLink } from '@/components/reservation-link';
 import { RoomImageCarousel } from '@/components/room-image-carousel';
@@ -14,6 +15,7 @@ import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { contactNumbers, siteConfig } from '@/content/site';
+import { mapsEmbedEnabled } from '@/lib/maps';
 import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
 import { eventSpaceCount } from '@/lib/venues';
@@ -76,7 +78,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
     if (item.href === '#meetings') return Boolean(hotel.meetings && hotel.eventSpaces);
     if (item.href === '#gallery') return hotel.gallery.length > 0;
     if (item.href === '#explore') return hotel.sightseeing.length > 0;
-    if (item.href === '#location') return Boolean(hotel.mapEmbedUrl || hotel.contact);
+    if (item.href === '#location') return Boolean(hotel.contact);
     return true;
   });
 
@@ -336,7 +338,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
 
       <ExploreSection hotel={hotel} />
 
-      {(hotel.mapEmbedUrl || hotel.contact) && (
+      {hotel.contact && (
         <section id="location" className="scroll-mt-32 py-10 sm:py-16">
           <div className="mx-auto max-w-7xl px-6">
             <SectionHeading eyebrow="Finding Us" title="Location &amp; Contact" />
@@ -378,15 +380,14 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                   </dl>
                 )}
               </div>
-              {hotel.mapEmbedUrl && (
-                <div className="aspect-[4/3] overflow-hidden rounded-lg border border-forest/10 shadow-md lg:aspect-auto">
-                  <iframe
-                    src={hotel.mapEmbedUrl}
-                    title={`Map showing ${hotel.name}`}
-                    className="h-full min-h-[320px] w-full"
-                    loading="lazy"
-                  />
-                </div>
+              {hotel.contact && (
+                <LocationMap
+                  address={hotel.contact.address}
+                  query={`${hotel.name}, ${hotel.location}, ${hotel.state}`}
+                  embedUrl={hotel.mapEmbedUrl}
+                  title={`Map showing ${hotel.name}`}
+                  enabled={mapsEmbedEnabled()}
+                />
               )}
             </div>
           </div>
