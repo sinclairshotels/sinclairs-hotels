@@ -25,6 +25,11 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
   const formStarted = useRef(false);
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
+  // React resets the form once the action resolves, and the reset restores
+  // these defaults — which is why the rejected values have to come back from
+  // the server rather than be held in the DOM.
+  const typed = (field: keyof NonNullable<BookingFormState['values']>) =>
+    state.values?.[field] ?? '';
 
   return (
     <form
@@ -59,6 +64,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
             type="text"
             required
             autoComplete="name"
+            defaultValue={typed('guestName')}
             className="input"
           />
         </Field>
@@ -70,6 +76,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
             type="email"
             required
             autoComplete="email"
+            defaultValue={typed('guestEmail')}
             className="input"
           />
         </Field>
@@ -81,6 +88,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
             type="tel"
             required
             autoComplete="tel"
+            defaultValue={typed('guestPhone')}
             className="input"
           />
         </Field>
@@ -92,6 +100,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
             type="text"
             required
             autoComplete="street-address"
+            defaultValue={typed('billingAddress')}
             className="input"
           />
         </Field>
@@ -102,7 +111,13 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
         name="specialRequests"
         error={fieldError('specialRequests')}
       >
-        <textarea id="specialRequests" name="specialRequests" rows={3} className="input" />
+        <textarea
+          id="specialRequests"
+          name="specialRequests"
+          rows={3}
+          defaultValue={typed('specialRequests')}
+          className="input"
+        />
       </Field>
 
       <input

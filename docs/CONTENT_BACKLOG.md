@@ -33,7 +33,7 @@ because nobody re-raises what looks done.
 
 ### Sinclairs Gangtok
 
-- [x] 2 event spaces
+- [x] 2 event spaces — The Cherry Hall (3,700 sq ft, 200 guests) and the Jasmine Boardroom (510 sq ft, 25 guests). The old Cherry Hall "Lower"/"Upper" split is gone; a boardroom counts as an event space, it is only labelled as one.
 
 ### Every page
 
@@ -49,6 +49,7 @@ because nobody re-raises what looks done.
 ## B. Contact (decision, applied site-wide)
 
 - [x] No per-property email addresses anywhere on the site. Every contact point is the enquiry form. Remove existing property emails from hotel pages and the footer.
+- [x] No per-property phone numbers either. The toll-free line and WhatsApp are the only two numbers the site publishes — see `contactNumbers` in `content/site.ts`. `ContactInfo` no longer carries a `phone` field at all, so one cannot drift back onto a page; the per-property numbers remain in git history if they are ever needed for a staff screen.
 
 ## Not doing
 

@@ -1,4 +1,5 @@
 import { VOUCHER_TERMS_HTML } from '@/content/legal';
+import { contactNumbers } from '@/content/site';
 import type { Hotel } from '@/content/types';
 import { voucherGuestFields } from '@/lib/voucher-view';
 import type { Voucher } from '@prisma/client';
@@ -28,7 +29,7 @@ export function VoucherView({ voucher, hotel }: { voucher: Voucher; hotel?: Hote
           <br />
           {hotel.contact.address}
           <br />
-          Phone: {hotel.contact.phone}
+          Reservations: {contactNumbers.tollFree}
         </p>
       )}
 

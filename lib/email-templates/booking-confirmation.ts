@@ -1,3 +1,4 @@
+import { contactNumbers } from '@/content/site';
 import type { Hotel } from '@/content/types';
 import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import type { Booking } from '@prisma/client';
@@ -55,7 +56,7 @@ export function bookingConfirmationHtml({
     ? `<p style="font-size:12px; color:#404040; margin:16px 0;">
         <strong>${escapeHtml(hotel.name)}</strong><br>
         ${escapeHtml(hotel.contact.address)}<br>
-        Phone: ${escapeHtml(hotel.contact.phone)}
+        Reservations: ${escapeHtml(contactNumbers.tollFree)}
       </p>`
     : '';
 

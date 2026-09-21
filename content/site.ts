@@ -8,6 +8,17 @@ export const siteConfig = {
   url: 'https://www.sinclairshotels.com',
 };
 
+// The only two numbers the site publishes. Properties have their own lines, but
+// a guest is never sent to one: a call goes to reservations and everything else
+// goes through the enquiry form, so there is nowhere for a per-property number
+// to drift back onto a page from.
+export const contactNumbers = {
+  tollFree: '1800 120 267 000',
+  tollFreeHref: 'tel:1800120267000',
+  whatsapp: '+91 92571 08784',
+  whatsappHref: 'https://wa.me/919257108784',
+} as const;
+
 // Staah sells the inventory this site does not: the website sells its own
 // allotment per hotel, room type and night through /book, and Staah sells the
 // rest. No CTA here points at this URL any more — it is kept because Staah is

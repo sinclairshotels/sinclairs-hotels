@@ -1,5 +1,6 @@
 import { ContactLink } from '@/components/contact-link';
 import { hotels } from '@/content/hotels';
+import { contactNumbers } from '@/content/site';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -53,11 +54,11 @@ export default function ContactPage() {
                 <dd className="mt-1">
                   <ContactLink
                     method="phone"
-                    href="tel:1800120267000"
+                    href={contactNumbers.tollFreeHref}
                     ctaSource="contact_page_reservations"
                     className="hover:text-gold"
                   >
-                    1800 120 267 000
+                    {contactNumbers.tollFree}
                   </ContactLink>
                 </dd>
               </div>
@@ -65,12 +66,12 @@ export default function ContactPage() {
                 <dt className="text-xs uppercase tracking-wider text-ink/50">WhatsApp</dt>
                 <dd className="mt-1">
                   <a
-                    href="https://wa.me/919257108784"
+                    href={contactNumbers.whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-gold"
                   >
-                    +91 92571 08784
+                    {contactNumbers.whatsapp}
                   </a>
                 </dd>
               </div>
@@ -104,25 +105,12 @@ export default function ContactPage() {
                       {hotel.location}, {hotel.state}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-4">
-                    {hotel.contact && (
-                      <ContactLink
-                        method="phone"
-                        href={`tel:${hotel.contact.phone.replace(/\s/g, '')}`}
-                        ctaSource="contact_page_property"
-                        hotel={hotel.slug}
-                        className="text-ink/70 hover:text-gold"
-                      >
-                        {hotel.contact.phone}
-                      </ContactLink>
-                    )}
-                    <Link
-                      href={`/enquiry?property=${hotel.slug}&type=hotel`}
-                      className="text-gold-dark hover:text-gold"
-                    >
-                      Enquire
-                    </Link>
-                  </div>
+                  <Link
+                    href={`/enquiry?property=${hotel.slug}&type=hotel`}
+                    className="shrink-0 text-gold-dark hover:text-gold"
+                  >
+                    Enquire
+                  </Link>
                 </li>
               ))}
             </ul>

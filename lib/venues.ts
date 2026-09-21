@@ -1,15 +1,10 @@
 import type { EventVenue, Hotel } from '@/content/types';
 
-// A boardroom is a meeting room, not an event space: it belongs in the venue
-// list a planner reads, but never in a property's "Event Spaces" headline
-// figure. Every screen that shows a count goes through here so the number on
-// the home page, the hotel page and the weddings page can't drift apart.
-export function eventSpaces(hotel: Hotel): EventVenue[] {
-  return (hotel.eventSpaces?.venues ?? []).filter((venue) => venue.kind !== 'boardroom');
-}
-
+// Every count on the site goes through here so the home page, the hotel page
+// and the weddings page cannot drift apart. A boardroom counts as an event
+// space like any other room — `kind` only changes how it is labelled.
 export function eventSpaceCount(hotel: Hotel): number {
-  return eventSpaces(hotel).length;
+  return hotel.eventSpaces?.venues.length ?? 0;
 }
 
 export function totalEventSpaces(list: readonly Hotel[]): number {

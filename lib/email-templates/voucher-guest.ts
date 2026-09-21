@@ -1,4 +1,5 @@
 import { VOUCHER_TERMS_HTML } from '@/content/legal';
+import { contactNumbers } from '@/content/site';
 import type { Hotel } from '@/content/types';
 import type { Voucher } from '@prisma/client';
 import { voucherGuestFields } from '../voucher-view';
@@ -17,7 +18,7 @@ export function voucherGuestHtml({
     ? `<p style="font-size:12px; color:#404040; margin:16px 0;">
         <strong>${escapeHtml(hotel.name)}</strong><br>
         ${escapeHtml(hotel.contact.address)}<br>
-        Phone: ${escapeHtml(hotel.contact.phone)}
+        Reservations: ${escapeHtml(contactNumbers.tollFree)}
       </p>`
     : '';
 

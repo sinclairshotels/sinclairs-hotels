@@ -13,7 +13,7 @@ import { SectionHeading } from '@/components/section-heading';
 import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
-import { siteConfig } from '@/content/site';
+import { contactNumbers, siteConfig } from '@/content/site';
 import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
 import { eventSpaceCount } from '@/lib/venues';
@@ -87,10 +87,8 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
     description: hotel.description,
     url: `${siteConfig.url}/hotels/${hotel.slug}`,
     image: `${siteConfig.url}${hotel.heroImage}`,
-    ...(hotel.contact && {
-      address: hotel.contact.address,
-      telephone: hotel.contact.phone,
-    }),
+    ...(hotel.contact && { address: hotel.contact.address }),
+    telephone: contactNumbers.tollFree,
     amenityFeature: hotel.amenities.map((name) => ({
       '@type': 'LocationFeatureSpecification',
       name,
@@ -353,16 +351,16 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-wider text-ink/50">Contact No.</dt>
+                      <dt className="text-xs uppercase tracking-wider text-ink/50">Reservations</dt>
                       <dd className="mt-2 text-sm text-ink/80">
                         <ContactLink
                           method="phone"
-                          href={`tel:${hotel.contact.phone.replace(/\s/g, '')}`}
+                          href={contactNumbers.tollFreeHref}
                           ctaSource="hotel_page"
                           hotel={hotel.slug}
                           className="hover:text-forest"
                         >
-                          {hotel.contact.phone}
+                          {contactNumbers.tollFree}
                         </ContactLink>
                       </dd>
                     </div>

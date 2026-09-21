@@ -20,11 +20,38 @@ import { bookingSchema } from '@/lib/validation';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+export interface GuestValues {
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  billingAddress: string;
+  specialRequests: string;
+}
+
 export type BookingFormState = {
   status: 'idle' | 'error';
   message?: string;
   fieldErrors?: Record<string, string[]>;
+  // What the guest typed, echoed back. React resets a form's DOM once the
+  // action resolves, so without this a rejected submission — a gateway
+  // outage, a lost race for the last room — empties four fields the guest
+  // has to type again to see the same error.
+  values?: GuestValues;
 };
+
+function guestValues(formData: FormData): GuestValues {
+  const read = (field: string) => {
+    const value = formData.get(field);
+    return typeof value === 'string' ? value : '';
+  };
+  return {
+    guestName: read('guestName'),
+    guestEmail: read('guestEmail'),
+    guestPhone: read('guestPhone'),
+    billingAddress: read('billingAddress'),
+    specialRequests: read('specialRequests'),
+  };
+}
 
 // Raised when the rooms a guest is looking at were taken between the
 // availability page rendering and this submission — the whole reason the
@@ -37,22 +64,25 @@ export async function createBooking(
 ): Promise<BookingFormState> {
   const headerList = await headers();
   const ip = clientIp(headerList);
+  const values = guestValues(formData);
+  const fail = (message: string, fieldErrors?: Record<string, string[]>): BookingFormState => ({
+    status: 'error',
+    message,
+    ...(fieldErrors ? { fieldErrors } : {}),
+    values,
+  });
 
   if (isRateLimited(`booking:${ip}`)) {
-    return { status: 'error', message: 'Too many requests. Please try again in a minute.' };
+    return fail('Too many requests. Please try again in a minute.');
   }
 
   const parsed = bookingSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) {
-    return {
-      status: 'error',
-      message: 'Please check the highlighted fields.',
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
+    return fail('Please check the highlighted fields.', parsed.error.flatten().fieldErrors);
   }
 
   if (parsed.data.company) {
-    return { status: 'error', message: 'Something went wrong. Please try again.' };
+    return fail('Something went wrong. Please try again.');
   }
 
   const d = parsed.data;
@@ -63,32 +93,28 @@ export async function createBooking(
   // The dates arrive in a hidden field, so they are re-checked here rather
   // than trusted from the page that rendered them.
   if (!checkIn || !checkOut) {
-    return { status: 'error', message: 'Please choose valid check-in and check-out dates.' };
+    return fail('Please choose valid check-in and check-out dates.');
   }
   if (checkIn < today || checkOut <= checkIn) {
-    return { status: 'error', message: 'Please choose valid check-in and check-out dates.' };
+    return fail('Please choose valid check-in and check-out dates.');
   }
   if (
     nightsBetween(checkIn, checkOut) > MAX_NIGHTS ||
     checkIn > addDays(today, MAX_BOOKING_HORIZON_DAYS)
   ) {
-    return { status: 'error', message: 'Please send an enquiry for a stay of that length.' };
+    return fail('Please send an enquiry for a stay of that length.');
   }
   if (d.adults + d.children > d.rooms * MAX_GUESTS_PER_ROOM) {
-    return {
-      status: 'error',
-      message: `That many guests needs more rooms — we can take up to ${MAX_GUESTS_PER_ROOM} per room.`,
-    };
+    return fail(
+      `That many guests needs more rooms — we can take up to ${MAX_GUESTS_PER_ROOM} per room.`,
+    );
   }
 
   // Checked before anything is written: without credentials the gateway is
   // never called, so the booking could only ever sit unpaid.
   if (!ipayConfigured()) {
     log.error('booking.ipay_misconfigured', { hotel: d.hotelSlug });
-    return {
-      status: 'error',
-      message: 'Online booking is temporarily unavailable. Please send us an enquiry instead.',
-    };
+    return fail('Online booking is temporarily unavailable. Please send us an enquiry instead.');
   }
 
   const orderId = generateOrderId();
@@ -175,16 +201,10 @@ export async function createBooking(
     );
   } catch (err) {
     if (err instanceof RoomsGoneError) {
-      return {
-        status: 'error',
-        message: 'Those rooms were taken while you were booking. Please search again.',
-      };
+      return fail('Those rooms were taken while you were booking. Please search again.');
     }
     if (isWriteConflict(err)) {
-      return {
-        status: 'error',
-        message: 'Someone else was booking the same room. Please try again.',
-      };
+      return fail('Someone else was booking the same room. Please try again.');
     }
     throw err;
   }
@@ -222,7 +242,7 @@ export async function createBooking(
         data: { status: 'PAYMENT_FAILED' },
       }),
     ]);
-    return { status: 'error', message: sale.message };
+    return fail(sale.message);
   }
 
   redirect(sale.redirectUrl);

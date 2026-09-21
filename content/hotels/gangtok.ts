@@ -36,7 +36,7 @@ export const gangtokHotel: Hotel = {
     'Elevator',
     'Left luggage storage',
     'Room service',
-    'Conference and banquet halls (The Cherry Hall and Jasmine)',
+    'Conference and banquet halls (The Cherry Hall and the Jasmine Boardroom)',
   ],
   rooms: [
     {
@@ -202,7 +202,7 @@ export const gangtokHotel: Hotel = {
     },
     {
       src: '/images/hotels/gangtok/amenities/JasmineHall.webp',
-      alt: 'Jasmine Hall, a versatile function room at Sinclairs Gangtok',
+      alt: 'The Jasmine Boardroom at Sinclairs Gangtok',
     },
     {
       src: '/images/hotels/gangtok/amenities/OutdoorDeck4.webp',
@@ -246,19 +246,18 @@ export const gangtokHotel: Hotel = {
     },
   ],
   eventSpaces: {
-    totalSqFt: 4728,
-    maxCapacity: 110,
+    totalSqFt: 4210,
+    maxCapacity: 200,
     venues: [
-      { name: 'The Cherry Hall (Lower)', areaSqFt: 2240, capacity: 110 },
-      { name: 'The Cherry Hall (Upper)', areaSqFt: 1468, capacity: 80 },
-      { name: 'Jasmine Hall', areaSqFt: 510, capacity: 30, kind: 'boardroom' },
+      { name: 'The Cherry Hall', areaSqFt: 3700, capacity: 200 },
+      { name: 'Jasmine Boardroom', areaSqFt: 510, capacity: 25, kind: 'boardroom' },
     ],
   },
   weddings: {
     intro:
       'Say your vows with the Kanchenjunga range as a backdrop. Sinclairs Gangtok pairs an intimate banquet hall with honeymoon-ready Valentine Rooms for a wedding that feels personal, not production-line.',
     highlights: [
-      'The Cherry Hall seats up to 110 guests',
+      'The Cherry Hall seats up to 200 guests',
       'Dedicated haldi, mehendi and sangeet arrangements',
       'Valentine Rooms for the newlyweds',
       'Multi-cuisine wedding menus at Magnolia',
@@ -292,10 +291,10 @@ export const gangtokHotel: Hotel = {
   },
   meetings: {
     intro:
-      'The Cherry Hall and Jasmine Hall give Sinclairs Gangtok two well-equipped conference spaces just minutes from MG Marg, backed by mountain views that make even a full-day offsite feel like a retreat.',
+      'The Cherry Hall and the Jasmine Boardroom give Sinclairs Gangtok two well-equipped conference spaces just minutes from MG Marg, backed by mountain views that make even a full-day offsite feel like a retreat.',
     highlights: [
-      'The Cherry Hall (Lower & Upper) and Jasmine Hall',
-      'Up to 110 guests theatre-style',
+      'The Cherry Hall and the Jasmine Boardroom',
+      'Up to 200 guests theatre-style',
       'In-house catering at Magnolia and Guras Bar',
       'Transfers to NJP/Bagdogra airport',
     ],
@@ -310,7 +309,7 @@ export const gangtokHotel: Hotel = {
       },
       {
         src: '/images/hotels/gangtok/amenities/JasmineHall.webp',
-        alt: 'Jasmine Hall, a versatile function room at Sinclairs Gangtok',
+        alt: 'The Jasmine Boardroom at Sinclairs Gangtok',
       },
     ],
   },
@@ -318,7 +317,6 @@ export const gangtokHotel: Hotel = {
     'https://maps.google.com/maps?q=Sinclairs%20Gangtok&t=m&z=17&output=embed&iwloc=near',
   contact: {
     address: 'Cherry Residency Complex, Zero Point, PO Rajbhawan, Gangtok 737101, Sikkim, India',
-    phone: '+91 70032 07937',
     notificationEmail: 'gangtok@sinclairshotels.com',
   },
 };

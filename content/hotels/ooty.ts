@@ -264,7 +264,6 @@ export const ootyHotel: Hotel = {
     'https://maps.google.com/maps?q=Sinclairs%20Retreat%20Ooty&t=m&z=17&output=embed&iwloc=near',
   contact: {
     address: '444 Gorishola Road, Next to Tea Factory, Ooty 643001, Tamil Nadu, India',
-    phone: '+91 63829 46457',
     notificationEmail: 'ooty@sinclairshotels.com',
   },
 };

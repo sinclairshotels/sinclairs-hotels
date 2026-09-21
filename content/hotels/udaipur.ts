@@ -193,7 +193,6 @@ export const udaipurHotel: Hotel = {
     'https://maps.google.com/maps?q=Sinclairs%20Palace%20Retreat%20Udaipur&t=m&z=17&output=embed&iwloc=near',
   contact: {
     address: 'Karanji Ka Guda, District Udaipur 313322, Rajasthan, India',
-    phone: '+91 90075 40727',
     notificationEmail: 'palace.udaipur@sinclairshotels.com',
   },
 };

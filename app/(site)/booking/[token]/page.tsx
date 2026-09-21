@@ -1,4 +1,5 @@
 import { getHotelBySlug } from '@/content/hotels';
+import { contactNumbers } from '@/content/site';
 import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { Metadata } from 'next';
@@ -100,7 +101,7 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
 
           {hotel?.contact && (
             <p className="mt-8 border-t border-ink/10 pt-6 text-xs leading-relaxed text-ink/60">
-              Need to change something? Call {hotel.name} on {hotel.contact.phone}, or{' '}
+              Need to change something? Call reservations on {contactNumbers.tollFree}, or{' '}
               <Link href="/enquiry" className="underline hover:text-forest">
                 send us an enquiry
               </Link>

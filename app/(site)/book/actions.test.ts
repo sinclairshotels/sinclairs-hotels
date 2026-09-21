@@ -224,6 +224,40 @@ describe('createBooking', () => {
     expect(redirectedTo).toBeNull();
   });
 
+  it('hands back what the guest typed, so a refused booking is not retyped', async () => {
+    await loadRates(3);
+    mockState.configured = false;
+
+    const { state } = await submit(
+      bookingFormData({
+        guestName: 'Retyping Is Rude',
+        guestPhone: '+91 90000 11111',
+        billingAddress: '12 Test Lane, Kolkata',
+        specialRequests: 'A quiet floor, please.',
+      }),
+    );
+
+    expect(state?.status).toBe('error');
+    expect(state?.values).toMatchObject({
+      guestName: 'Retyping Is Rude',
+      guestPhone: '+91 90000 11111',
+      billingAddress: '12 Test Lane, Kolkata',
+      specialRequests: 'A quiet floor, please.',
+    });
+  });
+
+  it('hands the values back on a rejected field too, alongside the field errors', async () => {
+    await loadRates(3);
+
+    const { state } = await submit(
+      bookingFormData({ guestEmail: 'not-an-email', guestName: 'Still Here' }),
+    );
+
+    expect(state?.fieldErrors?.guestEmail).toBeDefined();
+    expect(state?.values?.guestName).toBe('Still Here');
+    expect(state?.values?.guestEmail).toBe('not-an-email');
+  });
+
   it('writes nothing when the gateway is not configured', async () => {
     await loadRates(3);
     mockState.configured = false;
