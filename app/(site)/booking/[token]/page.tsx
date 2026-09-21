@@ -1,3 +1,4 @@
+import { BookingPurchaseTracking } from '@/components/booking-purchase-tracking';
 import { getHotelBySlug } from '@/content/hotels';
 import { contactNumbers } from '@/content/site';
 import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
@@ -15,8 +16,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function BookingPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function BookingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ paid?: string }>;
+}) {
   const { token } = await params;
+  const { paid } = await searchParams;
   const booking = await prisma.booking.findUnique({ where: { viewToken: token } });
   if (!booking) notFound();
 
@@ -52,6 +60,17 @@ export default async function BookingPage({ params }: { params: Promise<{ token:
 
   return (
     <section className="bg-forest/5 px-6 py-16 sm:py-24">
+      {paid === '1' && booking.status === 'CONFIRMED' && hotel && (
+        <BookingPurchaseTracking
+          reference={booking.reference}
+          amount={booking.total.toNumber()}
+          hotelSlug={booking.hotelSlug}
+          hotelName={hotel.name}
+          roomName={booking.roomName}
+          nights={nights}
+          rooms={booking.rooms}
+        />
+      )}
       <div className="mx-auto max-w-xl overflow-hidden rounded-xl bg-white shadow-xl">
         <div className="bg-forest px-8 py-10 text-center text-cream">
           <p className="text-xs uppercase tracking-[0.3em] text-gold-light">

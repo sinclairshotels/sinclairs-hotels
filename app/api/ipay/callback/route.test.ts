@@ -323,9 +323,12 @@ describe('i-Pay callback settling a booking', () => {
       'CONFIRMED',
     );
     expect(mailKinds()).toEqual([]);
-    // A guest pressing back still lands on their booking, not the generic receipt.
+    // A guest pressing back still lands on their booking, not the generic
+    // receipt — and still carries ?paid=1, because they have arrived from the
+    // bank again. Reporting the sale twice is prevented in the page, which
+    // de-duplicates on the booking reference, not by withholding the marker.
     expect(replay.headers.get('location')).toBe(
-      `http://localhost:3000/booking/${booking.viewToken}`,
+      `http://localhost:3000/booking/${booking.viewToken}?paid=1`,
     );
   });
 });

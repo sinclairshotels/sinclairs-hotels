@@ -185,7 +185,7 @@ export default async function PaymentsPage({
                 </td>
                 <td className="px-4 py-3 font-medium">
                   <a
-                    href={`${protocol}://${publicHost}/ipay/result?order=${payment.orderId}`}
+                    href={`${protocol}://${publicHost}/ipay/result?t=${payment.viewToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-forest underline"

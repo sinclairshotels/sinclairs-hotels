@@ -25,13 +25,18 @@ import { NextResponse } from 'next/server';
 // Used by the replay branch too, so a guest pressing back lands in the same
 // place they did the first time.
 async function settlementUrl(baseUrl: string, paymentId: string, orderId: string): Promise<string> {
-  const booking = await prisma.booking.findUnique({
-    where: { paymentId },
-    select: { viewToken: true },
-  });
-  return booking
-    ? `${baseUrl}/booking/${booking.viewToken}`
-    : `${baseUrl}/ipay/result?order=${orderId}`;
+  const [booking, payment] = await Promise.all([
+    prisma.booking.findUnique({ where: { paymentId }, select: { viewToken: true } }),
+    prisma.payment.findUnique({ where: { id: paymentId }, select: { viewToken: true } }),
+  ]);
+  // ?paid=1 marks the arrival that came straight from the bank. The same URL
+  // is the permanent "view my booking" link in the guest's email, so without a
+  // marker the purchase event would fire again every time they reopened it and
+  // GA4 would count the revenue afresh each time — it does not de-duplicate.
+  if (booking) return `${baseUrl}/booking/${booking.viewToken}?paid=1`;
+  return payment?.viewToken
+    ? `${baseUrl}/ipay/result?t=${payment.viewToken}`
+    : `${baseUrl}/ipay/result`;
 }
 
 // Two late callbacks can be settling their way into the same last room at the
@@ -138,7 +143,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { hmacKey } = iciciConfig();
   if (!hmacKey) {
     log.error('ipay.callback.misconfigured', { reason: 'ICICI_HMAC_KEY not set' });
-    return NextResponse.redirect(`${baseUrl}/ipay/result?order=unknown`, 303);
+    return NextResponse.redirect(`${baseUrl}/ipay/result`, 303);
   }
 
   const formData = await request.formData();
@@ -147,7 +152,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   if (!orderId) {
     log.error('ipay.callback.rejected', { reason: 'no_order_id' });
-    return NextResponse.redirect(`${baseUrl}/ipay/result?order=unknown`, 303);
+    return NextResponse.redirect(`${baseUrl}/ipay/result`, 303);
   }
 
   // Only the gateway's own signed response — never a plain redirect query
@@ -162,13 +167,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     // A signature that does not verify is either a tampered response or a
     // forged callback; both are security events, not payment outcomes.
     log.error('ipay.callback.rejected', { order_id: orderId, reason: 'hash_mismatch' });
-    return NextResponse.redirect(`${baseUrl}/ipay/result?order=${orderId}`, 303);
+    return NextResponse.redirect(`${baseUrl}/ipay/result`, 303);
   }
 
   const payment = await prisma.payment.findUnique({ where: { orderId } });
   if (!payment) {
     log.error('ipay.callback.rejected', { order_id: orderId, reason: 'unknown_order' });
-    return NextResponse.redirect(`${baseUrl}/ipay/result?order=${orderId}`, 303);
+    return NextResponse.redirect(`${baseUrl}/ipay/result`, 303);
   }
 
   // Idempotent: the callback (or a guest's back button) can arrive more than
@@ -338,5 +343,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     html: ipayConfirmationHtml(emailData),
   });
 
-  return NextResponse.redirect(`${baseUrl}/ipay/result?order=${orderId}`, 303);
+  // The guest has just paid and this is their receipt, so it is addressed by
+  // the payment's own token rather than the order number they may be quoting.
+  return NextResponse.redirect(await settlementUrl(baseUrl, updated.id, orderId), 303);
 }

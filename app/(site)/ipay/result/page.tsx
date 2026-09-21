@@ -19,10 +19,15 @@ export const dynamic = 'force-dynamic';
 export default async function IpayResultPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
-  const { order } = await searchParams;
-  const payment = order ? await prisma.payment.findUnique({ where: { orderId: order } }) : null;
+  // Addressed by the token only. It used to accept ?order=, but the order
+  // number is printed on receipts and quoted in email, so anyone who saw one
+  // could open that payment's page. The guest reaches this from the bank's
+  // redirect or their own email; staff read the same transaction, with the
+  // guest's details attached, in /admin/payments.
+  const { t } = await searchParams;
+  const payment = t ? await prisma.payment.findUnique({ where: { viewToken: t } }) : null;
 
   if (!payment) {
     return (
