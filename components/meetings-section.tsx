@@ -1,6 +1,7 @@
 import { getAmenityIcon } from '@/components/amenity-icon';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { Reveal } from '@/components/reveal';
+import { SectionHeading } from '@/components/section-heading';
 import type { Hotel } from '@/content/types';
 import Link from 'next/link';
 
@@ -14,13 +15,13 @@ export function MeetingsSection({ hotel }: { hotel: Hotel }) {
       id="meetings"
       className="scroll-mt-32 border-y border-forest/10 bg-white py-10 sm:py-16"
     >
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <Reveal>
-          <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Meetings &amp; Events</p>
-          <h2 className="mt-3 font-display text-2xl text-forest sm:text-3xl">
-            Meetings &amp; Conferences at {hotel.name}
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">{meetings.intro}</p>
+          <SectionHeading
+            eyebrow="Meetings &amp; Events"
+            title={`Meetings & Conferences at ${hotel.name}`}
+            lede={meetings.intro}
+          />
         </Reveal>
 
         <div className="mt-10 flex flex-wrap items-baseline gap-x-14 gap-y-6 border-y border-forest/10 py-8">
@@ -47,9 +48,16 @@ export function MeetingsSection({ hotel }: { hotel: Hotel }) {
 
           <ul className="divide-y divide-forest/10 self-start text-sm">
             {spaces.venues.map((venue) => (
-              <li key={venue.name} className="flex items-center justify-between py-3">
-                <span className="text-ink/80">{venue.name}</span>
-                <span className="text-ink/50">
+              <li key={venue.name} className="flex items-center justify-between gap-4 py-3">
+                <span className="text-ink/80">
+                  {venue.name}
+                  {venue.kind === 'boardroom' && (
+                    <span className="ml-2 rounded-full bg-forest/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-wider text-forest">
+                      Boardroom
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0 text-ink/50">
                   {venue.areaSqFt.toLocaleString('en-IN')} sq ft · {venue.capacity} guests
                 </span>
               </li>

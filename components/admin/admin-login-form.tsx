@@ -17,6 +17,23 @@ export function AdminLoginForm() {
       )}
 
       <div>
+        <label htmlFor="email" className="text-xs uppercase tracking-wider text-ink/60">
+          Email
+        </label>
+        <div className="mt-1">
+          <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            autoComplete="username"
+            className="input"
+            aria-invalid={state.status === 'error'}
+          />
+        </div>
+      </div>
+
+      <div>
         <label htmlFor="password" className="text-xs uppercase tracking-wider text-ink/60">
           Password
         </label>
@@ -26,6 +43,7 @@ export function AdminLoginForm() {
             type="password"
             name="password"
             required
+            autoComplete="current-password"
             className="input"
             aria-invalid={state.status === 'error'}
           />

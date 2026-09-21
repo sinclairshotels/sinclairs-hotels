@@ -8,10 +8,16 @@ export const siteConfig = {
   url: 'https://www.sinclairshotels.com',
 };
 
-// Staah runs reservations end-to-end; every "Book Now" / availability CTA sends
-// guests there instead of handling booking on this site.
-export const reservationUrl =
-  'https://reservation.sinclairshotels.com/inst/#group?groupId=882Mjkbac8S7wLYqvHyxVFGKNMfaaeRV5yNO8NFk4hB5fg15ZQ3NDc=&JDRN=Y';
+// The only two numbers the site publishes. Properties have their own lines, but
+// a guest is never sent to one: a call goes to reservations and everything else
+// goes through the enquiry form, so there is nowhere for a per-property number
+// to drift back onto a page from.
+export const contactNumbers = {
+  tollFree: '1800 120 267 000',
+  tollFreeHref: 'tel:1800120267000',
+  whatsapp: '+91 92571 08784',
+  whatsappHref: 'https://wa.me/919257108784',
+} as const;
 
 export const socialLinks = [
   { label: 'Facebook', href: 'https://www.facebook.com/sinclairshotelsandresorts/' },
@@ -116,7 +122,7 @@ export const pressMentions = [
 // broken even on the live site, so the notice text — the part that was ever
 // guest-facing — is what's ported, not a re-hosted file).
 export const fraudAlert =
-  "Some entities are fraudulently using our brand name, along with our address. They are offering rooms at our hotels and resorts and collecting payment in fake bank accounts to cheat you. Our official hotel website is www.sinclairshotels.com — please double-check the website address before engaging, and ensure it's www.sinclairshotels.com to avoid scams. We are NOT responsible for losses incurred on fake websites. In case of any doubts, please call our Senior Reservation Manager (98305 56333) or mail us at kolkata@sinclairshotels.com.";
+  "Some entities are fraudulently using our brand name, along with our address. They are offering rooms at our hotels and resorts and collecting payment in fake bank accounts to cheat you. Our official hotel website is www.sinclairshotels.com — please double-check the website address before engaging, and ensure it's www.sinclairshotels.com to avoid scams. We are NOT responsible for losses incurred on fake websites. In case of any doubts, please call our Senior Reservation Manager (98305 56333) or send us an enquiry through this website.";
 
 // The legacy voucher tool's full booking-office directory (per-office address/GSTIN)
 // lived in a database table this migration hasn't pulled yet — only the head office,

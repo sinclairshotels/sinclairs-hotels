@@ -116,7 +116,7 @@ export default async function PaymentsPage({
           />
         </div>
 
-        <form method="get" className="mt-3 flex flex-nowrap items-center gap-2 overflow-x-auto">
+        <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input
             type="search"
             name="q"
@@ -185,7 +185,7 @@ export default async function PaymentsPage({
                 </td>
                 <td className="px-4 py-3 font-medium">
                   <a
-                    href={`${protocol}://${publicHost}/ipay/result?order=${payment.orderId}`}
+                    href={`${protocol}://${publicHost}/ipay/result?t=${payment.viewToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-forest underline"

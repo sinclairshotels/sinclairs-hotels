@@ -48,18 +48,16 @@ export function IpayForm({ hotels }: { hotels: Hotel[] }) {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Hotel" name="hotelSlug" error={fieldError('hotelSlug')}>
           <input type="hidden" name="hotelSlug" value={hotelSlug} />
-          <div className="input">
-            <Select value={hotelSlug} onValueChange={setHotelSlug}>
-              <SelectTrigger id="hotelSlug" placeholder="Select a hotel" />
-              <SelectContent>
-                {hotels.map((hotel) => (
-                  <SelectItem key={hotel.slug} value={hotel.slug}>
-                    {hotel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={hotelSlug} onValueChange={setHotelSlug}>
+            <SelectTrigger id="hotelSlug" placeholder="Select a hotel" />
+            <SelectContent>
+              {hotels.map((hotel) => (
+                <SelectItem key={hotel.slug} value={hotel.slug}>
+                  {hotel.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Amount (₹)" name="amount" error={fieldError('amount')}>
           <input
@@ -110,20 +108,16 @@ export function IpayForm({ hotels }: { hotels: Hotel[] }) {
         </Field>
         <Field label="Check-in" name="checkIn">
           <input type="hidden" name="checkIn" value={checkIn} />
-          <div className="input">
-            <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
-          </div>
+          <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
         </Field>
         <Field label="Check-out" name="checkOut">
           <input type="hidden" name="checkOut" value={checkOut} />
-          <div className="input">
-            <DatePicker
-              value={checkOut}
-              onChange={setCheckOut}
-              min={checkIn}
-              placeholder="Select date"
-            />
-          </div>
+          <DatePicker
+            value={checkOut}
+            onChange={setCheckOut}
+            min={checkIn}
+            placeholder="Select date"
+          />
         </Field>
       </div>
 

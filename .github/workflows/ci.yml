@@ -38,6 +38,11 @@ jobs:
 
       - run: pnpm prisma migrate deploy
 
+      # The A0 migration can only backfill room types that already had a rate or
+      # a booking — SQL cannot read content/hotels/*.ts. On a fresh database that
+      # is none, so without this every test that books a room finds no RoomType.
+      - run: pnpm sync:rooms
+
       - run: pnpm lint
 
       - run: pnpm typecheck

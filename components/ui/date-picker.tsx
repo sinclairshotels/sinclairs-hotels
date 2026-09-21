@@ -49,12 +49,19 @@ export function DatePicker({
   min,
   placeholder = 'Select date',
   id,
+  label,
+  bare = false,
 }: {
   value: string;
   onChange: (iso: string) => void;
   min?: string;
   placeholder?: string;
   id?: string;
+  // The trigger is a button, not a form control, so a <label> cannot name it.
+  // This is how it gets an accessible name of its own.
+  label?: string;
+  // See SelectTrigger: boxed by default, opt out where the parent draws one.
+  bare?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const minDate = min ? parseISO(min) : undefined;
@@ -75,7 +82,10 @@ export function DatePicker({
         <button
           id={id}
           type="button"
-          className="flex w-full items-center justify-between gap-2 text-left text-sm text-ink outline-none"
+          aria-label={label}
+          className={`flex w-full items-center justify-between gap-2 text-left text-sm text-ink outline-none ${
+            bare ? '' : 'input'
+          }`}
         >
           <span className={value ? '' : 'text-ink/40'}>
             {value ? formatDisplay(value) : placeholder}
@@ -97,7 +107,10 @@ export function DatePicker({
                   setDisplayMonth((prev) => new Date(prev.getFullYear(), Number(v), 1))
                 }
               >
-                <SelectTrigger className="rounded border border-forest/15 px-2 py-1.5 text-ink" />
+                <SelectTrigger
+                  bare
+                  className="rounded border border-forest/15 px-2 py-1.5 text-ink"
+                />
                 <SelectContent>
                   {MONTH_NAMES.map((name, i) => (
                     <SelectItem key={name} value={String(i)}>
@@ -114,7 +127,10 @@ export function DatePicker({
                   setDisplayMonth((prev) => new Date(Number(v), prev.getMonth(), 1))
                 }
               >
-                <SelectTrigger className="rounded border border-forest/15 px-2 py-1.5 text-ink" />
+                <SelectTrigger
+                  bare
+                  className="rounded border border-forest/15 px-2 py-1.5 text-ink"
+                />
                 <SelectContent>
                   {years.map((year) => (
                     <SelectItem key={year} value={String(year)}>

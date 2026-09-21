@@ -1,23 +1,27 @@
 import { getAmenityIcon } from '@/components/amenity-icon';
 import { ClosingCta } from '@/components/closing-cta';
 import { ContactLink } from '@/components/contact-link';
-import { EmailText } from '@/components/email-text';
 import { ExploreSection } from '@/components/explore-section';
-import { FoodStrip } from '@/components/food-strip';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { HeroCarousel } from '@/components/hero-carousel';
 import { HotelViewTracking } from '@/components/hotel-view-tracking';
 import { JsonLd } from '@/components/json-ld';
+import { LocationMap } from '@/components/location-map';
 import { MeetingsSection } from '@/components/meetings-section';
 import { ReservationLink } from '@/components/reservation-link';
 import { RoomImageCarousel } from '@/components/room-image-carousel';
+import { SectionHeading } from '@/components/section-heading';
 import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
-import { siteConfig } from '@/content/site';
+import { contactNumbers, siteConfig } from '@/content/site';
+import { mapsEmbedEnabled } from '@/lib/maps';
+import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
+import { eventSpaceCount } from '@/lib/venues';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 type Params = { slug: string };
@@ -53,10 +57,20 @@ const subNav = [
   { href: '#location', label: 'Location' },
 ];
 
+// Staff rename and retire rooms without a deploy, so the room list cannot be
+// baked in at build time — but it changes rarely enough not to be dynamic.
+export const revalidate = 600;
+
 export default async function HotelPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   const hotel = getHotelBySlug(slug);
   if (!hotel) notFound();
+
+  const display = await roomDisplayNames(hotel.slug);
+  const visibleRooms = hotel.rooms
+    .map((room) => ({ ...room, ...(display.get(room.name) ?? { name: room.name, active: true }) }))
+    .filter((room) => room.active)
+    .map((room) => ({ ...room, displayName: room.name }));
 
   const award = awards.find((a) => a.propertySlug === hotel.slug);
   const sections = subNav.filter((item) => {
@@ -64,7 +78,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
     if (item.href === '#meetings') return Boolean(hotel.meetings && hotel.eventSpaces);
     if (item.href === '#gallery') return hotel.gallery.length > 0;
     if (item.href === '#explore') return hotel.sightseeing.length > 0;
-    if (item.href === '#location') return Boolean(hotel.mapEmbedUrl || hotel.contact);
+    if (item.href === '#location') return Boolean(hotel.contact);
     return true;
   });
 
@@ -75,10 +89,8 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
     description: hotel.description,
     url: `${siteConfig.url}/hotels/${hotel.slug}`,
     image: `${siteConfig.url}${hotel.heroImage}`,
-    ...(hotel.contact && {
-      address: hotel.contact.address,
-      telephone: hotel.contact.phone,
-    }),
+    ...(hotel.contact && { address: hotel.contact.address }),
+    telephone: contactNumbers.tollFree,
     amenityFeature: hotel.amenities.map((name) => ({
       '@type': 'LocationFeatureSpecification',
       name,
@@ -144,10 +156,10 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       <div className="relative z-10 mx-auto -mt-8 w-full max-w-6xl px-6">
         <div className="flex flex-wrap items-center justify-between gap-6 rounded-xl bg-white px-6 py-5 shadow-xl sm:gap-10">
           <div className="flex flex-wrap gap-x-10 gap-y-3">
-            <Stat value={String(hotel.rooms.length)} label="Room Types" />
+            <Stat value={String(visibleRooms.length)} label="Room Types" />
             <Stat value={String(hotel.dining.length)} label="Dining Venues" />
             {hotel.eventSpaces && (
-              <Stat value={String(hotel.eventSpaces.venues.length)} label="Event Spaces" />
+              <Stat value={String(eventSpaceCount(hotel))} label="Event Spaces" />
             )}
             <Stat value={String(hotel.amenities.length)} label="Amenities" />
           </div>
@@ -176,11 +188,12 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         </div>
       </nav>
 
-      <section id="overview" className="mx-auto max-w-4xl scroll-mt-32 px-6 py-10 sm:py-16">
-        <p className="text-base leading-relaxed text-ink/80">{hotel.description}</p>
+      <section id="overview" className="mx-auto max-w-7xl scroll-mt-32 px-6 py-10 sm:py-16">
+        <SectionHeading eyebrow="The Property" title="Overview" />
+        <p className="mt-6 max-w-3xl text-base leading-relaxed text-ink/80">{hotel.description}</p>
 
         {hotel.history && (
-          <div className="mt-8 rounded-lg border-l-4 border-gold bg-forest/5 p-6">
+          <div className="mt-8 max-w-3xl rounded-lg border-l-4 border-gold bg-forest/5 p-6">
             <p className="text-xs uppercase tracking-[0.3em] text-gold-dark">Heritage</p>
             <p className="mt-3 font-display text-lg italic leading-relaxed text-forest">
               {hotel.history}
@@ -189,9 +202,9 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         )}
 
         {hotel.amenities.length > 0 && (
-          <div className="mt-12">
-            <h2 className="font-display text-2xl text-forest">Amenities</h2>
-            <ul className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+          <div className="mt-14">
+            <SectionHeading title="Amenities" />
+            <ul className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
               {hotel.amenities.map((amenity) => {
                 const Icon = getAmenityIcon(amenity);
                 return (
@@ -206,15 +219,19 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         )}
       </section>
 
-      {hotel.rooms.length > 0 && (
+      {visibleRooms.length > 0 && (
         <section
           id="rooms"
           className="scroll-mt-32 border-y border-forest/10 bg-white py-10 sm:py-16"
         >
           <div className="mx-auto max-w-7xl px-6">
-            <h2 className="font-display text-2xl text-forest">Rooms &amp; Suites</h2>
-            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {hotel.rooms.map((room) => (
+            <SectionHeading
+              eyebrow="Where You Stay"
+              title="Rooms &amp; Suites"
+              lede={`Every room at ${hotel.name}, with the detail to choose between them.`}
+            />
+            <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {visibleRooms.map((room) => (
                 <div
                   key={room.name}
                   className="group flex flex-col overflow-hidden rounded-lg bg-cream shadow-sm transition hover:shadow-lg"
@@ -224,14 +241,14 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                     alt={room.name}
                   />
                   <div className="flex flex-1 flex-col p-5">
-                    <h3 className="font-display text-lg text-forest">{room.name}</h3>
+                    <h3 className="font-display text-lg text-forest">{room.displayName}</h3>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/70">
                       {room.description}
                     </p>
                     <ReservationLink
                       ctaSource="hotel_room_card"
-                      params={{ hotel: hotel.slug, room: room.name }}
-                      item={{ slug: hotel.slug, name: hotel.name, variant: room.name }}
+                      params={{ hotel: hotel.slug, room: room.displayName }}
+                      item={{ slug: hotel.slug, name: hotel.name, variant: room.displayName }}
                       className="mt-5 block rounded bg-forest-dark py-2.5 text-center text-xs uppercase tracking-wider text-cream transition hover:bg-forest"
                     >
                       Book Now
@@ -246,16 +263,14 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
 
       {hotel.dining.length > 0 && (
         <section id="dining" className="scroll-mt-32 bg-forest-dark py-10 sm:py-16">
-          <div className="mx-auto max-w-6xl px-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-gold">Restaurants &amp; Bars</p>
-            <h2 className="mt-3 font-display text-2xl text-cream sm:text-3xl">
-              Dining at {hotel.name}
-            </h2>
-            <p className="mt-2 max-w-xl text-sm text-cream/60">
-              Signature venues for every hour of the day, from a fresh multi-cuisine table to an
-              evening drink with a view.
-            </p>
-            <div className="mt-10 grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-6">
+          <div className="mx-auto max-w-7xl px-6">
+            <SectionHeading
+              tone="dark"
+              eyebrow="Restaurants &amp; Bars"
+              title={`Dining at ${hotel.name}`}
+              lede="Signature venues for every hour of the day, from a fresh multi-cuisine table to an evening drink with a view."
+            />
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {hotel.dining.map((venue, i) => (
                 <div
                   key={venue.name}
@@ -288,11 +303,19 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       )}
 
       {hotel.foodGallery && hotel.foodGallery.length > 0 && (
-        <FoodStrip
-          title={`Food & Dining at ${hotel.name}`}
-          body="A daily table of fresh, chef-plated Indian, Continental and Oriental fare — from sunrise breakfasts to candlelit evenings."
-          images={hotel.foodGallery}
-        />
+        <section className="border-b border-forest/10 bg-forest-dark py-10 sm:py-16">
+          <div className="mx-auto max-w-7xl px-6">
+            <SectionHeading
+              tone="dark"
+              eyebrow="Culinary Journey"
+              title={`Food & Dining at ${hotel.name}`}
+              lede="A daily table of fresh, chef-plated Indian, Continental and Oriental fare — from sunrise breakfasts to candlelit evenings."
+            />
+            <div className="mt-10">
+              <GalleryLightbox images={hotel.foodGallery} />
+            </div>
+          </div>
+        </section>
       )}
 
       <WeddingSection hotel={hotel} />
@@ -301,11 +324,12 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       {hotel.gallery.length > 0 && (
         <section id="gallery" className="scroll-mt-32 py-10 sm:py-16">
           <div className="mx-auto max-w-7xl px-6">
-            <h2 className="font-display text-2xl text-forest">Gallery</h2>
-            <p className="mt-2 text-sm text-ink/60">
-              The facade, the pool, the lounges &mdash; a closer look at {hotel.name}
-            </p>
-            <div className="mt-8">
+            <SectionHeading
+              eyebrow="In Pictures"
+              title="Gallery"
+              lede={`The facade, the pool, the lounges — a closer look at ${hotel.name}.`}
+            />
+            <div className="mt-10">
               <GalleryLightbox images={hotel.gallery} />
             </div>
           </div>
@@ -314,11 +338,11 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
 
       <ExploreSection hotel={hotel} />
 
-      {(hotel.mapEmbedUrl || hotel.contact) && (
+      {hotel.contact && (
         <section id="location" className="scroll-mt-32 py-10 sm:py-16">
           <div className="mx-auto max-w-7xl px-6">
-            <h2 className="font-display text-2xl text-forest">Location &amp; Contact</h2>
-            <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2">
+            <SectionHeading eyebrow="Finding Us" title="Location &amp; Contact" />
+            <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-2">
               <div>
                 {hotel.contact && (
                   <dl className="grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -329,45 +353,41 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-wider text-ink/50">Contact No.</dt>
+                      <dt className="text-xs uppercase tracking-wider text-ink/50">Reservations</dt>
                       <dd className="mt-2 text-sm text-ink/80">
                         <ContactLink
                           method="phone"
-                          href={`tel:${hotel.contact.phone.replace(/\s/g, '')}`}
+                          href={contactNumbers.tollFreeHref}
                           ctaSource="hotel_page"
                           hotel={hotel.slug}
                           className="hover:text-forest"
                         >
-                          {hotel.contact.phone}
+                          {contactNumbers.tollFree}
                         </ContactLink>
                       </dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-xs uppercase tracking-wider text-ink/50">Email</dt>
+                      <dt className="text-xs uppercase tracking-wider text-ink/50">Enquiries</dt>
                       <dd className="mt-2 text-sm text-ink/80">
-                        <ContactLink
-                          method="email"
-                          href={`mailto:${hotel.contact.email}`}
-                          ctaSource="hotel_page"
-                          hotel={hotel.slug}
-                          className="break-words hover:text-forest"
+                        <Link
+                          href={`/enquiry?property=${hotel.slug}&type=hotel`}
+                          className="border-b border-gold pb-0.5 hover:text-forest"
                         >
-                          <EmailText email={hotel.contact.email} />
-                        </ContactLink>
+                          Send an enquiry
+                        </Link>
                       </dd>
                     </div>
                   </dl>
                 )}
               </div>
-              {hotel.mapEmbedUrl && (
-                <div className="aspect-[4/3] overflow-hidden rounded-lg border border-forest/10 shadow-md lg:aspect-auto">
-                  <iframe
-                    src={hotel.mapEmbedUrl}
-                    title={`Map showing ${hotel.name}`}
-                    className="h-full min-h-[320px] w-full"
-                    loading="lazy"
-                  />
-                </div>
+              {hotel.contact && (
+                <LocationMap
+                  address={hotel.contact.address}
+                  query={`${hotel.name}, ${hotel.location}, ${hotel.state}`}
+                  embedUrl={hotel.mapEmbedUrl}
+                  title={`Map showing ${hotel.name}`}
+                  enabled={mapsEmbedEnabled()}
+                />
               )}
             </div>
           </div>

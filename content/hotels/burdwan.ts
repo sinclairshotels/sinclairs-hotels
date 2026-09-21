@@ -270,8 +270,7 @@ export const burdwanHotel: Hotel = {
     'https://maps.google.com/maps?q=Sinclairs%20Burdwan&t=m&z=17&output=embed&iwloc=near',
   contact: {
     address: 'High Street 1, Renaissance Township, NH-2, Burdwan 713102, West Bengal, India',
-    phone: '+91 83730 71037',
-    email: 'reservations@sinclairshotels.com',
+    notificationEmail: 'reservations@sinclairshotels.com',
   },
 };
 

@@ -3,7 +3,7 @@
 import { randomBytes } from 'node:crypto';
 import { getHotelBySlug } from '@/content/hotels';
 import { bookingOffices } from '@/content/site';
-import { ADMIN_COOKIE_NAME, verifySessionCookieValue } from '@/lib/admin-auth';
+import { authorize } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { voucherAdminHtml } from '@/lib/email-templates/voucher-admin';
 import { voucherGuestHtml } from '@/lib/email-templates/voucher-guest';
@@ -24,10 +24,8 @@ export async function createVoucher(
   _prevState: VoucherFormState,
   formData: FormData,
 ): Promise<VoucherFormState> {
-  const authed = await verifySessionCookieValue((await cookies()).get(ADMIN_COOKIE_NAME)?.value);
-  if (!authed) {
-    return { status: 'error', message: 'Session expired, please sign in again.' };
-  }
+  const auth = await authorize('vouchers:write');
+  if (!auth.ok) return { status: 'error', message: auth.message };
 
   const headerList = await headers();
   const ip = clientIp(headerList);
@@ -98,7 +96,7 @@ export async function createVoucher(
   );
 
   await sendMail({
-    to: hotel?.contact?.email ?? VOUCHER_OFFICE_EMAIL,
+    to: hotel?.contact?.notificationEmail ?? VOUCHER_OFFICE_EMAIL,
     kind: 'voucher-office',
     bcc: officeCopyBcc,
     subject: `[Office Copy] Voucher #${voucher.voucherNo} — ${voucher.guestName}`,

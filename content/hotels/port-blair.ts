@@ -286,8 +286,7 @@ export const portBlairHotel: Hotel = {
   contact: {
     address:
       'Corbyns Cove Road, South Point, Shadipur, Port Blair 744106, Andaman and Nicobar Islands, India',
-    phone: '+91 99332 56469',
-    email: 'portblair@sinclairshotels.com',
+    notificationEmail: 'portblair@sinclairshotels.com',
   },
 };
 

@@ -22,7 +22,6 @@ export const udaipurHotel: Hotel = {
     'Intercom',
     'Tea/Coffee Maker',
     'Work Desk',
-    'Mini Bar',
     'Television',
     'Ceiling Fan',
     'Air Conditioning',
@@ -136,15 +135,19 @@ export const udaipurHotel: Hotel = {
     { name: 'Saheliyon Ki Bari' },
   ],
   eventSpaces: {
-    totalSqFt: 7000,
-    maxCapacity: 700,
-    venues: [{ name: 'Rajmahal', areaSqFt: 7000, capacity: 700 }],
+    totalSqFt: 9600,
+    maxCapacity: 500,
+    venues: [
+      { name: 'Rajmahal', areaSqFt: 7000, capacity: 500 },
+      { name: 'Rajmahal Annexe', areaSqFt: 2000, capacity: 125 },
+      { name: 'Haveli', areaSqFt: 600, capacity: 40 },
+    ],
   },
   weddings: {
     intro:
-      'A genuine Rajasthani palace, complete with a fountain courtyard and domed pavilions, Sinclairs Palace Retreat Udaipur is built for a wedding on a royal scale — the Rajmahal alone seats 700.',
+      'A genuine Rajasthani palace, complete with a fountain courtyard and domed pavilions, Sinclairs Palace Retreat Udaipur is built for a wedding on a royal scale — the Rajmahal alone seats 500.',
     highlights: [
-      'Rajmahal seats up to 700 guests',
+      'Rajmahal seats up to 500 guests',
       'Palace courtyard for a fairytale ceremony',
       'Dedicated haldi, mehendi and sangeet arrangements',
       'Vegetarian, multicuisine wedding menus at The Gharana',
@@ -178,10 +181,10 @@ export const udaipurHotel: Hotel = {
   },
   meetings: {
     intro:
-      "The Rajmahal's 7,000 sq ft can seat up to 700 delegates, making Sinclairs Palace Retreat Udaipur one of the region's largest royal conference venues, set within a genuine heritage palace an hour from Udaipur city.",
+      "The Rajmahal's 7,000 sq ft can seat up to 500 delegates, with the Rajmahal Annexe and the Haveli for breakouts — making Sinclairs Palace Retreat Udaipur one of the region's largest royal conference venues, set within a genuine heritage palace an hour from Udaipur city.",
     highlights: [
-      'Rajmahal seats up to 700 guests',
-      'Palace courtyard for outdoor breakout sessions',
+      'Rajmahal seats up to 500 guests',
+      'Rajmahal Annexe and Haveli for smaller sessions',
       'Vegetarian, multicuisine catering at The Gharana',
       "An hour's drive from Udaipur airport",
     ],
@@ -190,8 +193,7 @@ export const udaipurHotel: Hotel = {
     'https://maps.google.com/maps?q=Sinclairs%20Palace%20Retreat%20Udaipur&t=m&z=17&output=embed&iwloc=near',
   contact: {
     address: 'Karanji Ka Guda, District Udaipur 313322, Rajasthan, India',
-    phone: '+91 90075 40727',
-    email: 'palace.udaipur@sinclairshotels.com',
+    notificationEmail: 'palace.udaipur@sinclairshotels.com',
   },
 };
 

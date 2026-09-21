@@ -1,0 +1,107 @@
+import { expect, test } from '@playwright/test';
+import { prisma } from '../lib/db';
+import { clearNights, findRoom, loadNights } from '../test-utils/inventory';
+
+// Far enough out that these rows cannot collide with anything real, and the
+// whole window can be cleaned up by date.
+const HOTEL = 'gangtok';
+const ROOM = 'Deluxe Room';
+const RATE = 6800;
+const TOTAL_ROOMS = 4;
+
+function isoDay(offset: number): string {
+  const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+  return new Date(today.getTime() + offset * 86_400_000).toISOString().slice(0, 10);
+}
+
+const CHECK_IN = isoDay(200);
+const CHECK_OUT = isoDay(202);
+const WINDOW = {
+  gte: new Date(`${isoDay(190)}T00:00:00.000Z`),
+  lt: new Date(`${isoDay(220)}T00:00:00.000Z`),
+};
+
+const stayQuery = `checkIn=${CHECK_IN}&checkOut=${CHECK_OUT}&rooms=1&adults=2&children=0`;
+
+// A property this spec empties on purpose, to prove the "not open here yet"
+// message. Kept away from the one the rates spec works on.
+const UNLOADED_HOTEL = 'kalimpong';
+
+// Serial: these share one seeded date window, and beforeAll/afterAll run once
+// per worker — split across workers, one worker's afterAll deletes the rates
+// another worker is still asserting against.
+test.describe.configure({ mode: 'serial' });
+
+let room: Awaited<ReturnType<typeof findRoom>>;
+
+test.beforeAll(async () => {
+  room = await findRoom(HOTEL, ROOM);
+  await loadNights(
+    room,
+    HOTEL,
+    [0, 1].map((i) => new Date(`${isoDay(200 + i)}T00:00:00.000Z`)),
+    { rate: RATE, roomsOnSale: TOTAL_ROOMS },
+  );
+});
+
+test.afterAll(async () => {
+  await clearNights(HOTEL, WINDOW);
+  await prisma.$disconnect();
+});
+
+test('the booking entry page offers every property', async ({ page }) => {
+  await page.goto('/book');
+  await expect(page.getByRole('heading', { level: 1, name: /reserve your stay/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /check availability/i })).toBeVisible();
+});
+
+test('a room with rates loaded is offered, priced, and leads to the guest form', async ({
+  page,
+}) => {
+  await page.goto(`/book/${HOTEL}?${stayQuery}`);
+
+  await expect(page.getByRole('heading', { level: 2, name: ROOM })).toBeVisible();
+  // 2 nights at 6,800. Both sit under the ₹7,500 threshold, so both take the
+  // 5% rate — and the price the guest is shown must be the one the server
+  // computes, not a rounded display of something else.
+  await expect(page.getByText('₹14,280')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Select' }).first().click();
+
+  await expect(page).toHaveURL(/\/book\/gangtok\/confirm\?/);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /confirm your booking/i }),
+  ).toBeVisible();
+  await expect(page.getByText('Total payable')).toBeVisible();
+  await expect(page.getByText('₹14,280')).toBeVisible();
+  await expect(page.getByLabel('Full Name')).toBeVisible();
+  await expect(page.getByRole('button', { name: /pay & confirm booking/i })).toBeVisible();
+});
+
+test('a property with no rates loaded says so rather than showing no availability', async ({
+  page,
+}) => {
+  // The message depends on the property having nothing loaded at all, which
+  // pnpm seed:demo would otherwise undo — so the spec empties this one itself
+  // rather than assuming a bare database. Re-run the seed to restore it.
+  await clearNights(UNLOADED_HOTEL, {
+    gte: new Date(`${isoDay(-400)}T00:00:00.000Z`),
+    lt: new Date(`${isoDay(400)}T00:00:00.000Z`),
+  });
+
+  await page.goto(`/book/${UNLOADED_HOTEL}?${stayQuery}`);
+  await expect(page.getByText(/not yet bookable online/i)).toBeVisible();
+});
+
+test('a stay in the past is refused', async ({ page }) => {
+  await page.goto(`/book/${HOTEL}?checkIn=${isoDay(-5)}&checkOut=${isoDay(-3)}`);
+  await expect(page.getByText(/check-in cannot be in the past/i)).toBeVisible();
+});
+
+test('the guest form refuses an empty submission', async ({ page }) => {
+  // The confirm page is addressed by room type id now, not by name — a room
+  // can be renamed between a guest seeing it and submitting.
+  await page.goto(`/book/${HOTEL}/confirm?roomType=${room.roomTypeId}&${stayQuery}`);
+  await page.getByRole('button', { name: /pay & confirm booking/i }).click();
+  await expect(page.getByLabel('Full Name')).toHaveJSProperty('validity.valid', false);
+});

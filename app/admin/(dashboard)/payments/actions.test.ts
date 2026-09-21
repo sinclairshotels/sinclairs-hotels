@@ -1,13 +1,8 @@
-import { createSessionCookieValue } from '@/lib/admin-auth';
 import { prisma } from '@/lib/db';
 import { sendMail } from '@/lib/mail';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
 import { refundPayment } from './actions';
-
-// createSessionCookieValue() needs this set — locally it comes from .env.local
-// (loaded by vitest.config.ts), but CI has no such file, so this test must not
-// depend on the ambient environment for it.
-const originalAdminSecret = process.env.ADMIN_SESSION_SECRET;
 
 const mockState = vi.hoisted(() => ({
   cookieValue: undefined as string | undefined,
@@ -19,7 +14,7 @@ const mockState = vi.hoisted(() => ({
 vi.mock('next/headers', () => ({
   cookies: async () => ({
     get: (name: string) =>
-      name === 'admin_session' && mockState.cookieValue
+      name === 'staff_session' && mockState.cookieValue
         ? { value: mockState.cookieValue }
         : undefined,
   }),
@@ -76,9 +71,7 @@ function refundFormData(orderId: string, amount: string): FormData {
 }
 
 describe('refundPayment', () => {
-  beforeAll(() => {
-    process.env.ADMIN_SESSION_SECRET = 'test-secret-do-not-use-in-production';
-  });
+  beforeAll(() => {});
 
   beforeEach(() => {
     mockState.cookieValue = undefined;
@@ -96,13 +89,6 @@ describe('refundPayment', () => {
     const paymentIds = testPayments.map((p) => p.id);
     await prisma.refund.deleteMany({ where: { paymentId: { in: paymentIds } } });
     await prisma.payment.deleteMany({ where: { id: { in: paymentIds } } });
-
-    if (originalAdminSecret === undefined) {
-      // biome-ignore lint/performance/noDelete: process.env stringifies assignments; delete is required here
-      delete process.env.ADMIN_SESSION_SECRET;
-    } else {
-      process.env.ADMIN_SESSION_SECRET = originalAdminSecret;
-    }
   });
 
   it('rejects an unauthenticated request without creating a refund row', async () => {
@@ -112,13 +98,13 @@ describe('refundPayment', () => {
     const result = await refundPayment({ status: 'idle' }, refundFormData(payment.orderId, '10'));
 
     expect(result.status).toBe('error');
-    expect(result.message).toMatch(/session expired/i);
+    expect(result.message).toMatch(/session has ended/i);
     expect(await prisma.refund.count()).toBe(before);
     expect(sendMail).not.toHaveBeenCalled();
   });
 
   it('rejects a refund for a payment that is not SUCCESS', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     const payment = await prisma.payment.create({
       data: {
         orderId: `REFTEST${Math.random()}`,
@@ -139,7 +125,7 @@ describe('refundPayment', () => {
   });
 
   it('rejects a refund for a legacy-imported payment without calling the gateway', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     // Deliberately SUCCESS: the ~4,191 imported cca_status rows with this
     // status are exactly the ones that used to render a working Refund button.
     const payment = await prisma.payment.create({
@@ -168,7 +154,7 @@ describe('refundPayment', () => {
   });
 
   it('rejects a refund amount greater than the refundable balance', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     const payment = await createTestPayment({ amount: 100 });
 
     const result = await refundPayment({ status: 'idle' }, refundFormData(payment.orderId, '150'));
@@ -179,7 +165,7 @@ describe('refundPayment', () => {
   });
 
   it('records a SUCCESS refund and emails guest and staff when the gateway accepts it', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     const payment = await createTestPayment({ amount: 100 });
     mockState.refundResponse = {
       responseCode: 'R1000',
@@ -210,7 +196,7 @@ describe('refundPayment', () => {
   });
 
   it('records a FAILURE refund when the gateway declines it, without blocking a later attempt', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     const payment = await createTestPayment({ amount: 100 });
     mockState.refundResponse = {
       responseCode: 'R1001',
@@ -249,7 +235,7 @@ describe('refundPayment', () => {
   });
 
   it('rate-limits repeated submissions from the same IP', async () => {
-    mockState.cookieValue = await createSessionCookieValue();
+    mockState.cookieValue = (await createTestStaff({ role: 'ADMIN' })).token;
     mockState.ip = `refund-actions-test-rate-limit-${Math.random()}`;
     mockState.refundResponse = {
       responseCode: 'R1000',

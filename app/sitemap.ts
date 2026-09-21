@@ -6,6 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPaths = [
     '',
     '/hotels',
+    '/book',
     '/weddings',
     '/meetings-events',
     '/contact',

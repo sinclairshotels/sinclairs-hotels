@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { dailyDigestHtml } from '@/lib/email-templates/daily-digest';
 import { log } from '@/lib/log';
 import { sendMail } from '@/lib/mail';
+import { coverageWarnings } from '@/lib/rate-calendar';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +51,10 @@ export async function GET(request: Request) {
 
   const { start, end, dayName, dateLabel } = getPreviousIstDay(new Date());
 
-  const [enquiries, newsletterSignups, payments] = await Promise.all([
+  // refundsDue and coverage are deliberately not bounded to yesterday: they
+  // are outstanding state, and an unpaid refund from last week matters more
+  // this morning than one taken overnight.
+  const [enquiries, newsletterSignups, payments, refundsDue, coverage] = await Promise.all([
     prisma.enquiry.findMany({
       where: { createdAt: { gte: start, lt: end } },
       orderBy: { createdAt: 'asc' },
@@ -63,6 +67,11 @@ export async function GET(request: Request) {
       where: { status: 'SUCCESS', createdAt: { gte: start, lt: end } },
       orderBy: { createdAt: 'asc' },
     }),
+    prisma.booking.findMany({
+      where: { status: 'REFUND_DUE' },
+      orderBy: { createdAt: 'asc' },
+    }),
+    coverageWarnings(),
   ]);
 
   const html = dailyDigestHtml({
@@ -82,13 +91,29 @@ export async function GET(request: Request) {
       guestName: p.guestName,
       bankRefNo: p.bankRefNo,
     })),
+    refundsDue: refundsDue.map((b) => ({
+      reference: b.reference,
+      hotelName: getHotelBySlug(b.hotelSlug)?.name ?? b.hotelSlug,
+      amount: b.total.toFixed(2),
+      bookedOn: b.createdAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }),
+    })),
+    coverage: coverage.map((c) => ({
+      hotelName: c.hotelName,
+      roomName: c.roomName,
+      daysLeft: c.daysLeft,
+    })),
   });
 
   await sendMail({
     to: digestTo,
     kind: 'daily-digest',
     bcc: process.env.DIGEST_BCC_EMAIL,
-    subject: `Sinclairs Hotels online enquiries on ${dayName.toUpperCase()}`,
+    // The subject is what gets read on a phone at 7am, so it carries the one
+    // fact that might need acting on before the mail is even opened.
+    subject:
+      refundsDue.length > 0
+        ? `Sinclairs Hotels — ${refundsDue.length} refund${refundsDue.length === 1 ? '' : 's'} owed — ${dayName.toUpperCase()}`
+        : `Sinclairs Hotels online enquiries on ${dayName.toUpperCase()}`,
     html,
   });
 
@@ -99,6 +124,8 @@ export async function GET(request: Request) {
       enquiries: enquiries.length,
       newsletterSignups: newsletterSignups.length,
       payments: payments.length,
+      refundsDue: refundsDue.length,
+      coverageWarnings: coverage.length,
     },
   });
 }

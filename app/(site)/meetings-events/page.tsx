@@ -1,6 +1,7 @@
 import { BusinessIcon, SightseeingIcon } from '@/components/amenity-icon';
 import { ClosingCta } from '@/components/closing-cta';
 import { MeetingVenueCard } from '@/components/meeting-venue-card';
+import { SectionHeading } from '@/components/section-heading';
 import { CateringIcon } from '@/components/service-icons';
 import { hotels } from '@/content/hotels';
 import { pageMetadata } from '@/lib/seo';
@@ -139,14 +140,12 @@ export default function MeetingsEventsPage() {
 
       <section className="border-y border-forest/10 bg-white py-12">
         <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-center font-display text-2xl text-forest">
-            Conference &amp; Banquet Venues
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-ink/70">
-            There are endless reasons to celebrate, and Sinclairs offers flexible meeting venues to
-            make your event memorable — be it a corporate triumph, a milestone, or an offsite that
-            feels like a getaway.
-          </p>
+          <SectionHeading
+            align="center"
+            eyebrow="Every Property"
+            title="Conference &amp; Banquet Venues"
+            lede="There are endless reasons to celebrate, and Sinclairs offers flexible meeting venues to make your event memorable — be it a corporate triumph, a milestone, or an offsite that feels like a getaway."
+          />
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {venueHotels.map((hotel) => (
               <MeetingVenueCard key={hotel.slug} hotel={hotel} />

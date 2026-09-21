@@ -1,0 +1,66 @@
+# Content backlog
+
+Corrections and content requests raised by the team, reviewed by Nikhil.
+
+Check this list before editing anything under `content/` or `public/`, and tick
+items off in the same PR that resolves them. An item stays unticked until the
+change is on `main` — a half-applied correction is worse than an open one,
+because nobody re-raises what looks done.
+
+## A. Content and layout corrections
+
+### Sinclairs Retreat Dooars
+
+- [x] Overview: 5 event spaces
+- [x] Rooms: two queen beds
+- [x] Meetings: 5 venues, adding The Lilac (720 sq ft, 35 guests) and The Pavilion (1,800 sq ft, 120 guests)
+
+### Sinclairs Palace Retreat Udaipur
+
+- [x] Overview: remove Bar
+- [x] Weddings: capacity 500 guests
+- [x] Meetings: 3 venues — Rajmahal (7,000 sq ft, 500 guests), Rajmahal Annexe (2,000 sq ft, 125 guests), Haveli (600 sq ft, 40 guests)
+
+### Sinclairs Darjeeling
+
+- [x] Dining: add Kanchenjunga Restaurant and Mount View Café
+- [x] Amenities: remove Barbeques
+- [ ] Real copy and photography for Kanchenjunga Restaurant and Mount View Café — both were added with placeholder descriptions; Kanchenjunga Restaurant has no photo of its own and falls back to the hero image
+
+### Sinclairs Retreat Kalimpong
+
+- [x] Juniper is the boardroom
+
+### Sinclairs Gangtok
+
+- [x] 2 event spaces — The Cherry Hall (3,700 sq ft, 200 guests) and the Jasmine Boardroom (510 sq ft, 25 guests). The old Cherry Hall "Lower"/"Upper" split is gone; a boardroom counts as an event space, it is only labelled as one.
+
+### Every page
+
+- [x] Hotel page headers are misaligned — fix in the shared component
+- [x] Fonts are inconsistent — one type scale applied everywhere
+- [x] Page titles repeat — fix the title template
+- [x] Gallery headlines sit too close to the photos (e.g. "Panoramic view of Mount Kanchenjunga")
+- [x] Emphasise "why book direct" on the home page
+- [x] Weddings page: show all venues across all hotels together
+- [x] Dining: replace the scrolling strip with one F&B photo per hotel (no storytelling page — it links to that hotel's dining section)
+- [x] "Explore <location>" tabs: check placement on every hotel (e.g. Lloyd Botanical Garden on Darjeeling)
+
+## B. Contact (decision, applied site-wide)
+
+- [x] No per-property email addresses anywhere on the site. Every contact point is the enquiry form. Remove existing property emails from hotel pages and the footer.
+- [x] No per-property phone numbers either. The toll-free line and WhatsApp are the only two numbers the site publishes — see `contactNumbers` in `content/site.ts`. `ContactInfo` no longer carries a `phone` field at all, so one cannot drift back onto a page; the per-property numbers remain in git history if they are ever needed for a staff screen.
+
+## Not doing
+
+Recorded so nobody re-raises them:
+
+- Careers page
+- Newsletter
+- Offers page
+- Destination guides
+- "Font too big"
+- AI integration
+- Redesign
+- F&B storytelling
+- Photo changes for Burdwan, Port Blair and Ooty

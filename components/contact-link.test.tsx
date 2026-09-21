@@ -7,7 +7,7 @@ describe('ContactLink', () => {
     window.dataLayer = [];
   });
 
-  it('renders the underlying tel/mailto link unchanged', () => {
+  it('renders the underlying tel: link unchanged', () => {
     render(
       <ContactLink method="phone" href="tel:1800120267000" ctaSource="footer">
         1800 120 267 000
@@ -21,18 +21,13 @@ describe('ContactLink', () => {
 
   it('pushes contact_click with method, cta_source and hotel on click', () => {
     render(
-      <ContactLink
-        method="email"
-        href="mailto:gangtok@sinclairshotels.com"
-        ctaSource="hotel_page"
-        hotel="gangtok"
-      >
-        Email
+      <ContactLink method="phone" href="tel:+913592280701" ctaSource="hotel_page" hotel="gangtok">
+        Call the hotel
       </ContactLink>,
     );
-    fireEvent.click(screen.getByRole('link', { name: 'Email' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Call the hotel' }));
     expect(window.dataLayer).toEqual([
-      { event: 'contact_click', method: 'email', cta_source: 'hotel_page', hotel: 'gangtok' },
+      { event: 'contact_click', method: 'phone', cta_source: 'hotel_page', hotel: 'gangtok' },
     ]);
   });
 
