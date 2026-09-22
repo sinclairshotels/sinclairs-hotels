@@ -35,7 +35,6 @@ export function RoomReviews({ hotelName }: { hotelName: string }) {
             >
               {review.source}
             </a>
-            {review.date && ` · ${review.date}`}
           </figcaption>
         </figure>
       ))}

@@ -68,5 +68,7 @@ Recorded so nobody re-raises them:
 ## Open
 
 - [ ] Dates for the guest reviews in `content/reviews.ts`. The Tripadvisor import
-      did not carry them, and the booking page shows a review's date only when it
-      is present rather than dating a quote by guesswork.
+      did not carry them, so the quotes on the room list credit their source and
+      say nothing about when — an undated quote is honest, a guessed date is not.
+      Supplying real dates means adding the field back to `Review` and to
+      `components/room-reviews.tsx` together.
