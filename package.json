@@ -22,6 +22,7 @@
     "prune:deployments": "vercel remove sinclairs-hotels --safe --yes",
     "seed:dev": "tsx prisma/seed-dev.ts",
     "sync:rooms": "tsx scripts/sync-room-types.ts",
+    "photos:prune": "tsx scripts/prune-photos.ts",
     "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {

@@ -2,6 +2,7 @@ import { ContactLink } from '@/components/contact-link';
 import { EnquiryForm } from '@/components/enquiry-form';
 import { hotels } from '@/content/hotels';
 import { contactNumbers } from '@/content/site';
+import { currentOverrides, photoUrl } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -12,6 +13,10 @@ export const metadata: Metadata = pageMetadata({
   description: 'Get in touch with Sinclairs Hotels & Resorts reservations and sales teams.',
   path: '/contact',
 });
+
+// Photos are staff-editable without a deploy, so this is revalidated rather than
+// frozen at build time.
+export const revalidate = 600;
 
 export default async function ContactPage({
   searchParams,
@@ -27,14 +32,20 @@ export default async function ContactPage({
     guests?: string;
   }>;
 }) {
-  const { property, type, checkIn, checkOut, guests } = await searchParams;
+  const [{ property, type, checkIn, checkOut, guests }, overrides] = await Promise.all([
+    searchParams,
+    currentOverrides(),
+  ]);
 
   return (
     <div>
       <section className="relative flex h-[42vh] min-h-[320px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src="/images/hotels/dooars/amenities/Welcoming guest with the traditional khada.webp"
+            src={photoUrl(
+              '/images/hotels/dooars/amenities/Welcoming guest with the traditional khada.webp',
+              overrides,
+            )}
             alt="A guest welcomed at reception with the traditional khada scarf"
             fill
             priority

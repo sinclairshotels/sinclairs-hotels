@@ -546,3 +546,53 @@ model FunnelEvent {
   @@index([step, at])
   @@index([hotelSlug, at])
 }
+
+// ---------------------------------------------------------------------------
+// Photos
+// ---------------------------------------------------------------------------
+
+// A photo staff replaced from /admin/photos. It stands in for a file in
+// public/images/, which cannot itself be rewritten: public/ is baked into the
+// deployment and Vercel's filesystem is read-only at runtime. So the bytes live
+// here and app/api/photos/[id] serves them, with lib/photos.ts swapping the URL
+// in wherever the original path is rendered.
+//
+// The actor is a label rather than a foreign key — AuditEvent is the durable
+// record of who changed what, and this row only needs to say it on screen.
+model PhotoAsset {
+  id            String    @id @default(cuid())
+  // The public/ path this replaces, e.g. /images/hotels/gangtok/hero.webp.
+  contentPath   String
+  slotKey       String
+  // Exactly one of these is set. `data` holds an upload converted here;
+  // `sourcePath` points at a photo already in the repository, chosen from the
+  // library — the whole point of that being that no second copy is made.
+  data          Bytes?
+  sourcePath    String?
+  contentType   String    @default("image/webp")
+  width         Int
+  height        Int
+  bytes         Int
+  originalName  String
+  uploadedAt    DateTime  @default(now())
+  uploadedLabel String
+  // Set when a later upload took its place. The row is kept, not deleted, so a
+  // replacement can be undone until it is pruned — see PHOTO_RETENTION_DAYS.
+  supersededAt  DateTime?
+
+  @@index([contentPath, supersededAt])
+  @@index([supersededAt])
+}
+
+// An image no page references any more, that staff have retired from
+// /admin/photos. The file still sits in public/ — deleting it needs a commit,
+// which `pnpm photos:prune` prepares — so this row is what hides it from the
+// contact sheet in the meantime, and what tells the script which files to
+// remove.
+model RetiredPhoto {
+  id           String   @id @default(cuid())
+  contentPath  String   @unique
+  retiredAt    DateTime @default(now())
+  retiredLabel String
+  bytes        Int
+}

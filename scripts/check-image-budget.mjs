@@ -6,22 +6,26 @@
 // so a single committed 27 MB JPEG is not 27 MB — it is 27 MB times every build
 // made afterwards. That is not obvious while committing it, which is exactly why
 // this is a check and not a convention.
-import { readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const PUBLIC_DIR = 'public';
 
 // Raised deliberately, never drifted into. If a genuine need pushes public/ past
 // this, move the images to a CDN rather than lifting the ceiling — the ceiling is
-// the thing keeping deploy size bounded.
-const MAX_PUBLIC_MB = 170;
+// the thing keeping deploy size bounded. The numbers live in config/ because the
+// admin's photo replacement enforces the same two limits before it accepts an
+// upload, and a build check that disagreed with the upload form would let staff
+// load something the next build then rejects.
+const budget = JSON.parse(readFileSync('config/image-budget.json', 'utf8'));
+const MAX_PUBLIC_MB = budget.maxPublicMb;
 
 // Anything a browser is served that is not one of these is a source file that
 // should have been converted, or an asset that belongs outside the repo.
 const ALLOWED = new Set(['.webp', '.svg', '.png', '.ico', '.txt', '.xml', '.json', '.webmanifest']);
 
 // One 1x1 favicon-class PNG is fine; a directory of them is not.
-const MAX_SINGLE_FILE_MB = 4;
+const MAX_SINGLE_FILE_MB = budget.maxSingleFileMb;
 
 function walk(dir) {
   const out = [];

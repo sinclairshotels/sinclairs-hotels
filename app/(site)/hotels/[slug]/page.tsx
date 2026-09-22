@@ -19,6 +19,7 @@ import { contactNumbers, siteConfig } from '@/content/site';
 import { formatInr } from '@/lib/booking';
 import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { mapsEmbedEnabled } from '@/lib/maps';
+import { currentOverrides, withPhotos } from '@/lib/photos';
 import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
 import { eventSpaceCount } from '@/lib/venues';
@@ -66,8 +67,13 @@ export const revalidate = 600;
 
 export default async function HotelPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const hotel = getHotelBySlug(slug);
-  if (!hotel) notFound();
+  const contentHotel = getHotelBySlug(slug);
+  if (!contentHotel) notFound();
+
+  const overrides = await currentOverrides();
+  // Photos are the one content type staff change without a deploy, so the paths
+  // the page renders come from here rather than straight from the content file.
+  const hotel = withPhotos(contentHotel, overrides);
 
   const fromPrice = (await fromPricePerHotel()).get(hotel.slug) ?? null;
 
