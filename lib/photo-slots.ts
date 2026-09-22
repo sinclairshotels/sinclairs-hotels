@@ -396,13 +396,10 @@ const OTHER_PAGES: PhotoPage[] = [
           const image = 'image' in mention ? mention.image : undefined;
           return image
             ? [
-                slot(
-                  `media:${i}`,
-                  `${mention.outlet} — ${mention.title}`,
-                  image,
-                  STANDARD_WIDTH,
-                  [i, 'image'],
-                ),
+                slot(`media:${i}`, `${mention.outlet} — ${mention.title}`, image, STANDARD_WIDTH, [
+                  i,
+                  'image',
+                ]),
               ]
             : [];
         }),

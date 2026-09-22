@@ -87,9 +87,9 @@ describe('proxy', () => {
       expect(redirectedTo(response)).toContain('/admin/dashboard');
     });
 
-    it('lets the API through, because admin pages call it for their own images', async () => {
+    it('lets the API through rather than redirecting it to the dashboard', async () => {
       const proxy = await proxyUnder('production');
-      const response = await proxy(request(STAFF_HOST, '/api/photos/abc123'));
+      const response = await proxy(request(STAFF_HOST, '/api/funnel'));
 
       expect(passedThrough(response)).toBe(true);
       expect(redirectedTo(response)).toBeNull();

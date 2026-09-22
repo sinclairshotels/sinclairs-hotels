@@ -439,10 +439,23 @@ button, because the name is what a conversation about a photo uses.
 
 **A replaced photo cannot be written back to `public/`.** That directory is
 baked into the deployment and Vercel's filesystem is read-only at runtime, so
-the converted bytes go into `PhotoAsset` in Postgres and `app/api/photos/[id]`
-serves them. The id changes on every upload, which is what lets that response be
-cached forever. `lib/photos.ts`'s `withPhotos()` / `photoUrl()` swap the URL in
-wherever the original path is rendered, and the pages that render photos are
+the converted bytes go to **Vercel Blob** (`lib/photo-storage.ts`) and Postgres
+keeps only the mapping and the audit trail. They were in Postgres first, which
+worked, but it put megabytes of image data in every backup, pulled them through
+the connection pool on every read, and woke a serverless function to serve a
+file the CDN could have served itself.
+
+Uploads therefore need `BLOB_READ_WRITE_TOKEN`, and there is deliberately **no
+fallback to the database** without it — a second storage path is a second set
+of bugs, and a photo that silently lands somewhere other than where the site
+reads it is worse than an upload that refuses. *Choose from library* still
+works without the token, because it stores a path and no bytes. The blob host
+needs both an `images.remotePatterns` entry and a CSP `img-src` allowance in
+`next.config.ts`; without the first Next refuses to optimize the image and the
+position renders nothing at all.
+
+`lib/photos.ts`'s `withPhotos()` / `photoUrl()` swap the URL in wherever the
+original path is rendered, and the pages that render photos are
 `revalidate = 600` rather than static so a replacement appears without a deploy.
 A page that renders an image and does *not* go through one of those two will
 keep showing the repository's copy — that is the thing to check first if a
@@ -485,7 +498,9 @@ accepted what the next build rejects would be worse than no check at all.
 
 **Nothing is deleted in the moment.** A replaced photo is marked superseded and
 kept for `PHOTO_RETENTION_DAYS` (30), so a wrong photo noticed a fortnight later
-can still be put back. Deleting an unused image writes a `RetiredPhoto` row and
+can still be put back. `pnpm photos:prune` deletes the blob *before* the row
+that names it: a row without its blob is a broken photo, but a blob without its
+row is a bill nothing can find to cancel. Deleting an unused image writes a `RetiredPhoto` row and
 hides it from the sheet; the file itself leaves the repository through
 `pnpm photos:prune`, in a commit a person makes — a runtime cannot delete from
 `public/` any more than it can write to it. Both actions write an `AuditEvent`

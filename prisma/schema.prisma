@@ -568,10 +568,15 @@ model PhotoAsset {
   // The public/ path that position renders when nothing overrides it, kept so
   // the library can say which positions a file already fills.
   contentPath   String
-  // Exactly one of these is set. `data` holds an upload converted here;
+  // Exactly one of these is set. `blobUrl` is an upload converted here and
+  // stored in Vercel Blob — Postgres keeps the mapping, never the bytes.
   // `sourcePath` points at a photo already in the repository, chosen from the
   // library — the whole point of that being that no second copy is made.
-  data          Bytes?
+  blobUrl       String?
+  // The blob's pathname, which is what `del` needs to remove it once the
+  // retention window closes. The URL alone works too, but the pathname is what
+  // the Vercel dashboard lists, so it is the one worth storing.
+  blobPath      String?
   sourcePath    String?
   contentType   String    @default("image/webp")
   width         Int

@@ -20,6 +20,8 @@ export interface PhotoOverride {
   // rather than given one of its own. Nothing was copied, so this renders as
   // that file's own URL.
   sourcePath: string | null;
+  // Set when the bytes were uploaded; the CDN serves them, not this app.
+  blobUrl: string | null;
 }
 
 // Keyed by slot, never by file. Two positions can render the same photo — a
@@ -41,6 +43,7 @@ const OVERRIDE_FIELDS = {
   uploadedAt: true,
   uploadedLabel: true,
   sourcePath: true,
+  blobUrl: true,
 } as const;
 
 export async function currentOverrides(): Promise<PhotoOverrides> {
@@ -51,14 +54,18 @@ export async function currentOverrides(): Promise<PhotoOverrides> {
   return new Map(rows.map(({ slotKey, ...rest }) => [slotKey, rest]));
 }
 
-export function photoHref(id: string): string {
-  return `/api/photos/${id}`;
+// A row with neither a source path nor a blob is one the blob migration
+// superseded but that is still being read from a cached page; it renders the
+// photo in the repository, which is what the position showed before it was
+// replaced.
+function contentPathFallback(override: PhotoOverride): string {
+  return override.contentPath;
 }
 
-function overrideUrl(override: PhotoOverride): string {
+export function overrideUrl(override: PhotoOverride): string {
   // Deliberately one hop, not a chain: pointing A at B while B points at C
   // shows B, and two positions aimed at each other do not spin.
-  return override.sourcePath ?? photoHref(override.id);
+  return override.sourcePath ?? override.blobUrl ?? contentPathFallback(override);
 }
 
 // What a named position renders today. The content path is passed alongside the

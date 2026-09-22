@@ -13,6 +13,7 @@ import {
 } from '@/lib/photo-files';
 import { type LibraryPhoto, photoLibrary } from '@/lib/photo-library';
 import { claimedPaths, slotByKey } from '@/lib/photo-slots';
+import { PhotoStorageUnconfigured, putPhoto } from '@/lib/photo-storage';
 import { retiredPaths } from '@/lib/photos';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
 import { revalidatePath } from 'next/cache';
@@ -105,6 +106,19 @@ export async function replacePhoto(_prev: PhotoState, formData: FormData): Promi
 
   const original = await fileInfo(slot.contentPath);
 
+  // Uploaded before the transaction opens, not inside it: a blob write is a
+  // network round trip to another service, and holding a Postgres transaction
+  // open across one is how a pool runs out. An orphaned blob costs storage; a
+  // row pointing at a blob that was never written costs a broken photo.
+  let stored: { url: string; pathname: string };
+  try {
+    stored = await putPhoto(slot.key, webp, 'image/webp');
+  } catch (error) {
+    if (error instanceof PhotoStorageUnconfigured) return fail(error.message);
+    log.error('photo.upload_failed', { slot: slot.key });
+    throw error;
+  }
+
   const created = await prisma.$transaction(async (tx) => {
     if (existing) {
       // Kept, not deleted: PHOTO_RETENTION_DAYS is what makes a wrong photo
@@ -118,7 +132,8 @@ export async function replacePhoto(_prev: PhotoState, formData: FormData): Promi
       data: {
         contentPath: slot.contentPath,
         slotKey: slot.key,
-        data: new Uint8Array(webp),
+        blobUrl: stored.url,
+        blobPath: stored.pathname,
         width,
         height,
         bytes: webp.byteLength,

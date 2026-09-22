@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { MAX_SINGLE_FILE_BYTES } from '@/lib/photo-files';
 import { allSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl } from '@/lib/photos';
+import { put } from '@vercel/blob';
 import sharp from 'sharp';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
@@ -27,6 +28,20 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
+// The bytes go to Vercel Blob, which has no local equivalent to run against.
+// What matters here is that the upload path stores the URL it was given and
+// that nothing lands in Postgres, so the client is stubbed rather than the
+// storage module — the slot-keyed pathname is part of what is under test.
+vi.mock('@vercel/blob', () => ({
+  put: vi.fn(async (pathname: string) => ({
+    url: `https://test.public.blob.vercel-storage.com/${pathname}`,
+    pathname,
+  })),
+  del: vi.fn(async () => undefined),
+}));
+
+process.env.BLOB_READ_WRITE_TOKEN ??= 'test-token';
 
 // A hero slot, so the target width is the widest the site serves and a small
 // upload exercises the "never enlarge" rule.
@@ -81,7 +96,13 @@ describe('replacePhoto', () => {
     expect(asset.contentType).toBe('image/webp');
     expect(asset.contentPath).toBe(SLOT.contentPath);
     expect(asset.slotKey).toBe(SLOT.key);
-    expect((await sharp(Buffer.from(asset.data ?? [])).metadata()).format).toBe('webp');
+    expect(asset.blobUrl).toMatch(/^https:\/\/test\.public\.blob\.vercel-storage\.com\//);
+
+    // The bytes are what was handed to blob storage, not what is in Postgres —
+    // Postgres holds no image data at all any more, which is the point.
+    const [pathname, bytes] = vi.mocked(put).mock.calls.at(-1) ?? [];
+    expect(pathname).toContain('gangtok-overview-hero');
+    expect((await sharp(Buffer.from(bytes as Uint8Array)).metadata()).format).toBe('webp');
   });
 
   it('never enlarges a photo past what the upload actually contains', async () => {
@@ -230,7 +251,7 @@ describe('assignPhoto', () => {
 
     expect(state.status).toBe('success');
     const asset = await prisma.photoAsset.findFirstOrThrow({ where: { supersededAt: null } });
-    expect(asset.data).toBeNull();
+    expect(asset.blobUrl).toBeNull();
     expect(asset.sourcePath).toBe(SOURCE.contentPath);
   });
 

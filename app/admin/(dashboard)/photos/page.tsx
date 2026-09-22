@@ -10,7 +10,7 @@ import {
   publicImagePaths,
 } from '@/lib/photo-files';
 import { type PhotoSlot, claimedPaths, photoPages } from '@/lib/photo-slots';
-import { type PhotoOverride, currentOverrides, photoHref, retiredPaths } from '@/lib/photos';
+import { type PhotoOverride, currentOverrides, overrideUrl, retiredPaths } from '@/lib/photos';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -44,7 +44,7 @@ export default async function PhotosPage() {
       label: slot.label,
       contentPath: slot.contentPath,
       targetWidth: slot.targetWidth,
-      src: override ? (override.sourcePath ?? photoHref(override.id)) : slot.contentPath,
+      src: override ? overrideUrl(override) : slot.contentPath,
       fileName: fileNameOf(slot.contentPath),
       width: shown?.width ?? 0,
       height: shown?.height ?? 0,
