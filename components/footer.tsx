@@ -1,6 +1,6 @@
 import { ContactLink } from '@/components/contact-link';
 import { hotels } from '@/content/hotels';
-import { contactNumbers, siteConfig, socialLinks } from '@/content/site';
+import { contactNumbers, siteConfig, socialLinks, whatsappHref } from '@/content/site';
 import Link from 'next/link';
 import { NewsletterForm } from './newsletter-form';
 import { FacebookIcon, InstagramIcon, TwitterIcon } from './social-icons';
@@ -136,7 +136,7 @@ export function Footer() {
                 <dt className="text-xs text-cream/50">WhatsApp</dt>
                 <dd className="mt-0.5">
                   <a
-                    href={contactNumbers.whatsappHref}
+                    href={whatsappHref()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="transition hover:text-gold-light"

@@ -1,3 +1,4 @@
+import type { RoomType as ContentRoom, Hotel } from '@/content/types';
 import { prisma } from '@/lib/db';
 import type { PhotoSlot } from '@/lib/photo-slots';
 
@@ -112,4 +113,17 @@ export function withPhotos<T>(value: T, slots: PhotoSlot[], overrides: PhotoOver
     if (s.at && override) setAt(copy, s.at, overrideUrl(override));
   }
   return copy;
+}
+
+// A room offer carries its photography from the content file, which
+// lib/availability.ts reads directly — pricing has no business knowing about
+// photo overrides, and should not grow a reason to. So the booking pages
+// re-point the offer at the already-overridden hotel's room of the same name,
+// which is how a replaced room photo reaches /book as well as the hotel page.
+export function roomContentWithPhotos(
+  content: ContentRoom | undefined,
+  hotel: Hotel,
+): ContentRoom | undefined {
+  if (!content) return content;
+  return hotel.rooms.find((room) => room.name === content.name) ?? content;
 }

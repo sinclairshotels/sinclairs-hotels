@@ -25,8 +25,19 @@ export const contactNumbers = {
   tollFree: '1800 120 267 000',
   tollFreeHref: 'tel:1800120267000',
   whatsapp: '+91 92571 08784',
-  whatsappHref: 'https://wa.me/919257108784',
+  // Digits only, no +, which is the form wa.me takes. The displayed number
+  // above is the same one spaced for reading; keep them in step.
+  whatsappNumber: '919257108784',
 } as const;
+
+// An empty compose box asks the guest to introduce themselves before they have
+// asked anything. This says who they are writing to and why, and they can
+// delete it — a prefill is a starting point, not a script.
+export const whatsappMessage = 'Hi Sinclairs Hotels, I would like to ask about a booking.';
+
+export function whatsappHref(message: string = whatsappMessage): string {
+  return `https://wa.me/${contactNumbers.whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
 
 export const socialLinks = [
   { label: 'Facebook', href: 'https://www.facebook.com/sinclairshotelsandresorts/' },

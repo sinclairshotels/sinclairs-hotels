@@ -17,6 +17,8 @@ import {
   todayUtc,
 } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { hotelSlots } from '@/lib/photo-slots';
+import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
@@ -62,8 +64,13 @@ export default async function BookHotelPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { slug } = await params;
-  const hotel = getHotelBySlug(slug);
-  if (!hotel) notFound();
+  const contentHotel = getHotelBySlug(slug);
+  if (!contentHotel) notFound();
+
+  // Photos staff replaced have to reach this page too, or a property's hero
+  // changes on /hotels/<slug> and not on the page where the room is sold.
+  const overrides = await currentOverrides();
+  const hotel = withPhotos(contentHotel, hotelSlots(contentHotel), overrides);
 
   const query = await searchParams;
   const parsed = staySchema.safeParse({ hotelSlug: slug, ...query });
@@ -179,7 +186,10 @@ export default async function BookHotelPage({
                 >
                   <div className="relative aspect-[4/3] sm:aspect-auto">
                     <Image
-                      src={offer.content?.images?.[0] ?? hotel.thumbnailImage}
+                      src={
+                        roomContentWithPhotos(offer.content, hotel)?.images?.[0] ??
+                        hotel.thumbnailImage
+                      }
                       alt={offer.roomTypeName}
                       fill
                       sizes="(min-width: 640px) 14rem, 100vw"

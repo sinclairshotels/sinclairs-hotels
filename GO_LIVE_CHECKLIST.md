@@ -227,6 +227,12 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
 - [ ] `NEXT_PUBLIC_GA4_ID` — `G-7Y4FZLC5MW`. The direct-to-GA4 workaround for
       the container blocker above. Mutually exclusive with published GTM tags
       for the same events.
+- [ ] `BLOB_READ_WRITE_TOKEN` — Vercel Blob, where photos replaced from
+      `/admin/photos` are stored. Vercel sets it once a Blob store is attached
+      to the project. Uploads refuse without it and say so; *Choose from
+      library* still works, since it stores a path and no bytes. Needed on
+      **both** Preview and Production, and both need rebuilding afterwards —
+      env is snapshotted at build time.
 - [ ] `SITE_BASE_URL` — currently overrides the base URL for absolute links in
       emails/vouchers because `sinclairshotels.com` still serves WordPress
       (`lib/site-url.ts`). **Remove the override at cutover**, once

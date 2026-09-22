@@ -1,7 +1,7 @@
 import { ContactLink } from '@/components/contact-link';
 import { EnquiryForm } from '@/components/enquiry-form';
 import { hotels } from '@/content/hotels';
-import { contactNumbers } from '@/content/site';
+import { contactNumbers, whatsappHref } from '@/content/site';
 import { currentOverrides, photoUrl } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -112,7 +112,7 @@ export default async function ContactPage({
                   <dt className="text-xs uppercase tracking-wider text-ink/50">WhatsApp</dt>
                   <dd className="mt-1">
                     <a
-                      href={contactNumbers.whatsappHref}
+                      href={whatsappHref()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-gold"
