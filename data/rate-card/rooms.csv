@@ -1,0 +1,53 @@
+# One row per room type. baseRate is the Room Only (EP) rate in rupees for a
+# normal month; scripts/load-rate-card.ts multiplies it by that month's factor
+# in seasons.csv. roomsOnSale is the allotment this website may sell.
+#
+# roomsOnSale is "?" wherever nobody has decided it yet. The loader prices those
+# rooms but loads no inventory for them, so they appear on the Set-up page and
+# are not sellable - a guessed allotment is how a property gets oversold.
+#
+# Occupancy and extra-guest charges are applied only to room types still holding
+# the schema defaults, so an edit made on the Set-up page is never overwritten.
+#
+# Every baseRate is DRAFT, derived from public OTA listings observed 22 Sep 2026
+# (see README.md). Those are post-commission sell prices, not a rate card.
+hotelSlug,roomName,baseRate,roomsOnSale,baseOccupancy,maxAdults,maxChildren,extraAdultCharge,extraChildCharge
+burdwan,Premier Room,4500,?,2,3,2,1500,1000
+burdwan,Junior Suite,5400,?,2,3,2,1500,1000
+burdwan,Maharaja Suite,8300,?,2,3,2,1500,1000
+darjeeling,Deluxe Room,4600,?,2,3,2,2200,2000
+darjeeling,Premier Room,5500,?,2,3,2,2200,2000
+darjeeling,Kanchenjunga Room,6200,?,2,3,2,2200,2000
+darjeeling,Burra Sahib Suite,7350,?,2,3,2,2200,2000
+darjeeling,Deluxe Family Room,5500,?,2,4,2,2200,2000
+dooars,Deluxe Room,5100,?,2,3,2,1500,1000
+dooars,Premier Suite,8150,?,2,3,2,1500,1000
+dooars,Wooden Cottage,9450,?,2,3,2,1500,1000
+gangtok,Deluxe Room,4750,?,2,3,2,1500,1000
+gangtok,Deluxe Family Room,5700,?,2,4,2,1500,1000
+gangtok,Premier Room,5700,?,2,3,2,1500,1000
+gangtok,Premier Suite,7600,?,2,3,2,1500,1000
+gangtok,Valentine Room,6400,?,2,2,0,1500,1000
+kalimpong,Premier Room,4800,?,2,3,2,1500,1000
+kalimpong,Premier Plus Room,5750,?,2,3,2,1500,1000
+kalimpong,Premier Attic Room,6500,?,2,3,2,1500,1000
+kalimpong,Premier Suite,7700,?,2,3,2,1500,1000
+kalimpong,Wooden Cottage Room,8900,?,2,3,2,1500,1000
+ooty,Deluxe Room,4300,?,2,3,2,1500,1000
+ooty,Premier Room,5150,?,2,3,2,1500,1000
+ooty,Superior Room,5150,?,2,3,2,1500,1000
+ooty,Deluxe Suite,6900,?,2,3,2,1500,1000
+ooty,Nilgiri Suite,7950,?,2,3,2,1500,1000
+port-blair,Premier Room,7000,?,2,3,2,1500,1000
+port-blair,The Valentine Room,9450,?,2,2,0,1500,1000
+port-blair,Premier Family Room,8400,?,2,4,2,1500,1000
+port-blair,Premier Family Suite,11200,?,2,4,2,1500,1000
+port-blair,Premier Family Attic Room,9450,?,2,4,2,1500,1000
+port-blair,Premier Family Suite with Attic,12950,?,2,4,2,1500,1000
+siliguri,Premier Room,3600,?,2,3,2,1500,1000
+siliguri,Garden Suite,5750,?,2,3,2,1500,1000
+siliguri,Premier Suite,5750,?,2,3,2,1500,1000
+udaipur,Premier Room,2900,?,2,3,2,1500,1000
+udaipur,Premier Plus Room,3500,?,2,3,2,1500,1000
+udaipur,Premier Suite,4650,?,2,3,2,1500,1000
+udaipur,Villa,5350,?,4,4,2,1500,1000

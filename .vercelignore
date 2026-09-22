@@ -12,3 +12,5 @@ playwright.config.ts
 vitest.config.ts
 vitest.setup.ts
 test-utils
+scripts/load-rate-card.ts
+data/rate-card

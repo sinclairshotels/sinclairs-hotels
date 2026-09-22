@@ -1,0 +1,14 @@
+# Per-property settings. See README.md in this directory.
+# breakfastSupplement: rupees per person per night. With Breakfast is sold as
+# Room Only plus this times the room's base guests - there is no separate
+# breakfast calendar. DRAFT: no public source publishes this; replace it.
+hotelSlug,breakfastSupplement
+burdwan,450
+darjeeling,450
+dooars,450
+gangtok,450
+kalimpong,450
+ooty,450
+port-blair,450
+siliguri,450
+udaipur,450
