@@ -1,5 +1,7 @@
 import { BookingSearchForm } from '@/components/booking-search-form';
+import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
+import { directBookingPerk } from '@/content/site';
 import { roomOffers } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
@@ -23,6 +25,10 @@ import { notFound } from 'next/navigation';
 
 // Availability changes with every booking taken, so this can never be cached.
 export const dynamic = 'force-dynamic';
+
+// A room with nine left saying so is noise; three or fewer is the number a
+// guest actually weighs against booking now.
+const SCARCITY_THRESHOLD = 3;
 
 export async function generateMetadata({
   params,
@@ -207,9 +213,12 @@ export default async function BookHotelPage({
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
                         {offer.content?.description}
                       </p>
-                      {offer.roomsLeft <= 3 && (
+                      {/* Only worth saying when it is nearly true. A room with
+                          nine left saying so is noise; three or fewer is the
+                          number a guest actually weighs. */}
+                      {offer.roomsLeft <= SCARCITY_THRESHOLD && (
                         <p className="mt-3 text-xs uppercase tracking-wider text-gold-dark">
-                          Only {offer.roomsLeft} left
+                          {offer.roomsLeft} left at this price
                         </p>
                       )}
                     </div>
@@ -218,10 +227,12 @@ export default async function BookHotelPage({
                       <p className="text-xs uppercase tracking-wider text-ink/50">From</p>
                       <p className="font-display text-2xl text-forest">{formatInr(perNight)}</p>
                       <p className="text-xs text-ink/50">per room / night</p>
-                      <p className="mt-2 text-sm text-ink/70">
+                      <p className="mt-2 text-sm font-medium text-ink">
                         {formatInr(offer.quote.total)} total
                       </p>
-                      <p className="text-xs text-ink/50">incl. taxes</p>
+                      <p className="text-xs text-ink/50">
+                        including {formatInr(offer.quote.taxTotal)} GST
+                      </p>
                       <Link
                         href={confirmHref}
                         className="mt-4 inline-block rounded bg-gold px-6 py-2.5 text-xs uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
@@ -235,9 +246,11 @@ export default async function BookHotelPage({
             })}
           </div>
 
+          <RoomReviews hotelName={hotel.name} />
+
           <p className="mt-8 text-center text-xs text-ink/60">
-            All rates are non-refundable. A booking cannot be cancelled or refunded once payment
-            clears.
+            {directBookingPerk.long} All rates are non-refundable. A booking cannot be cancelled or
+            refunded once payment clears.
           </p>
 
           <p className="mt-6 text-center text-sm text-ink/60">

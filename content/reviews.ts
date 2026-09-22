@@ -5,6 +5,11 @@ export interface Review {
   rating: number;
   source: string;
   url: string;
+  // When the review was left, as it appears on the source. Optional because the
+  // import from Tripadvisor did not carry dates — the booking page shows one
+  // when it is here and stays silent when it is not, rather than dating a quote
+  // by guesswork. Tracked in docs/CONTENT_BACKLOG.md.
+  date?: string;
 }
 
 export const reviews: Review[] = [

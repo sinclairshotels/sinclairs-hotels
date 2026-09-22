@@ -64,3 +64,9 @@ Recorded so nobody re-raises them:
 - Redesign
 - F&B storytelling
 - Photo changes for Burdwan, Port Blair and Ooty
+
+## Open
+
+- [ ] Dates for the guest reviews in `content/reviews.ts`. The Tripadvisor import
+      did not carry them, and the booking page shows a review's date only when it
+      is present rather than dating a quote by guesswork.

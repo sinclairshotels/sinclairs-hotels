@@ -49,7 +49,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative h-[75vh] min-h-[620px] overflow-hidden">
+      <section className="relative h-[86vh] min-h-[760px] overflow-hidden">
         <JourneyHero
           slides={[...hotels]
             .sort((a, b) => (a.slug === 'burdwan' ? 1 : b.slug === 'burdwan' ? -1 : 0))
@@ -61,7 +61,7 @@ export default async function HomePage() {
             }))}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/95 via-forest-dark/50 to-forest-dark/15" />
-        <div className="absolute inset-x-0 bottom-0 pb-24 sm:pb-32">
+        <div className="absolute inset-x-0 bottom-0 pb-12 sm:pb-16">
           <div className="animate-fade-up mx-auto w-full max-w-7xl px-6 text-cream">
             <div className="flex items-center gap-3">
               <span className="h-px w-10 bg-gold" />
@@ -77,13 +77,15 @@ export default async function HomePage() {
               </em>{' '}
               Awaits
             </h1>
+            <p className="mt-5 max-w-xl text-sm text-cream/80 sm:text-base">
+              Book direct for free early check-in from 12 noon — every room, every property.
+            </p>
+            <div className="mt-8 w-full max-w-5xl">
+              <BookingWidget hotels={hotels} />
+            </div>
           </div>
         </div>
       </section>
-
-      <div className="relative z-10 mx-auto -mt-10 w-full max-w-5xl px-4">
-        <BookingWidget hotels={hotels} />
-      </div>
 
       <section className="border-b border-forest/10 pb-10 pt-16 sm:pt-20">
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-6 text-center sm:grid-cols-4">

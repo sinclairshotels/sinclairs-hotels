@@ -12,6 +12,15 @@ export const siteConfig = {
 // a guest is never sent to one: a call goes to reservations and everything else
 // goes through the enquiry form, so there is nowhere for a per-property number
 // to drift back onto a page from.
+// The one thing a guest gets for booking here rather than through an agent,
+// stated in the same words everywhere it appears: the hero, the room list, the
+// booking page, the confirmation email and the printed voucher. One constant so
+// those five can never drift into five slightly different promises.
+export const directBookingPerk = {
+  short: 'Free early check-in from 12 noon',
+  long: 'Free early check-in from 12 noon, on every direct booking.',
+} as const;
+
 export const contactNumbers = {
   tollFree: '1800 120 267 000',
   tollFreeHref: 'tel:1800120267000',

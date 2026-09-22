@@ -1,4 +1,5 @@
 import { getAmenityIcon } from '@/components/amenity-icon';
+import { BookingWidget } from '@/components/booking-widget';
 import { ClosingCta } from '@/components/closing-cta';
 import { ContactLink } from '@/components/contact-link';
 import { ExploreSection } from '@/components/explore-section';
@@ -179,7 +180,13 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         </div>
       </section>
 
-      <div className="relative z-10 mx-auto -mt-8 w-full max-w-6xl px-6">
+      {/* The same bar as the home page, with the property already answered —
+          a guest who has chosen where to stay should not be asked again. */}
+      <div className="relative z-10 mx-auto -mt-10 w-full max-w-5xl px-4">
+        <BookingWidget hotels={hotels} hotel={hotel.slug} ctaSource="hotel_page_widget" />
+      </div>
+
+      <div className="relative z-10 mx-auto mt-6 w-full max-w-6xl px-6">
         <div className="flex flex-wrap items-center justify-between gap-6 rounded-xl bg-white px-6 py-5 shadow-xl sm:gap-10">
           <div className="flex flex-wrap gap-x-10 gap-y-3">
             <Stat value={String(visibleRooms.length)} label="Room Types" />
