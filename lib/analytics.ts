@@ -108,3 +108,27 @@ export function hotelItem(
     ...extra,
   };
 }
+
+const FUNNEL_API = '/api/funnel';
+
+// The same three events that go to GA4 also go to our own table, because GA4
+// cannot be read back from the server and the admin funnel has to come from
+// somewhere. Fire-and-forget: a guest's page must never wait on it, and a
+// blocked or failed beacon is a missing row rather than a broken page.
+export function recordFunnelStep(step: 'home_view' | 'search' | 'room_view', hotel?: string): void {
+  if (typeof window === 'undefined') return;
+  const body = JSON.stringify({ step, ...(hotel ? { hotel } : {}) });
+  try {
+    // sendBeacon survives the navigation a search or a room click is about to
+    // cause; fetch would be cancelled mid-flight.
+    if (navigator.sendBeacon?.(FUNNEL_API, new Blob([body], { type: 'application/json' }))) return;
+    void fetch(FUNNEL_API, {
+      method: 'POST',
+      body,
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+    });
+  } catch {
+    // An ad blocker, or no network. The panel says these three under-report.
+  }
+}

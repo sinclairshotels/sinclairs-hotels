@@ -3,6 +3,7 @@ import { BookDirect } from '@/components/book-direct';
 import { BookingWidget } from '@/components/booking-widget';
 import { DiningShowcase } from '@/components/dining-showcase';
 import { ExperiencesCarousel } from '@/components/experiences-carousel';
+import { FunnelStep } from '@/components/funnel-step';
 import { HotelCard } from '@/components/hotel-card';
 import { JourneyHero } from '@/components/journey-hero';
 import { Reveal } from '@/components/reveal';
@@ -49,6 +50,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <FunnelStep step="home_view" />
       <section className="relative h-[86vh] min-h-[760px] overflow-hidden">
         <JourneyHero
           slides={[...hotels]

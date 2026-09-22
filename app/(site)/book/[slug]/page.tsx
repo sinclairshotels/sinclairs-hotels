@@ -1,4 +1,5 @@
 import { BookingSearchForm } from '@/components/booking-search-form';
+import { FunnelStep } from '@/components/funnel-step';
 import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { directBookingPerk } from '@/content/site';
@@ -89,6 +90,7 @@ export default async function BookHotelPage({
 
   return (
     <>
+      <FunnelStep step="room_view" hotel={hotel.slug} />
       <section className="relative h-[34vh] min-h-[260px] overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image

@@ -3,7 +3,7 @@
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import type { Hotel } from '@/content/types';
-import { hotelItem, pushEcommerceEvent } from '@/lib/analytics';
+import { hotelItem, pushEcommerceEvent, recordFunnelStep } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -43,6 +43,7 @@ export function BookingWidget({
       { items: selected ? [hotelItem(selected.slug, selected.name)] : [] },
       { cta_source: ctaSource, hotel: property },
     );
+    recordFunnelStep('search', property);
     // What the guest picked here is the search — it carries straight into the
     // engine's own results rather than being asked for a second time.
     const query = new URLSearchParams({

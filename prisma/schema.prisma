@@ -523,3 +523,26 @@ model AuditEvent {
   @@index([hotelSlug, at])
   @@index([actorUserId, at])
 }
+
+// ---------------------------------------------------------------------------
+// Funnel
+// ---------------------------------------------------------------------------
+
+// The top of the booking funnel, which Postgres otherwise cannot see. Guest
+// details, payment started and confirmed are already rows in Booking and
+// Payment; home views, searches and room views only happen in the browser, and
+// GA4 cannot be read back from here. So the same client events that fire to GA4
+// also land here.
+//
+// It holds no guest data and no identifier — a step, a property and a time. An
+// ad blocker stops the browser sending one, so these three steps under-report
+// where the paid-for steps below them do not; the panel says so.
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  step      String
+  hotelSlug String?
+  at        DateTime @default(now())
+
+  @@index([step, at])
+  @@index([hotelSlug, at])
+}

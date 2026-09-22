@@ -421,6 +421,32 @@ also means **tests must not rely on it**: one leftover row turns every
 bootstrap sign-in into a failed login, which is why `test-utils/auth.ts`
 exposes `ensureE2EAdmin`.
 
+## Funnel
+
+`/admin/dashboard` shows the booking funnel per property and in total, over 7 or
+30 days: home views → searches → room views → guest details → payment started →
+confirmed, with the drop-off against the step above.
+
+**The six steps come from two places, and the panel says which.** Guest details,
+payment started and confirmed are counted from `Booking` and `Payment` — rows
+that exist because money was on its way, and cannot be blocked or faked. The top
+three only ever happen in a browser, and GA4 cannot be read back from the server,
+so the same client events that fire to GA4 also POST to `/api/funnel` and land in
+`FunnelEvent` (`lib/analytics.ts`'s `recordFunnelStep`, sent with `sendBeacon` so
+it survives the navigation a search causes).
+
+That endpoint **accepts only those three steps**. Taking `confirmed` over HTTP
+would let anyone inflate the conversion rate from a terminal, which is why the
+allowlist is in `lib/funnel.ts` next to the definition rather than in the route.
+The hotel slug is checked against the content files before it is stored.
+
+`FunnelEvent` holds a step, a property and a time — no identifier, no guest data
+— so it needs no consent banner and leaks nothing if it is scraped. The cost is
+that an ad blocker stops the browser sending one, so the top three under-report
+against the three below them; the panel labels them "browser" rather than
+pretending the numbers are comparable. **It also has no history**: it starts
+counting the day it ships, so the 30-day column is only meaningful after a month.
+
 ## Server logging
 
 `lib/log.ts` emits one line of JSON per server event; Vercel indexes the fields,
