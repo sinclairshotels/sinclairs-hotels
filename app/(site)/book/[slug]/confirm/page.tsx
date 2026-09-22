@@ -11,6 +11,8 @@ import {
   todayUtc,
 } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { hotelSlots } from '@/lib/photo-slots';
+import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
@@ -43,8 +45,11 @@ export default async function ConfirmBookingPage({
   }>;
 }) {
   const { slug } = await params;
-  const hotel = getHotelBySlug(slug);
-  if (!hotel) notFound();
+  const contentHotel = getHotelBySlug(slug);
+  if (!contentHotel) notFound();
+
+  const overrides = await currentOverrides();
+  const hotel = withPhotos(contentHotel, hotelSlots(contentHotel), overrides);
 
   const query = await searchParams;
   const parsed = staySchema.safeParse({ hotelSlug: slug, ...query });
@@ -121,7 +126,9 @@ export default async function ConfirmBookingPage({
           <aside className="order-1 self-start overflow-hidden rounded-xl bg-white shadow-xl lg:order-2">
             <div className="relative aspect-[4/3]">
               <Image
-                src={offer.content?.images?.[0] ?? hotel.thumbnailImage}
+                src={
+                  roomContentWithPhotos(offer.content, hotel)?.images?.[0] ?? hotel.thumbnailImage
+                }
                 alt={offer.roomTypeName}
                 fill
                 sizes="(min-width: 1024px) 22rem, 100vw"

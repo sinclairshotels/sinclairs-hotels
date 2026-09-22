@@ -18,6 +18,7 @@ export const portBlairHotel: Hotel = {
     '/images/hotels/port-blair/destination/BayviewLobby1.webp',
   ],
   thumbnailImage: '/images/hotels/port-blair/destination/HotelAerielView3.webp',
+  sceneryImage: '/images/hotels/port-blair/explore/Corbyn_s Cove Island.webp',
   amenities: [
     'Multicuisine Restaurant',
     'Doctor by Appointment',

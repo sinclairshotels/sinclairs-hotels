@@ -3,7 +3,9 @@ import { ClosingCta } from '@/components/closing-cta';
 import { MeetingVenueCard } from '@/components/meeting-venue-card';
 import { SectionHeading } from '@/components/section-heading';
 import { CateringIcon } from '@/components/service-icons';
-import { hotels } from '@/content/hotels';
+import { hotels as contentHotels } from '@/content/hotels';
+import { hotelSlots } from '@/lib/photo-slots';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -42,25 +44,40 @@ const features = [
   },
 ];
 
-const venueHotels = hotels.filter((hotel) => hotel.eventSpaces);
-const totalVenues = hotels.reduce((sum, h) => sum + (h.eventSpaces?.venues.length ?? 0), 0);
-const totalSqFt = hotels.reduce((sum, h) => sum + (h.eventSpaces?.totalSqFt ?? 0), 0);
-const largestCapacity = Math.max(...hotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
+const venueHotelCount = contentHotels.filter((hotel) => hotel.eventSpaces).length;
+const totalVenues = contentHotels.reduce((sum, h) => sum + (h.eventSpaces?.venues.length ?? 0), 0);
+const totalSqFt = contentHotels.reduce((sum, h) => sum + (h.eventSpaces?.totalSqFt ?? 0), 0);
+const largestCapacity = Math.max(...contentHotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
 
 const stats = [
   { value: String(totalVenues), label: 'Conference Venues' },
   { value: totalSqFt.toLocaleString('en-IN'), label: 'Sq Ft of Event Space' },
   { value: largestCapacity.toLocaleString('en-IN'), label: 'Capacity, Largest Venue' },
-  { value: String(venueHotels.length), label: 'Properties Nationwide' },
+  { value: String(venueHotelCount), label: 'Properties Nationwide' },
 ];
 
-export default function MeetingsEventsPage() {
+export const revalidate = 600;
+
+export default async function MeetingsEventsPage() {
+  const overrides = await currentOverrides();
+  const venueHotels = contentHotels
+    .map((hotel) => withPhotos(hotel, hotelSlots(hotel), overrides))
+    .filter((hotel) => hotel.eventSpaces);
+  const shownFeatures = features.map((feature, i) => ({
+    ...feature,
+    image: photoUrl(`meetings:feature:${i}`, feature.image, overrides),
+  }));
+
   return (
     <div>
       <section className="relative flex h-[58vh] min-h-[400px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src="/images/hotels/kalimpong/amenities/The Orchid 1.webp"
+            src={photoUrl(
+              'meetings:hero',
+              '/images/hotels/kalimpong/amenities/The Orchid 1.webp',
+              overrides,
+            )}
             alt="The Orchid, a banquet hall at Sinclairs Retreat Kalimpong, set up for a conference"
             fill
             priority
@@ -114,7 +131,7 @@ export default function MeetingsEventsPage() {
           </p>
         </div>
         <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-6 px-6 pb-16 sm:grid-cols-3">
-          {features.map((feature) => (
+          {shownFeatures.map((feature) => (
             <div
               key={feature.title}
               className="group overflow-hidden rounded-lg border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
@@ -155,10 +172,14 @@ export default function MeetingsEventsPage() {
       </section>
 
       <ClosingCta
-        image="/images/hotels/ooty/gallery/The Regal room.webp"
+        image={photoUrl(
+          'meetings:closing',
+          '/images/hotels/ooty/gallery/The Regal room.webp',
+          overrides,
+        )}
         heading="Plan Your Event"
         body="Tell us about your requirements and our sales team will get back to you with venue options and a quote."
-        href="/enquiry?type=meetings"
+        href="/contact?type=meetings"
       />
     </div>
   );

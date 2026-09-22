@@ -1,12 +1,16 @@
-const WHATSAPP_NUMBER = '919257108784';
+import { whatsappHref } from '@/content/site';
 
+// The number and the prefilled message both come from content/site.ts. They
+// were hard-coded here as well, which is two places to change one number and
+// one of them would have been missed.
 export function WhatsAppButton() {
   return (
     <a
-      href={`https://wa.me/${WHATSAPP_NUMBER}`}
+      href={whatsappHref()}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
+      data-testid="whatsapp-button"
       className="fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition hover:scale-105 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
     >
       <svg viewBox="0 0 32 32" fill="white" className="h-7 w-7" aria-hidden="true">

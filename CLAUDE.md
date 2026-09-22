@@ -35,7 +35,9 @@ current phase.
 - **No comments explaining what code does.** Only comment non-obvious *why*.
 - **All content lives in code** (`content/`), typed via a shared `Hotel`, `Page`, etc.
   interface in `content/types.ts`. Editing a hotel's copy means editing a `.ts` file
-  and opening a PR — there is no admin CMS in this phase.
+  and opening a PR — there is no admin CMS in this phase. **Photos are the one
+  exception**: staff replace them from `/admin/photos` without a deploy. See
+  "Photos" below.
 - **Images**: `public/images/` is **WebP only** — no JPEG, PNG (one favicon
   exception) or anything else. This is a hard rule, not tidiness: every Vercel
   deployment uploads `public/` in full and Vercel *retains every deployment*, so
@@ -359,11 +361,51 @@ on `/book` to choose. The warning that used to sit here still applies, just with
 no fallback behind it: a property with no rates loaded is now a dead end rather
 than a handoff, so load rates before pointing traffic at it.
 
+**A booking that is never paid for gets one email, an hour after its hold let
+go.** `lib/abandoned.ts` finds them and `/api/cron/abandoned-bookings` (hourly)
+sends them. `Booking.abandonedEmailSentAt` is claimed *before* the mail goes
+out, not after: a crash between the two costs one guest their reminder, where
+marking afterwards would risk a second email on the next run — and a duplicate
+is the one thing this is not allowed to do. Bookings older than
+`ABANDONED_MAX_AGE_DAYS` are skipped so switching the cron on does not email
+everyone who ever failed to pay.
+
+The link in it lands on `/book/resume/<viewToken>`, which **re-checks
+availability before it promises anything**: the hold let go an hour before the
+email was sent, so the room may be gone. Free, and the guest goes to the confirm
+page with the same dates and room; gone, and the page says so rather than
+letting them fail at payment.
+
 ## Staff accounts and roles
 
-`/admin` is per-person, not a shared password. `User`, `UserHotel` and `Session`
-are real tables; `lib/auth.ts` owns passwords and sessions, `lib/roles.ts` owns
-the capability matrix.
+`/admin` is per-person, not a shared password. `User`, `UserHotel`,
+`UserSectionGrant` and `Session` are real tables; `lib/auth.ts` owns passwords
+and sessions, `lib/roles.ts` owns what a role and a grant mean.
+
+**Two roles, not five.** Admin is everything, including Users, Tax and creating
+accounts. A User holds a grant per **section** — one per sidebar item (Today,
+Bookings, Rates, Vouchers, Payments, Enquiries, Newsletter, Photos, Audit) — at
+**View** or **Edit**; a section with no grant is not visible at all. Users and
+Tax are deliberately not sections, so no combination of ticks reaches them:
+`CAPABILITY_SECTION` maps them to `null` and `can()` refuses them for any User.
+The five roles were a guess at which jobs exist; the checklist is the same
+question asked directly.
+
+Pages and actions still check `can(user, 'rates:write')` rather than a
+(section, level) pair — there are twenty call sites, they read well, and
+`CAPABILITY_SECTION` is the single place the two vocabularies have to agree.
+
+**Grants are read on every request, never copied into the session.** So an
+Admin changing what someone may do takes effect on that person's next page
+load, without signing them out mid-task. Deactivating still revokes sessions,
+because that is ending access rather than changing it. Every change writes an
+`AuditEvent` with the before and after.
+
+**`allProperties` is a column, not an absence.** "No `UserHotel` rows means
+every property" was the old rule, which quietly promoted a scoped user to every
+property if their rows were ever lost. Ticking *All properties* also covers
+hotels added later, which is what the central team wants and what a list of
+slugs cannot express.
 
 **Three modules, because of where the code can run.** `lib/auth.ts` reaches
 Prisma, `node:crypto` and `next/headers`, so it is server-only; `lib/roles.ts`
@@ -394,10 +436,10 @@ returns its message on failure. **A hidden nav link is presentation, never a
 permission**: pages check again with `can()`, and `notFound()` is the right
 response to someone typing a URL they may not have.
 
-**`UserHotel` is a restriction, not a grant** — no rows means every property,
-which is how the central team is modelled. `hotelScopeFilter(user)` spreads into
-a Prisma `where` so a scoped user's list query cannot return another property's
-rows even if the page forgets to filter.
+`hotelScopeFilter(user)` spreads into a Prisma `where` so a scoped user's list
+query cannot return another property's rows even if the page forgets to filter.
+It returns `{}` for an Admin or an `allProperties` user and `{ hotelSlug: { in:
+[] } }` for a scoped user with nothing — nothing, not everything.
 
 The first Admin is bootstrapped from `ADMIN_PASSWORD` on the first sign-in
 against an empty `User` table, under whatever email is typed. That branch is
@@ -405,6 +447,161 @@ dead the moment one account exists, so it is not a standing back door — but it
 also means **tests must not rely on it**: one leftover row turns every
 bootstrap sign-in into a failed login, which is why `test-utils/auth.ts`
 exposes `ensureE2EAdmin`.
+
+## Photos
+
+**Photos are the one content type staff manage from the admin.** Every other
+field on a hotel is edited in `content/hotels/*.ts` and shipped in a PR; a
+photograph is replaced at `/admin/photos`, which is Admin-only
+(`photos:manage`, held by ADMIN alone).
+
+`/admin/photos` is a contact sheet, not a file browser: Home, then each hotel in
+site order with its sections (Overview, Rooms, Dining, Weddings, Meetings,
+Gallery, Explore), then the enquiry and contact pages, then the remaining
+marketing pages, then everything the site renders nowhere. Each position is a
+named slot showing the thumbnail, file name, dimensions, size and a Copy name
+button, because the name is what a conversation about a photo uses.
+
+**A replaced photo cannot be written back to `public/`.** That directory is
+baked into the deployment and Vercel's filesystem is read-only at runtime, so
+the converted bytes go to **Vercel Blob** (`lib/photo-storage.ts`) and Postgres
+keeps only the mapping and the audit trail. They were in Postgres first, which
+worked, but it put megabytes of image data in every backup, pulled them through
+the connection pool on every read, and woke a serverless function to serve a
+file the CDN could have served itself.
+
+Uploads therefore need `BLOB_READ_WRITE_TOKEN`, and there is deliberately **no
+fallback to the database** without it — a second storage path is a second set
+of bugs, and a photo that silently lands somewhere other than where the site
+reads it is worse than an upload that refuses. *Choose from library* still
+works without the token, because it stores a path and no bytes. The blob host
+needs both an `images.remotePatterns` entry and a CSP `img-src` allowance in
+`next.config.ts`; without the first Next refuses to optimize the image and the
+position renders nothing at all.
+
+`lib/photos.ts`'s `withPhotos()` / `photoUrl()` swap the URL in wherever the
+original path is rendered, and the pages that render photos are
+`revalidate = 600` rather than static so a replacement appears without a deploy.
+A page that renders an image and does *not* go through one of those two will
+keep showing the repository's copy — that is the thing to check first if a
+replacement "didn't take".
+
+**Each position offers two ways to change it**, and only one of them adds
+bytes. *Upload from computer* opens the file picker and uploads on choosing —
+there is no second "now press Upload" step, which only invited half-finished
+changes. *Choose from library* opens a picker of every photo in the repository,
+grouped by property in site order, searchable, each thumbnail saying which
+positions it already fills; picking one writes a `PhotoAsset` with `sourcePath`
+set and no `data`, so the position renders that file's own URL and **nothing is
+copied**. Choosing a position's own photo clears the override instead, which is
+how a change is undone.
+
+**An override belongs to a position, not to a file.** `PhotoAsset.slotKey` is
+the identity and a partial unique index enforces one live row per slot. Two
+positions rendering the same photo is normal — a hotel's hero is also its
+listing card, the weddings carousel reuses the portrait the home page shows —
+and replacing one of them must leave the other alone. Keying by `contentPath`
+made that impossible to say, so every position now has its own slot, including
+ones that share a file, and `withPhotos()` applies an override **at its slot's
+locator** (`PhotoSlot.at`, a path into the content object) rather than by
+matching image strings. A page that renders a literal passes the slot key
+alongside it — `photoUrl('meetings:hero', '/images/…', overrides)` — and
+`lib/photo-slots.test.ts` fails if a call site names a slot the registry does
+not hold, or names one that renders a different file. Without that check a
+mistyped key is silent: the position just renders its literal for ever and
+staff cannot change it.
+
+Resolution is deliberately **one hop**: pointing A at B while B points at C
+shows B, and two positions aimed at each other do not spin.
+
+**An upload is converted, never trusted.** `sharp` re-encodes it to WebP at
+quality 82, resized to the slot's width (3840 for full-bleed heroes, 2400
+otherwise) and **never enlarged** — upscaling a 1200px photo to 3840 adds bytes
+and no detail. The result must fit the same two limits the build check applies
+to `public/`, which is why both read `config/image-budget.json`: a form that
+accepted what the next build rejects would be worse than no check at all.
+
+**Nothing is deleted in the moment.** A replaced photo is marked superseded and
+kept for `PHOTO_RETENTION_DAYS` (30), so a wrong photo noticed a fortnight later
+can still be put back. `pnpm photos:prune` deletes the blob *before* the row
+that names it: a row without its blob is a broken photo, but a blob without its
+row is a bill nothing can find to cancel. Deleting an unused image writes a `RetiredPhoto` row and
+hides it from the sheet; the file itself leaves the repository through
+`pnpm photos:prune`, in a commit a person makes — a runtime cannot delete from
+`public/` any more than it can write to it. Both actions write an `AuditEvent`
+(`photo.replaced`, `photo.retired`).
+
+**"Not used on any page" is only as honest as `lib/photo-slots.ts`.** An image a
+page hard-codes but no slot claims is listed there, one click from being retired.
+`lib/photo-slots.test.ts` scans `app/`, `components/` and `content/` for
+`/images/…` literals and fails if any is unclaimed, which is what makes that list
+safe to act on. Add a photo to a page, add its slot.
+
+## Enquiries
+
+`/admin/enquiries` is a worklist, not a log. Four things carry weight:
+
+**Where notifications go is data, not content.** `NotificationEmail` holds one
+or more addresses per property plus a central list, edited from the Admin-only
+panel on that page and audited like everything else. `notificationRecipients()`
+(`lib/notification-emails.ts`) resolves them for both enquiry and booking mail.
+An empty table behaves exactly as the site did before, falling back to
+`content/hotels/*.ts` and `STAFF_NOTIFY_EMAIL`, so the lists can be filled in
+one property at a time. A property's own list and the central list are used
+**together** — the central address is an addition, not a default a property
+replaces, or someone watching everything would become a property's only
+recipient the moment it gets an address of its own.
+
+**An enquiry is assigned to a person**, who is emailed a link to it. That email
+deliberately carries no guest name, message or contact details: it lands in a
+staff inbox that may be shared, and the enquiry itself is one click away behind
+a sign-in. *Forward* sends the whole thing to any typed address and records
+where it went in the audit log.
+
+**Notes are a thread, not a field.** `EnquiryNote` holds one entry per reply
+with its author and time, newest first, and there is no edit or delete. An
+entry records what somebody did at a moment; letting a later hand rewrite it
+would make the thread a worse account of the conversation than the mailbox it
+exists to save opening. It was a single `Enquiry.replyNote` column for one
+commit, which lost the previous reply every time somebody added to it.
+
+**Closing needs a reason** — Booked, Declined, No response or Spam. "Closed"
+alone loses the only thing anyone asks afterwards, which is whether it turned
+into a booking. Every change records who and when on the row (`statusChangedAt`
+/ `statusChangedLabel`) and writes an `AuditEvent`; reopening clears the reason,
+because it described a close that no longer stands.
+
+**The default filter is the work still open.** The legacy import brought in
+35,837 rows and they would otherwise be the whole screen, so an absent `status`
+parameter means New and Contacted; `status=ALL` is how you ask for everything.
+A New enquiry older than `STALE_AFTER_MS` (24h) is red in the list and counted
+on the Today dashboard — one constant, shared, so the two cannot disagree.
+
+## Funnel
+
+`/admin/dashboard` shows the booking funnel per property and in total, over 7 or
+30 days: home views → searches → room views → guest details → payment started →
+confirmed, with the drop-off against the step above.
+
+**The six steps come from two places, and the panel says which.** Guest details,
+payment started and confirmed are counted from `Booking` and `Payment` — rows
+that exist because money was on its way, and cannot be blocked or faked. The top
+three only ever happen in a browser, and GA4 cannot be read back from the server,
+so the same client events that fire to GA4 also POST to `/api/funnel` and land in
+`FunnelEvent` (`lib/analytics.ts`'s `recordFunnelStep`, sent with `sendBeacon` so
+it survives the navigation a search causes).
+
+That endpoint **accepts only those three steps**. Taking `confirmed` over HTTP
+would let anyone inflate the conversion rate from a terminal, which is why the
+allowlist is in `lib/funnel.ts` next to the definition rather than in the route.
+The hotel slug is checked against the content files before it is stored.
+
+`FunnelEvent` holds a step, a property and a time — no identifier, no guest data
+— so it needs no consent banner and leaks nothing if it is scraped. The cost is
+that an ad blocker stops the browser sending one, so the top three under-report
+against the three below them; the panel labels them "browser" rather than
+pretending the numbers are comparable. **It also has no history**: it starts
+counting the day it ships, so the 30-day column is only meaningful after a month.
 
 ## Server logging
 
@@ -547,6 +744,8 @@ rollback story. Storage is not a place to keep history.
 - `pnpm test:e2e` — Playwright smoke suite
 - `pnpm sync:rooms` — reconcile `RoomType`/`RatePlan`/`HotelSettings` with the content
   files and seed holidays. Run after adding a room type to `content/hotels`.
+- `pnpm photos:prune` — drop superseded uploads past their 30 days and delete the files
+  staff retired from `public/`. Leaves the deletions staged for a person to commit.
 - `pnpm prisma:generate` / `pnpm prisma:migrate` — Prisma client / migrations (dev)
 - `pnpm prisma:migrate:deploy` — `prisma migrate deploy`, the non-interactive form CI uses
 - `pnpm verify:ci` — `prisma migrate deploy && lint && typecheck && test:ci-local && build`,

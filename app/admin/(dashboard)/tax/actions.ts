@@ -15,7 +15,7 @@ export type TaxState = { status: 'idle' | 'success' | 'error'; message?: string 
 export async function saveTaxSetting(_prev: TaxState, formData: FormData): Promise<TaxState> {
   // Admin only, not rates:write: a typo here re-prices every quote made after
   // it, which is a different kind of control from a room's nightly rate.
-  const auth = await authorize('users:manage');
+  const auth = await authorize('tax:manage');
   if (!auth.ok) return { status: 'error', message: auth.message };
 
   const ip = clientIp(await headers());

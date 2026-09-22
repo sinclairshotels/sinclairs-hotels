@@ -81,7 +81,9 @@ describe('createVoucher', () => {
   });
 
   it('rejects invalid input with field errors and does not create a row', async () => {
-    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
+    mockState.cookieValue = (
+      await createTestStaff({ role: 'USER', sections: { vouchers: 'EDIT' } })
+    ).token;
     const before = await prisma.voucher.count();
 
     const result = await createVoucher(
@@ -96,7 +98,9 @@ describe('createVoucher', () => {
   });
 
   it('creates a voucher row and emails the guest and office copies', async () => {
-    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
+    mockState.cookieValue = (
+      await createTestStaff({ role: 'USER', sections: { vouchers: 'EDIT' } })
+    ).token;
     const guestEmail = `created-${Math.random()}@${TEST_EMAIL_DOMAIN}`;
 
     const result = await createVoucher({ status: 'idle' }, voucherFormData({ guestEmail }));
@@ -117,7 +121,9 @@ describe('createVoucher', () => {
   });
 
   it('rate-limits repeated submissions from the same IP', async () => {
-    mockState.cookieValue = (await createTestStaff({ role: 'RESERVATIONS' })).token;
+    mockState.cookieValue = (
+      await createTestStaff({ role: 'USER', sections: { vouchers: 'EDIT' } })
+    ).token;
     mockState.ip = `actions-test-rate-limit-${Math.random()}`;
 
     const attempts = await Promise.all(

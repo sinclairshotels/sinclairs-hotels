@@ -1,8 +1,12 @@
 import type { Hotel } from '@/content/types';
+import { formatInr } from '@/lib/booking';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export function HotelCard({ hotel }: { hotel: Hotel }) {
+// `fromPrice` is the cheapest Room Only night loaded in the next 30 days, or
+// null where nothing is loaded — in which case the card says Enquire rather
+// than inventing a number it cannot sell.
+export function HotelCard({ hotel, fromPrice }: { hotel: Hotel; fromPrice?: number | null }) {
   return (
     <Link
       href={`/hotels/${hotel.slug}`}
@@ -21,6 +25,18 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         <p className="mt-0.5 text-[0.65rem] text-cream/70 sm:text-xs">
           {hotel.location}, {hotel.state}
         </p>
+        {fromPrice !== undefined && (
+          <p className="mt-1.5 text-[0.7rem] font-medium text-gold-light sm:text-xs">
+            {fromPrice === null ? (
+              'Enquire'
+            ) : (
+              <>
+                From {formatInr(fromPrice)}
+                <span className="font-normal text-cream/60"> per night</span>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </Link>
   );

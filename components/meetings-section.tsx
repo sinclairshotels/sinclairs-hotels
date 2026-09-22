@@ -72,7 +72,7 @@ export function MeetingsSection({ hotel }: { hotel: Hotel }) {
         )}
 
         <Link
-          href={`/enquiry?property=${hotel.slug}&type=meetings`}
+          href={`/contact?property=${hotel.slug}&type=meetings`}
           className="group mt-10 inline-flex w-fit items-center gap-2 border-b border-gold pb-1 text-sm uppercase tracking-wider text-forest transition hover:text-gold"
         >
           Request a Proposal

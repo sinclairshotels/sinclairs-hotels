@@ -6,7 +6,11 @@ import { BookingSearchForm } from './booking-search-form';
 const push = vi.hoisted(() => vi.fn());
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
-vi.mock('@/lib/analytics', () => ({ pushEcommerceEvent: vi.fn(), hotelItem: vi.fn() }));
+vi.mock('@/lib/analytics', () => ({
+  pushEcommerceEvent: vi.fn(),
+  hotelItem: vi.fn(),
+  recordFunnelStep: vi.fn(),
+}));
 
 const hotel = (slug: string, name: string): Hotel => ({
   slug,
@@ -17,6 +21,7 @@ const hotel = (slug: string, name: string): Hotel => ({
   description: 'A description.',
   heroImage: `/images/hotels/${slug}/hero.webp`,
   thumbnailImage: `/images/hotels/${slug}/thumb.webp`,
+  sceneryImage: '/images/scenery.webp',
   amenities: [],
   rooms: [],
   dining: [],

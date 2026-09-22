@@ -1,6 +1,7 @@
 'use client';
 
 import { type BookingFormState, createBooking } from '@/app/(site)/book/actions';
+import { directBookingPerk } from '@/content/site';
 import { pushDataLayerEvent } from '@/lib/analytics';
 import { useActionState, useRef } from 'react';
 
@@ -142,7 +143,8 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
         pay and confirmed the moment the payment clears.
       </p>
       <p className="text-center text-xs font-medium leading-relaxed text-ink/70">
-        This booking is non-refundable. Once payment clears it cannot be cancelled or refunded.
+        {directBookingPerk.long} This booking is non-refundable — once payment clears it cannot be
+        cancelled or refunded.
       </p>
     </form>
   );

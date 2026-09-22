@@ -1,6 +1,6 @@
 import { BookingPurchaseTracking } from '@/components/booking-purchase-tracking';
 import { getHotelBySlug } from '@/content/hotels';
-import { contactNumbers } from '@/content/site';
+import { contactNumbers, directBookingPerk } from '@/content/site';
 import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { Metadata } from 'next';
@@ -84,6 +84,15 @@ export default async function BookingPage({
         <div className="p-8">
           <p className="text-sm leading-relaxed text-ink/70">{blurb}</p>
 
+          {/* This page is what a guest prints or shows at the desk, so the perk
+              has to be on it rather than only in the email that brought them
+              here. */}
+          {booking.status === 'CONFIRMED' && (
+            <p className="mt-6 rounded border border-gold/50 bg-gold/10 px-4 py-3 text-sm font-medium text-forest">
+              {directBookingPerk.short} — show this booking on arrival.
+            </p>
+          )}
+
           <dl className="mt-6 space-y-2 border-t border-ink/10 pt-6 text-sm">
             <Row label="Property" value={hotel?.name ?? booking.hotelSlug} />
             <Row label="Room" value={booking.roomName} />
@@ -121,7 +130,7 @@ export default async function BookingPage({
           {hotel?.contact && (
             <p className="mt-8 border-t border-ink/10 pt-6 text-xs leading-relaxed text-ink/60">
               Need to change something? Call reservations on {contactNumbers.tollFree}, or{' '}
-              <Link href="/enquiry" className="underline hover:text-forest">
+              <Link href="/contact" className="underline hover:text-forest">
                 send us an enquiry
               </Link>
               , quoting {booking.reference}.

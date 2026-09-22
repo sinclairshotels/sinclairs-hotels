@@ -12,6 +12,7 @@ import {
   parseCalendarView,
   rateCalendar,
 } from '@/lib/rate-calendar';
+import { hotelScopeFilter } from '@/lib/roles';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -53,7 +54,7 @@ export default async function RatesPage({
     prisma.auditEvent.findMany({
       where: {
         action: { startsWith: 'rates.' },
-        ...(viewer.restrictedToHotels ? { hotelSlug: { in: viewer.restrictedToHotels } } : {}),
+        ...hotelScopeFilter(viewer),
       },
       orderBy: { at: 'desc' },
       take: RECENT_CHANGES,

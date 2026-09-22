@@ -18,6 +18,7 @@ export const udaipurHotel: Hotel = {
     '/images/hotels/udaipur/destination/Courtyard Night view.webp',
   ],
   thumbnailImage: '/images/hotels/udaipur/gallery/Palace (3).webp',
+  sceneryImage: '/images/hotels/udaipur/explore/kumbhalgarh.webp',
   amenities: [
     'Intercom',
     'Tea/Coffee Maker',

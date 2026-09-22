@@ -15,7 +15,8 @@ import {
   verifyHashV1,
 } from '@/lib/icici';
 import { errorFields, log } from '@/lib/log';
-import { STAFF_NOTIFY_EMAIL, sendMail } from '@/lib/mail';
+import { sendMail } from '@/lib/mail';
+import { notificationRecipients } from '@/lib/notification-emails';
 import { publicSiteUrl } from '@/lib/site-url';
 import type { Booking } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -24,16 +25,29 @@ import { NextResponse } from 'next/server';
 // comes back to their booking page rather than the standalone i-Pay receipt.
 // Used by the replay branch too, so a guest pressing back lands in the same
 // place they did the first time.
+// ?paid=1 marks the arrival that came straight from the bank. The same URL is
+// the permanent "view my booking" link in the guest's email, so without a
+// marker the purchase event would fire again every time they reopened it and
+// GA4 would count the revenue afresh each time — it does not de-duplicate.
+//
+// It lives in one function because spreading it across the call sites already
+// went wrong once: three places send a guest back here, the marker was added to
+// two of them, and the one that was missed was the direct-booking success path
+// — the only one a completed booking actually takes. So purchase never fired on
+// the bookings that mattered. The test did check the redirect, but asserted the
+// URL as it was rather than as it should be, so it moved with the bug. The
+// email link is deliberately *not* built from this: it is the permanent link,
+// and a click from the inbox is not a sale.
+function bookingReturnUrl(baseUrl: string, viewToken: string): string {
+  return `${baseUrl}/booking/${viewToken}?paid=1`;
+}
+
 async function settlementUrl(baseUrl: string, paymentId: string, orderId: string): Promise<string> {
   const [booking, payment] = await Promise.all([
     prisma.booking.findUnique({ where: { paymentId }, select: { viewToken: true } }),
     prisma.payment.findUnique({ where: { id: paymentId }, select: { viewToken: true } }),
   ]);
-  // ?paid=1 marks the arrival that came straight from the bank. The same URL
-  // is the permanent "view my booking" link in the guest's email, so without a
-  // marker the purchase event would fire again every time they reopened it and
-  // GA4 would count the revenue afresh each time — it does not de-duplicate.
-  if (booking) return `${baseUrl}/booking/${booking.viewToken}?paid=1`;
+  if (booking) return bookingReturnUrl(baseUrl, booking.viewToken);
   return payment?.viewToken
     ? `${baseUrl}/ipay/result?t=${payment.viewToken}`
     : `${baseUrl}/ipay/result`;
@@ -282,7 +296,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       });
 
       await sendMail({
-        to: STAFF_NOTIFY_EMAIL,
+        to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-oversold-staff',
         subject: `REFUND DUE: ${settled.reference} paid but not confirmed — ${hotelName}`,
         html: bookingOversoldHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
@@ -299,17 +313,18 @@ export async function POST(request: Request): Promise<NextResponse> {
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
       });
 
-      const hotelInbox = hotel?.contact?.notificationEmail ?? STAFF_NOTIFY_EMAIL;
+      // The property's addresses and the central one, resolved together —
+      // notificationRecipients already merges them, so the separate bcc that
+      // used to carry the central copy is no longer needed.
       await sendMail({
-        to: hotelInbox,
-        bcc: hotelInbox === STAFF_NOTIFY_EMAIL ? undefined : STAFF_NOTIFY_EMAIL,
+        to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-hotel',
         subject: `New direct booking ${settled.reference} — ${hotelName}`,
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
       });
     }
 
-    return NextResponse.redirect(`${baseUrl}/booking/${settled.viewToken}`, 303);
+    return NextResponse.redirect(bookingReturnUrl(baseUrl, settled.viewToken), 303);
   }
 
   const emailData = {
@@ -337,7 +352,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   });
 
   await sendMail({
-    to: STAFF_NOTIFY_EMAIL,
+    to: await notificationRecipients(updated.hotelSlug),
     kind: 'ipay-staff',
     subject: `${subject} — ${hotelName}`,
     html: ipayConfirmationHtml(emailData),

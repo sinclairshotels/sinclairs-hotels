@@ -12,6 +12,7 @@ export const siliguriHotel: Hotel = {
     "Sinclairs' very first hotel, opened here in 1976 — the gateway city that grew around a 19th-century railway junction linking the Bengal plains to Darjeeling and the eastern Himalayas.",
   heroImage: '/images/hotels/siliguri/destination/Sinclairs-Siliguri-with-pool.webp',
   thumbnailImage: '/images/hotels/siliguri/destination/Sinclairs-Siliguri-with-pool.webp',
+  sceneryImage: '/images/hotels/siliguri/explore/Monastery.webp',
   amenities: [
     'Multicuisine Restaurant',
     'Doctor by Appointment',

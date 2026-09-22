@@ -16,9 +16,21 @@ const nextConfig: NextConfig = {
     // already-compressed 1600px source up to 3840px, so a second lossy pass
     // at 75 compounds into visible haze — those opt into 90 explicitly.
     qualities: [75, 90],
+    // Photos staff replace from /admin/photos are served from Vercel Blob, not
+    // from public/. Without this Next refuses to optimize them and the position
+    // renders nothing at all.
+    remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
   },
   async redirects() {
-    return legacyRedirects();
+    return [
+      // /enquiry was a page of its own until the enquiry form moved onto
+      // /contact. Next carries the query string across a redirect by itself,
+      // so ?property=&type= still arrives and the form still pre-fills — which
+      // matters because those links are printed on vouchers and sitting in
+      // sent email.
+      { source: '/enquiry', destination: '/contact', statusCode: 301 as const },
+      ...legacyRedirects(),
+    ];
   },
   async headers() {
     const csp = [
@@ -47,7 +59,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       // GA4 and Ads fall back to image beacons, and Ads conversion/remarketing
       // pixels are served from doubleclick and the google.com ccTLDs.
-      "img-src 'self' data: https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://www.google.com https://www.google.co.in",
+      "img-src 'self' data: https://*.public.blob.vercel-storage.com https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://www.google.com https://www.google.co.in",
       "font-src 'self' data:",
       // Google Maps iframe on hotel pages, GTM's <noscript> fallback iframe,
       // doubleclick's remarketing frame, and tagassistant.google.com — the last

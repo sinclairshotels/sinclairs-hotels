@@ -4,6 +4,7 @@ import { hotels } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { hotelScopeFilter } from '@/lib/roles';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -28,7 +29,7 @@ export default async function DailyRatesPage() {
   const recent = await prisma.auditEvent.findMany({
     where: {
       action: 'rates.day_overridden',
-      ...(viewer.restrictedToHotels ? { hotelSlug: { in: viewer.restrictedToHotels } } : {}),
+      ...hotelScopeFilter(viewer),
     },
     orderBy: { at: 'desc' },
     take: RECENT_OVERRIDES,

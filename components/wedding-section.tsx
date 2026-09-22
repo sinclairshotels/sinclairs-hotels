@@ -58,7 +58,7 @@ export function WeddingSection({ hotel }: { hotel: Hotel }) {
             </ul>
 
             <Link
-              href={`/enquiry?property=${hotel.slug}&type=wedding`}
+              href={`/contact?property=${hotel.slug}&type=wedding`}
               className="group mt-8 inline-flex w-fit items-center gap-2 border-b border-gold pb-1 text-sm uppercase tracking-wider text-forest transition hover:text-gold"
             >
               Enquire for Your Wedding

@@ -3,12 +3,13 @@
 // These create real User and Session rows and hand back the cookie value the
 // browser would carry, so tests exercise the actual authorization path rather
 // than a mocked-out one. A test that stubs `authorize()` proves only that it
-// can stub `authorize()`; the thing worth testing is that a Reservations user
-// really is refused when they try to edit a rate.
+// can stub `authorize()`; the thing worth testing is that a User holding Rates
+// at View really is refused when they try to edit one.
 
 import { createSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import type { UserRole } from '@prisma/client';
+import type { Section } from '@/lib/roles';
+import type { SectionLevel, UserRole } from '@prisma/client';
 
 export const TEST_USER_DOMAIN = 'vitest-staff.invalid';
 
@@ -23,11 +24,17 @@ export interface TestStaff {
 export async function createTestStaff({
   role = 'ADMIN',
   hotels = [],
+  // Absent means every property, which is what an account with no scope set
+  // should be — the explicit column, not an empty list of restrictions.
+  allProperties,
+  sections = {},
   active = true,
   name = 'Test Staff',
 }: {
   role?: UserRole;
   hotels?: string[];
+  allProperties?: boolean;
+  sections?: Partial<Record<Section, SectionLevel>>;
   active?: boolean;
   name?: string;
 } = {}): Promise<TestStaff> {
@@ -39,8 +46,15 @@ export async function createTestStaff({
       name,
       role,
       active,
+      allProperties: allProperties ?? hotels.length === 0,
       passwordHash: 'scrypt$16384$8$1$dGVzdA==$dGVzdA==',
       hotels: { create: hotels.map((hotelSlug) => ({ hotelSlug })) },
+      grants: {
+        create: Object.entries(sections).map(([section, level]) => ({
+          section,
+          level: level as SectionLevel,
+        })),
+      },
     },
   });
 

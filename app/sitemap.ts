@@ -10,7 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/weddings',
     '/meetings-events',
     '/contact',
-    '/enquiry',
     '/media',
   ];
 

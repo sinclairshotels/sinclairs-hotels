@@ -88,6 +88,24 @@ SAQ-A rather than SAQ-D).
       (Authorization Redirect) calls the same-looking value `txnAuthID` in
       its sample response. `lib/icici.ts` accepts both defensively, but this
       needs confirming against a real UAT response before launch.
+- [ ] **Confirm whether the convenience fee is charged in production.** On UAT
+      (22 Sep 2026) ICICI's hosted page added a **Service Charge of ₹142.93** to
+      a ₹5,197.50 booking — a grand total of **₹5,340.43**, about 2.75% — and it
+      appeared once the Cards method was expanded. Nothing in this app sends,
+      receives or controls that: the fee is configuration on the merchant
+      account, and UAT and production are separate merchant IDs configured
+      separately. The callback still reported `amount 5197.5`, so what we store
+      matches the transaction ICICI reports; the fee is collected alongside it.
+      Two things to settle with ICICI before launch:
+      - Is pass-through enabled on the **production** merchant ID, or does the
+        merchant absorb it?
+      - If it is passed on, the site has to say so before the guest reaches the
+        bank. Quoting ₹5,198 and presenting ₹5,340.43 at the last step is where
+        a booking gets abandoned, and it is the one number a guest checks.
+
+      If the answer is "the guest pays it", `Get Service Charges` (Chapter 6, in
+      the deferred list below) is the API that would let the site quote the real
+      total rather than surprising them with it.
 - [ ] Confirm which hash version applies to `initiateSale` — the doc's intro
       calls it "a json request" but never explicitly says "Hash Calculation
       v2" for it (only Get Card Bin / UserCancel / Get Service Charges do).
@@ -227,6 +245,12 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
 - [ ] `NEXT_PUBLIC_GA4_ID` — `G-7Y4FZLC5MW`. The direct-to-GA4 workaround for
       the container blocker above. Mutually exclusive with published GTM tags
       for the same events.
+- [ ] `BLOB_READ_WRITE_TOKEN` — Vercel Blob, where photos replaced from
+      `/admin/photos` are stored. Vercel sets it once a Blob store is attached
+      to the project. Uploads refuse without it and say so; *Choose from
+      library* still works, since it stores a path and no bytes. Needed on
+      **both** Preview and Production, and both need rebuilding afterwards —
+      env is snapshotted at build time.
 - [ ] `SITE_BASE_URL` — currently overrides the base URL for absolute links in
       emails/vouchers because `sinclairshotels.com` still serves WordPress
       (`lib/site-url.ts`). **Remove the override at cutover**, once

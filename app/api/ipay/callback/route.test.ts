@@ -168,8 +168,12 @@ describe('i-Pay callback settling a booking', () => {
 
     const response = await postCallback(payment.orderId);
 
+    // ?paid=1 is what tells the booking page this arrival is a completed sale
+    // and not the guest reopening the link from their email, so the purchase
+    // event fires exactly once. Without it GA4 sees the checkout start and no
+    // conversion, and the whole direct channel reads as zero revenue.
     expect(response.headers.get('location')).toBe(
-      `http://localhost:3000/booking/${booking.viewToken}`,
+      `http://localhost:3000/booking/${booking.viewToken}?paid=1`,
     );
     const settled = await prisma.booking.findUnique({ where: { id: booking.id } });
     expect(settled?.status).toBe('CONFIRMED');
@@ -204,8 +208,10 @@ describe('i-Pay callback settling a booking', () => {
     expect((await prisma.payment.findUnique({ where: { id: payment.id } }))?.status).toBe(
       'SUCCESS',
     );
+    // Carries the marker like any other arrival from the bank; the page fires
+    // purchase only on a CONFIRMED booking, so a refund due reports no sale.
     expect(response.headers.get('location')).toBe(
-      `http://localhost:3000/booking/${booking.viewToken}`,
+      `http://localhost:3000/booking/${booking.viewToken}?paid=1`,
     );
   });
 

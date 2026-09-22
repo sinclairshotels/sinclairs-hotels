@@ -18,6 +18,7 @@ export const gangtokHotel: Hotel = {
     '/images/hotels/gangtok/amenities/OutdoorDeck4.webp',
   ],
   thumbnailImage: '/images/hotels/gangtok/destination/GangtokFacade1.webp',
+  sceneryImage: '/images/hotels/gangtok/explore/tashi view point.webp',
   amenities: [
     'Multicuisine restaurant',
     '24-hour front desk',

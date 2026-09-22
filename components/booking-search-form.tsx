@@ -3,7 +3,7 @@
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import type { Hotel } from '@/content/types';
-import { hotelItem, pushEcommerceEvent } from '@/lib/analytics';
+import { hotelItem, pushEcommerceEvent, recordFunnelStep } from '@/lib/analytics';
 import { addDays, dateKey, todayUtc } from '@/lib/booking';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -59,6 +59,7 @@ export function BookingSearchForm({
       { items: hotel ? [hotelItem(hotel.slug, hotel.name)] : [] },
       { cta_source: 'booking_search', hotel: hotelSlug },
     );
+    recordFunnelStep('search', hotelSlug);
     router.push(
       `/book/${hotelSlug}?${new URLSearchParams({ checkIn, checkOut, rooms, adults, children })}`,
     );

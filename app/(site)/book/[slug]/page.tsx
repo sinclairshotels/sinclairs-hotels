@@ -1,5 +1,8 @@
 import { BookingSearchForm } from '@/components/booking-search-form';
+import { FunnelStep } from '@/components/funnel-step';
+import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
+import { directBookingPerk } from '@/content/site';
 import { roomOffers } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
@@ -14,6 +17,8 @@ import {
   todayUtc,
 } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { hotelSlots } from '@/lib/photo-slots';
+import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
@@ -23,6 +28,10 @@ import { notFound } from 'next/navigation';
 
 // Availability changes with every booking taken, so this can never be cached.
 export const dynamic = 'force-dynamic';
+
+// A room with nine left saying so is noise; three or fewer is the number a
+// guest actually weighs against booking now.
+const SCARCITY_THRESHOLD = 3;
 
 export async function generateMetadata({
   params,
@@ -55,8 +64,13 @@ export default async function BookHotelPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { slug } = await params;
-  const hotel = getHotelBySlug(slug);
-  if (!hotel) notFound();
+  const contentHotel = getHotelBySlug(slug);
+  if (!contentHotel) notFound();
+
+  // Photos staff replaced have to reach this page too, or a property's hero
+  // changes on /hotels/<slug> and not on the page where the room is sold.
+  const overrides = await currentOverrides();
+  const hotel = withPhotos(contentHotel, hotelSlots(contentHotel), overrides);
 
   const query = await searchParams;
   const parsed = staySchema.safeParse({ hotelSlug: slug, ...query });
@@ -83,6 +97,7 @@ export default async function BookHotelPage({
 
   return (
     <>
+      <FunnelStep step="room_view" hotel={hotel.slug} />
       <section className="relative h-[34vh] min-h-[260px] overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
@@ -171,7 +186,10 @@ export default async function BookHotelPage({
                 >
                   <div className="relative aspect-[4/3] sm:aspect-auto">
                     <Image
-                      src={offer.content?.images?.[0] ?? hotel.thumbnailImage}
+                      src={
+                        roomContentWithPhotos(offer.content, hotel)?.images?.[0] ??
+                        hotel.thumbnailImage
+                      }
                       alt={offer.roomTypeName}
                       fill
                       sizes="(min-width: 640px) 14rem, 100vw"
@@ -207,9 +225,12 @@ export default async function BookHotelPage({
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
                         {offer.content?.description}
                       </p>
-                      {offer.roomsLeft <= 3 && (
+                      {/* Only worth saying when it is nearly true. A room with
+                          nine left saying so is noise; three or fewer is the
+                          number a guest actually weighs. */}
+                      {offer.roomsLeft <= SCARCITY_THRESHOLD && (
                         <p className="mt-3 text-xs uppercase tracking-wider text-gold-dark">
-                          Only {offer.roomsLeft} left
+                          {offer.roomsLeft} left at this price
                         </p>
                       )}
                     </div>
@@ -218,10 +239,12 @@ export default async function BookHotelPage({
                       <p className="text-xs uppercase tracking-wider text-ink/50">From</p>
                       <p className="font-display text-2xl text-forest">{formatInr(perNight)}</p>
                       <p className="text-xs text-ink/50">per room / night</p>
-                      <p className="mt-2 text-sm text-ink/70">
+                      <p className="mt-2 text-sm font-medium text-ink">
                         {formatInr(offer.quote.total)} total
                       </p>
-                      <p className="text-xs text-ink/50">incl. taxes</p>
+                      <p className="text-xs text-ink/50">
+                        including {formatInr(offer.quote.taxTotal)} GST
+                      </p>
                       <Link
                         href={confirmHref}
                         className="mt-4 inline-block rounded bg-gold px-6 py-2.5 text-xs uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
@@ -235,15 +258,17 @@ export default async function BookHotelPage({
             })}
           </div>
 
+          <RoomReviews hotelName={hotel.name} />
+
           <p className="mt-8 text-center text-xs text-ink/60">
-            All rates are non-refundable. A booking cannot be cancelled or refunded once payment
-            clears.
+            {directBookingPerk.long} All rates are non-refundable. A booking cannot be cancelled or
+            refunded once payment clears.
           </p>
 
           <p className="mt-6 text-center text-sm text-ink/60">
             Prefer to talk it through?{' '}
             <Link
-              href={`/enquiry?property=${slug}&type=HOTEL`}
+              href={`/contact?property=${slug}&type=HOTEL`}
               className="text-forest underline underline-offset-4 hover:text-gold-dark"
             >
               Send an enquiry

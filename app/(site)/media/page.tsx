@@ -1,5 +1,7 @@
 import { EditorialRow } from '@/components/editorial-row';
 import { fraudAlert, pressMentions } from '@/content/site';
+import { pressSlots } from '@/lib/photo-slots';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -16,13 +18,22 @@ export const metadata: Metadata = pageMetadata({
   path: '/media',
 });
 
-export default function MediaPage() {
+export const revalidate = 600;
+
+export default async function MediaPage() {
+  const overrides = await currentOverrides();
+  const mentions = withPhotos(pressMentions, pressSlots(), overrides);
+
   return (
     <div>
       <section className="relative flex h-[42vh] min-h-[320px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src="/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp"
+            src={photoUrl(
+              'media:hero',
+              '/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp',
+              overrides,
+            )}
             alt="Sinclairs Gangtok at night"
             fill
             priority
@@ -130,7 +141,7 @@ export default function MediaPage() {
             Share your travel dates and let our reservations team find the perfect stay for you.
           </p>
           <Link
-            href="/enquiry"
+            href="/contact"
             className="mt-6 inline-block rounded bg-gold px-8 py-3 text-sm uppercase tracking-wider text-forest transition hover:bg-gold-light"
           >
             Enquire Now

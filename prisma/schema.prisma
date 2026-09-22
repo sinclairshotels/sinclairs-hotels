@@ -13,6 +13,15 @@ enum EnquiryStatus {
   CLOSED
 }
 
+// Why an enquiry was closed. "Closed" alone loses the only thing anyone asks
+// afterwards, which is whether it turned into a booking.
+enum EnquiryCloseReason {
+  BOOKED
+  DECLINED
+  NO_RESPONSE
+  SPAM
+}
+
 enum EnquiryType {
   GENERAL
   HOTEL
@@ -36,8 +45,59 @@ model Enquiry {
   legacyTicket String?       @unique
   createdAt    DateTime      @default(now())
 
+  // Who is dealing with it. SetNull rather than Cascade: deleting a member of
+  // staff must not delete the enquiries they were handling.
+  assignedToUserId String?
+  assignedTo       User?     @relation("EnquiryAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedAt       DateTime?
+
+  // Who last moved it and when. The label is stored beside the key for the same
+  // reason AuditEvent stores one — the row still reads correctly after the
+  // account is gone.
+  closeReason        EnquiryCloseReason?
+  statusChangedAt    DateTime?
+  statusChangedLabel String?
+
+  notes EnquiryNote[]
+
   @@index([createdAt])
   @@index([property])
+  @@index([assignedToUserId])
+  @@index([status, createdAt])
+}
+
+// What was said back, one entry per reply, newest first on screen. Append-only:
+// an entry is a record of what someone did at a time, and editing one would
+// make the thread a worse account of the conversation than the mailbox it is
+// meant to save opening.
+//
+// The author is a label beside the key for the same reason AuditEvent stores
+// one — the entry still reads correctly after the account is gone.
+model EnquiryNote {
+  id           String   @id @default(cuid())
+  enquiryId    String
+  enquiry      Enquiry  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  body         String
+  authorUserId String?
+  authorLabel  String
+  at           DateTime @default(now())
+
+  @@index([enquiryId, at])
+}
+
+// Where enquiry and booking notifications go, per property plus one central
+// address. A null hotelSlug is the central one.
+//
+// These override the addresses in content/hotels/*.ts, which stay as the
+// fallback: an empty table behaves exactly as the site did before, so this can
+// be filled in property by property rather than all at once.
+model NotificationEmail {
+  id        String   @id @default(cuid())
+  hotelSlug String?
+  address   String
+  createdAt DateTime @default(now())
+
+  @@index([hotelSlug])
 }
 
 model Voucher {
@@ -214,6 +274,10 @@ model Booking {
   // must never be enough to open someone else's booking.
   reference String @unique
   viewToken String @unique
+  // When the one recovery email went out. Its presence is the guarantee there
+  // is never a second: the query that finds abandoned bookings requires it to
+  // be null, so a row can only ever be picked up once.
+  abandonedEmailSentAt DateTime?
 
   hotelSlug  String
   // The room type this booking consumes. Nullable only so the migration can
@@ -428,12 +492,18 @@ model Holiday {
 // Staff accounts
 // ---------------------------------------------------------------------------
 
+// Two roles, because five was a guess at what jobs exist and this is a
+// checklist of what a person may touch. Admin is everything, including Users,
+// Tax and creating accounts; a User has exactly the sections granted below and
+// can never reach those three.
 enum UserRole {
   ADMIN
-  REVENUE
-  RESERVATIONS
-  HOTEL
-  VIEWER
+  USER
+}
+
+enum SectionLevel {
+  VIEW
+  EDIT
 }
 
 model User {
@@ -451,11 +521,37 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // Every property, including ones added after this account was made. The
+  // alternative is the explicit list in `hotels`. This used to be implied by
+  // "no rows in UserHotel", which silently promoted a scoped user to every
+  // property if their rows were ever lost.
+  allProperties Boolean @default(false)
+
   hotels      UserHotel[]
+  grants      UserSectionGrant[]
   sessions    Session[]
   auditEvents AuditEvent[]
+  enquiries   Enquiry[]          @relation("EnquiryAssignee")
 
   @@index([role])
+}
+
+// What one User may do in one section of /admin — the sidebar's own list, minus
+// Users and Tax, which are Admin-only and therefore never granted. A missing
+// row is no access at all; VIEW is read; EDIT is read and write.
+//
+// Grants are read from here on every request rather than copied into the
+// session, so an Admin changing someone's access takes effect on that person's
+// next page load without signing them out.
+model UserSectionGrant {
+  id      String       @id @default(cuid())
+  userId  String
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section String
+  level   SectionLevel
+
+  @@unique([userId, section])
+  @@index([userId])
 }
 
 // Which properties a user may see and act on. No rows means every property —
@@ -518,4 +614,87 @@ model AuditEvent {
   @@index([entity, entityId])
   @@index([hotelSlug, at])
   @@index([actorUserId, at])
+}
+
+// ---------------------------------------------------------------------------
+// Funnel
+// ---------------------------------------------------------------------------
+
+// The top of the booking funnel, which Postgres otherwise cannot see. Guest
+// details, payment started and confirmed are already rows in Booking and
+// Payment; home views, searches and room views only happen in the browser, and
+// GA4 cannot be read back from here. So the same client events that fire to GA4
+// also land here.
+//
+// It holds no guest data and no identifier — a step, a property and a time. An
+// ad blocker stops the browser sending one, so these three steps under-report
+// where the paid-for steps below them do not; the panel says so.
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  step      String
+  hotelSlug String?
+  at        DateTime @default(now())
+
+  @@index([step, at])
+  @@index([hotelSlug, at])
+}
+
+// ---------------------------------------------------------------------------
+// Photos
+// ---------------------------------------------------------------------------
+
+// A photo staff replaced from /admin/photos. It stands in for a file in
+// public/images/, which cannot itself be rewritten: public/ is baked into the
+// deployment and Vercel's filesystem is read-only at runtime. So the bytes live
+// here and app/api/photos/[id] serves them, with lib/photos.ts swapping the URL
+// in wherever the original path is rendered.
+//
+// The actor is a label rather than a foreign key — AuditEvent is the durable
+// record of who changed what, and this row only needs to say it on screen.
+model PhotoAsset {
+  id            String    @id @default(cuid())
+  // The position this fills — lib/photo-slots.ts's slot key. This, not the
+  // file, is the identity: two positions can render the same photo, and
+  // replacing one of them must leave the other alone.
+  slotKey       String
+  // The public/ path that position renders when nothing overrides it, kept so
+  // the library can say which positions a file already fills.
+  contentPath   String
+  // Exactly one of these is set. `blobUrl` is an upload converted here and
+  // stored in Vercel Blob — Postgres keeps the mapping, never the bytes.
+  // `sourcePath` points at a photo already in the repository, chosen from the
+  // library — the whole point of that being that no second copy is made.
+  blobUrl       String?
+  // The blob's pathname, which is what `del` needs to remove it once the
+  // retention window closes. The URL alone works too, but the pathname is what
+  // the Vercel dashboard lists, so it is the one worth storing.
+  blobPath      String?
+  sourcePath    String?
+  contentType   String    @default("image/webp")
+  width         Int
+  height        Int
+  bytes         Int
+  originalName  String
+  uploadedAt    DateTime  @default(now())
+  uploadedLabel String
+  // Set when a later upload took its place. The row is kept, not deleted, so a
+  // replacement can be undone until it is pruned — see PHOTO_RETENTION_DAYS.
+  supersededAt  DateTime?
+
+  @@index([slotKey, supersededAt])
+  @@index([contentPath, supersededAt])
+  @@index([supersededAt])
+}
+
+// An image no page references any more, that staff have retired from
+// /admin/photos. The file still sits in public/ — deleting it needs a commit,
+// which `pnpm photos:prune` prepares — so this row is what hides it from the
+// contact sheet in the meantime, and what tells the script which files to
+// remove.
+model RetiredPhoto {
+  id           String   @id @default(cuid())
+  contentPath  String   @unique
+  retiredAt    DateTime @default(now())
+  retiredLabel String
+  bytes        Int
 }

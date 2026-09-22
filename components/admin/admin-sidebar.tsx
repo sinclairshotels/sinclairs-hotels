@@ -9,24 +9,22 @@ import { usePathname } from 'next/navigation';
 // who may see what from one definition. Hiding a link is presentation only —
 // the page and its actions check again.
 const NAV_ITEMS: Array<{ label: string; href: string; capability: Capability }> = [
-  { label: 'Today', href: '/admin/dashboard', capability: 'bookings:read' },
+  { label: 'Today', href: '/admin/dashboard', capability: 'today:read' },
   { label: 'Bookings', href: '/admin/bookings', capability: 'bookings:read' },
   { label: 'Rates', href: '/admin/rates', capability: 'rates:read' },
   { label: 'Vouchers', href: '/admin/vouchers', capability: 'vouchers:read' },
   { label: 'Payments', href: '/admin/payments', capability: 'payments:read' },
   { label: 'Enquiries', href: '/admin/enquiries', capability: 'enquiries:read' },
-  { label: 'Newsletter', href: '/admin/newsletter', capability: 'enquiries:read' },
+  { label: 'Newsletter', href: '/admin/newsletter', capability: 'newsletter:read' },
+  { label: 'Photos', href: '/admin/photos', capability: 'photos:read' },
   { label: 'Users', href: '/admin/users', capability: 'users:manage' },
-  { label: 'Tax', href: '/admin/tax', capability: 'users:manage' },
+  { label: 'Tax', href: '/admin/tax', capability: 'tax:manage' },
   { label: 'Audit', href: '/admin/audit', capability: 'audit:read' },
 ];
 
 const ROLE_LABEL: Record<AuthedUser['role'], string> = {
   ADMIN: 'Admin',
-  REVENUE: 'Revenue',
-  RESERVATIONS: 'Reservations',
-  HOTEL: 'Hotel',
-  VIEWER: 'Viewer',
+  USER: 'User',
 };
 
 export function AdminSidebar({ user }: { user: AuthedUser }) {
@@ -64,7 +62,7 @@ export function AdminSidebar({ user }: { user: AuthedUser }) {
           <p className="px-3 text-xs text-cream/70">{user.name}</p>
           <p className="px-3 text-[10px] uppercase tracking-widest text-gold-light">
             {ROLE_LABEL[user.role]}
-            {user.restrictedToHotels && ` · ${user.restrictedToHotels.length} properties`}
+            {!user.allProperties && ` · ${user.hotels.length} properties`}
           </p>
           <form action={logout} className="mt-2">
             <button

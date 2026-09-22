@@ -64,3 +64,31 @@ Recorded so nobody re-raises them:
 - Redesign
 - F&B storytelling
 - Photo changes for Burdwan, Port Blair and Ooty
+
+## Open
+
+- [ ] **A scenery photograph for Siliguri.** Every property now has a
+      `sceneryImage` for the home page hero carousel — a view of the landscape
+      it sits in. Siliguri is the only one without a real candidate: the
+      repository holds a stadium and the Salugara Monastery gate, and the
+      monastery is standing in. Note that the four `hotels/siliguri/gallery/ADS_*`
+      files in git history are **not Siliguri** — they show a hill town and the
+      white Ooty property, so they are mislabelled and must not be used here.
+- [ ] **A better scenery photograph for Burdwan.** Bishnupur is standing in. It
+      is a landmark rather than a view, which is the best the plains-town set
+      offers; the alternatives are a duck close-up, a street and a yellow
+      building.
+
+- [ ] **Food ratings for the hotel Dining sections.** `content/reviews.ts` has
+      `foodRatings`, and the Dining section shows an entry where one exists —
+      it is empty because no source in this repository publishes a score for
+      the food, as opposed to the stay. Each entry needs the property name, the
+      score, the scale, the source and its URL, and the review count where the
+      source gives one. Deliberately **not** derived from the overall rating: a
+      stay scored 5 for its view is not a restaurant scored 5.
+
+- [ ] Dates for the guest reviews in `content/reviews.ts`. The Tripadvisor import
+      did not carry them, so the quotes on the room list credit their source and
+      say nothing about when — an undated quote is honest, a guessed date is not.
+      Supplying real dates means adding the field back to `Review` and to
+      `components/room-reviews.tsx` together.

@@ -1,10 +1,13 @@
+import { FunnelPanel } from '@/components/admin/funnel-panel';
 import { StatTiles } from '@/components/admin/stat-tiles';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
 import { formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import { dashboardToday } from '@/lib/dashboard';
+import { FUNNEL_STEPS, type Funnel, type FunnelStep, funnelCounts, toRows } from '@/lib/funnel';
 import { COVERAGE_WARNING_DAYS, coverageWarnings } from '@/lib/rate-calendar';
+import { canAccessHotel } from '@/lib/roles';
 import type { Booking } from '@prisma/client';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -13,19 +16,44 @@ import { notFound } from 'next/navigation';
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ funnel?: string }>;
+}) {
   const viewer = await getSession();
-  if (!viewer || !can(viewer, 'bookings:read')) notFound();
+  if (!viewer || !can(viewer, 'today:read')) notFound();
 
-  const [today, warnings] = await Promise.all([
+  const { funnel: funnelParam } = await searchParams;
+  const funnelDays = funnelParam === '30' ? 30 : 7;
+
+  const [today, warnings, funnelCountsByHotel] = await Promise.all([
     dashboardToday(viewer),
     can(viewer, 'rates:read') ? coverageWarnings() : Promise.resolve([]),
+    funnelCounts(viewer, funnelDays),
   ]);
 
-  const visibleWarnings = warnings.filter(
-    (warning) =>
-      !viewer.restrictedToHotels || viewer.restrictedToHotels.includes(warning.hotelSlug),
-  );
+  const funnels: Funnel[] = [
+    {
+      hotelSlug: null,
+      hotelName: 'All properties',
+      rows: toRows(funnelCountsByHotel.get(null) ?? blankCounts()),
+    },
+    ...[...funnelCountsByHotel.entries()]
+      .flatMap(([slug, counts]) => (slug === null ? [] : [{ slug, counts }]))
+      .sort((a, b) =>
+        (getHotelBySlug(a.slug)?.name ?? a.slug).localeCompare(
+          getHotelBySlug(b.slug)?.name ?? b.slug,
+        ),
+      )
+      .map(({ slug, counts }) => ({
+        hotelSlug: slug,
+        hotelName: getHotelBySlug(slug)?.name ?? slug,
+        rows: toRows(counts),
+      })),
+  ];
+
+  const visibleWarnings = warnings.filter((warning) => canAccessHotel(viewer, warning.hotelSlug));
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -69,6 +97,17 @@ export default async function DashboardPage() {
           </section>
         )}
 
+        {today.staleEnquiries > 0 && can(viewer, 'enquiries:read') && (
+          <p className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-ink/70">
+            <Link href="/admin/enquiries" className="font-medium text-red-700 hover:underline">
+              {today.staleEnquiries} new{' '}
+              {today.staleEnquiries === 1 ? 'enquiry has' : 'enquiries have'} been waiting over 24
+              hours
+            </Link>{' '}
+            — nobody has marked them contacted.
+          </p>
+        )}
+
         {today.awaitingPayment > 0 && (
           <p className="rounded border border-gold/50 bg-gold/10 px-4 py-3 text-sm text-ink/70">
             {today.awaitingPayment} {today.awaitingPayment === 1 ? 'booking is' : 'bookings are'}{' '}
@@ -87,6 +126,38 @@ export default async function DashboardPage() {
             empty="Nobody is due to check out today."
             bookings={today.departures}
           />
+        </section>
+
+        <section className="pb-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <p className="font-display text-lg text-forest">Funnel</p>
+              <p className="mt-1 text-xs text-ink/50">
+                Home views, searches and room views come from the browser, so an ad blocker costs us
+                the count — the three steps below them are rows, and cannot be blocked.
+              </p>
+            </div>
+            <div className="flex gap-1 text-xs">
+              {[7, 30].map((days) => (
+                <Link
+                  key={days}
+                  href={`/admin/dashboard?funnel=${days}`}
+                  className={`rounded px-3 py-1.5 transition ${
+                    funnelDays === days
+                      ? 'bg-forest text-cream'
+                      : 'border border-ink/15 text-ink/60 hover:border-forest hover:text-forest'
+                  }`}
+                >
+                  {days} days
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {funnels.map((funnel) => (
+              <FunnelPanel key={funnel.hotelSlug ?? 'all'} funnel={funnel} />
+            ))}
+          </div>
         </section>
 
         {visibleWarnings.length > 0 && (
@@ -173,3 +244,6 @@ function BookingLine({ booking }: { booking: Booking }) {
     </Link>
   );
 }
+
+const blankCounts = (): Record<FunnelStep, number> =>
+  Object.fromEntries(FUNNEL_STEPS.map((step) => [step, 0])) as Record<FunnelStep, number>;

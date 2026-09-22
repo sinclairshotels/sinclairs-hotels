@@ -87,6 +87,14 @@ describe('proxy', () => {
       expect(redirectedTo(response)).toContain('/admin/dashboard');
     });
 
+    it('lets the API through rather than redirecting it to the dashboard', async () => {
+      const proxy = await proxyUnder('production');
+      const response = await proxy(request(STAFF_HOST, '/api/funnel'));
+
+      expect(passedThrough(response)).toBe(true);
+      expect(redirectedTo(response)).toBeNull();
+    });
+
     it('lets the sign-in page through without a session', async () => {
       const proxy = await proxyUnder('production');
       const response = await proxy(request(STAFF_HOST, '/admin/login'));

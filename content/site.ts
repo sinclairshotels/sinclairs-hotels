@@ -12,12 +12,32 @@ export const siteConfig = {
 // a guest is never sent to one: a call goes to reservations and everything else
 // goes through the enquiry form, so there is nowhere for a per-property number
 // to drift back onto a page from.
+// The one thing a guest gets for booking here rather than through an agent,
+// stated in the same words everywhere it appears: the hero, the room list, the
+// booking page, the confirmation email and the printed voucher. One constant so
+// those five can never drift into five slightly different promises.
+export const directBookingPerk = {
+  short: 'Free early check-in from 12 noon',
+  long: 'Free early check-in from 12 noon, on every direct booking.',
+} as const;
+
 export const contactNumbers = {
   tollFree: '1800 120 267 000',
   tollFreeHref: 'tel:1800120267000',
   whatsapp: '+91 92571 08784',
-  whatsappHref: 'https://wa.me/919257108784',
+  // Digits only, no +, which is the form wa.me takes. The displayed number
+  // above is the same one spaced for reading; keep them in step.
+  whatsappNumber: '919257108784',
 } as const;
+
+// An empty compose box asks the guest to introduce themselves before they have
+// asked anything. This says who they are writing to and why, and they can
+// delete it — a prefill is a starting point, not a script.
+export const whatsappMessage = 'Hi Sinclairs Hotels, I would like to ask about a booking.';
+
+export function whatsappHref(message: string = whatsappMessage): string {
+  return `https://wa.me/${contactNumbers.whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
 
 export const socialLinks = [
   { label: 'Facebook', href: 'https://www.facebook.com/sinclairshotelsandresorts/' },
@@ -25,13 +45,13 @@ export const socialLinks = [
   { label: 'Twitter', href: 'https://www.twitter.com/sinclairshotels' },
 ] as const;
 
+// The top bar carries only what a guest is deciding between, with Book Now as
+// the one CTA. Home is the logo, Media sits in the footer, and Enquire is gone
+// as a destination of its own — /contact is the enquiry form now.
 export const primaryNav = [
-  { label: 'Home', href: '/' },
   { label: 'Hotels', href: '/hotels' },
-  { label: 'Meetings', href: '/meetings-events' },
   { label: 'Weddings', href: '/weddings' },
-  { label: 'Media', href: '/media' },
-  { label: 'Enquire Now', href: '/enquiry' },
+  { label: 'Meetings', href: '/meetings-events' },
   { label: 'Contact', href: '/contact' },
 ] as const;
 
