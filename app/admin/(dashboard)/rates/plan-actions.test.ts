@@ -381,4 +381,76 @@ describe('the monthly and daily rate screens', () => {
     const rows = await inventoryRows();
     expect(rows.every((row) => monthKey(row.date) === MONTH)).toBe(true);
   });
+
+  // The write batches nights that share a room and a value, rather than
+  // upserting one night at a time. These cover what batching can get wrong
+  // that a night-by-night loop could not: one room's values reaching another,
+  // and a second save missing the rows the first created.
+  describe('saving more than one room at once', () => {
+    it('gives each room its own values', async () => {
+      const other = await findRoom(HOTEL, 'Premier Room');
+
+      await saveMonth(
+        monthlyForm([
+          { roomTypeId: room.roomTypeId, month: MONTH, roomsOnSale: 4, rate: 6000 },
+          { roomTypeId: other.roomTypeId, month: MONTH, roomsOnSale: 9, rate: 3300 },
+        ]),
+      );
+
+      const [mine, theirs] = await Promise.all([
+        prisma.roomInventory.findMany({
+          where: { roomTypeId: room.roomTypeId, date: { gte: MONTH_START, lt: MONTH_END } },
+        }),
+        prisma.roomInventory.findMany({
+          where: { roomTypeId: other.roomTypeId, date: { gte: MONTH_START, lt: MONTH_END } },
+        }),
+      ]);
+
+      expect(mine).toHaveLength(NIGHTS_IN_MONTH);
+      expect(theirs).toHaveLength(NIGHTS_IN_MONTH);
+      expect(mine.every((row) => row.roomsOnSale === 4)).toBe(true);
+      expect(theirs.every((row) => row.roomsOnSale === 9)).toBe(true);
+
+      const theirPrices = await prisma.ratePrice.findMany({
+        where: { ratePlanId: other.ratePlanId, date: { gte: MONTH_START, lt: MONTH_END } },
+      });
+      expect(theirPrices.every((row) => row.amount.toNumber() === 3300)).toBe(true);
+    });
+
+    it('updates rows it created the first time rather than duplicating them', async () => {
+      await saveMonth(
+        monthlyForm([{ roomTypeId: room.roomTypeId, month: MONTH, roomsOnSale: 4, rate: 6000 }]),
+      );
+      await saveMonth(
+        monthlyForm([{ roomTypeId: room.roomTypeId, month: MONTH, roomsOnSale: 7, rate: 8200 }]),
+      );
+
+      const rows = await inventoryRows();
+      const prices = await priceRows();
+      expect(rows).toHaveLength(NIGHTS_IN_MONTH);
+      expect(prices).toHaveLength(NIGHTS_IN_MONTH);
+      expect(rows.every((row) => row.roomsOnSale === 7)).toBe(true);
+      expect(prices.every((row) => row.amount.toNumber() === 8200)).toBe(true);
+    });
+
+    it('fills in the nights a partial month is missing without disturbing the rest', async () => {
+      await saveMonth(
+        monthlyForm([{ roomTypeId: room.roomTypeId, month: MONTH, roomsOnSale: 4, rate: 6000 }]),
+      );
+      // Knock a hole in the middle, as a cleared night would.
+      await prisma.roomInventory.deleteMany({
+        where: { roomTypeId: room.roomTypeId, date: MID_MONTH },
+      });
+      expect(await inventoryRows()).toHaveLength(NIGHTS_IN_MONTH - 1);
+
+      await saveMonth(monthlyForm([{ roomTypeId: room.roomTypeId, month: MONTH, roomsOnSale: 6 }]));
+
+      const rows = await inventoryRows();
+      expect(rows).toHaveLength(NIGHTS_IN_MONTH);
+      expect(rows.every((row) => row.roomsOnSale === 6)).toBe(true);
+      // The rate half was left alone, including on the night that was re-made.
+      const prices = await priceRows();
+      expect(prices.every((row) => row.amount.toNumber() === 6000)).toBe(true);
+    });
+  });
 });
