@@ -88,6 +88,24 @@ SAQ-A rather than SAQ-D).
       (Authorization Redirect) calls the same-looking value `txnAuthID` in
       its sample response. `lib/icici.ts` accepts both defensively, but this
       needs confirming against a real UAT response before launch.
+- [ ] **Confirm whether the convenience fee is charged in production.** On UAT
+      (22 Sep 2026) ICICI's hosted page added a **Service Charge of ₹142.93** to
+      a ₹5,197.50 booking — a grand total of **₹5,340.43**, about 2.75% — and it
+      appeared once the Cards method was expanded. Nothing in this app sends,
+      receives or controls that: the fee is configuration on the merchant
+      account, and UAT and production are separate merchant IDs configured
+      separately. The callback still reported `amount 5197.5`, so what we store
+      matches the transaction ICICI reports; the fee is collected alongside it.
+      Two things to settle with ICICI before launch:
+      - Is pass-through enabled on the **production** merchant ID, or does the
+        merchant absorb it?
+      - If it is passed on, the site has to say so before the guest reaches the
+        bank. Quoting ₹5,198 and presenting ₹5,340.43 at the last step is where
+        a booking gets abandoned, and it is the one number a guest checks.
+
+      If the answer is "the guest pays it", `Get Service Charges` (Chapter 6, in
+      the deferred list below) is the API that would let the site quote the real
+      total rather than surprising them with it.
 - [ ] Confirm which hash version applies to `initiateSale` — the doc's intro
       calls it "a json request" but never explicitly says "Hash Calculation
       v2" for it (only Get Card Bin / UserCancel / Get Service Charges do).
