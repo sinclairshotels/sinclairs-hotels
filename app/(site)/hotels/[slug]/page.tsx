@@ -16,6 +16,7 @@ import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { contactNumbers, siteConfig } from '@/content/site';
 import { mapsEmbedEnabled } from '@/lib/maps';
+import { currentOverrides, withPhotos } from '@/lib/photos';
 import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
 import { eventSpaceCount } from '@/lib/venues';
@@ -63,8 +64,13 @@ export const revalidate = 600;
 
 export default async function HotelPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const hotel = getHotelBySlug(slug);
-  if (!hotel) notFound();
+  const contentHotel = getHotelBySlug(slug);
+  if (!contentHotel) notFound();
+
+  const overrides = await currentOverrides();
+  // Photos are the one content type staff change without a deploy, so the paths
+  // the page renders come from here rather than straight from the content file.
+  const hotel = withPhotos(contentHotel, overrides);
 
   const display = await roomDisplayNames(hotel.slug);
   const visibleRooms = hotel.rooms

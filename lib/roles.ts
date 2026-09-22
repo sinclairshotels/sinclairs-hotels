@@ -33,6 +33,7 @@ export type Capability =
   | 'vouchers:write'
   | 'enquiries:read'
   | 'users:manage'
+  | 'photos:manage'
   | 'audit:read';
 
 const READ_ONLY: Capability[] = [
@@ -59,6 +60,7 @@ const ROLE_CAPABILITIES: Record<UserRole, Capability[]> = {
     'payments:refund',
     'vouchers:write',
     'users:manage',
+    'photos:manage',
     'audit:read',
   ],
   // Sets what rooms sell for and reads how that performed. Deliberately cannot

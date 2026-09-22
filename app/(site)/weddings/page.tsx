@@ -11,7 +11,8 @@ import {
 } from '@/components/service-icons';
 import { VenueDirectory } from '@/components/venue-directory';
 import { WeddingVenueCard } from '@/components/wedding-venue-card';
-import { hotels } from '@/content/hotels';
+import { hotels as contentHotels } from '@/content/hotels';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import { totalEventSpaces, venuesByHotel } from '@/lib/venues';
 import type { Metadata } from 'next';
@@ -78,23 +79,34 @@ const services = [
   { label: 'Honeymoon Planning', icon: HeartIcon },
 ];
 
-const weddingHotels = hotels.filter((hotel) => hotel.weddings);
-const totalVenues = totalEventSpaces(hotels);
-const totalSqFt = hotels.reduce((sum, h) => sum + (h.eventSpaces?.totalSqFt ?? 0), 0);
-const largestCapacity = Math.max(...hotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
+const weddingHotelSlugs = contentHotels.filter((hotel) => hotel.weddings);
+const totalVenues = totalEventSpaces(contentHotels);
+const totalSqFt = contentHotels.reduce((sum, h) => sum + (h.eventSpaces?.totalSqFt ?? 0), 0);
+const largestCapacity = Math.max(...contentHotels.map((h) => h.eventSpaces?.maxCapacity ?? 0));
 
 const stats = [
   { value: String(totalVenues), label: 'Banquet Venues' },
   { value: totalSqFt.toLocaleString('en-IN'), label: 'Sq Ft of Event Space' },
   { value: largestCapacity.toLocaleString('en-IN'), label: 'Capacity, Largest Venue' },
-  { value: String(weddingHotels.length), label: 'Wedding Destinations' },
+  { value: String(weddingHotelSlugs.length), label: 'Wedding Destinations' },
 ];
 
-export default function WeddingsPage() {
+export const revalidate = 600;
+
+export default async function WeddingsPage() {
+  const overrides = await currentOverrides();
+  const hotels = withPhotos(contentHotels, overrides);
+  const weddingHotels = hotels.filter((hotel) => hotel.weddings);
+  const heroes = heroImages.map((src) => photoUrl(src, overrides));
+  const shownMoments = moments.map((moment) => ({
+    ...moment,
+    image: photoUrl(moment.image, overrides),
+  }));
+
   return (
     <div>
       <section className="relative flex h-[72vh] min-h-[480px] items-end overflow-hidden">
-        <HeroCarousel images={heroImages} alt="Weddings at Sinclairs Hotels &amp; Resorts" />
+        <HeroCarousel images={heroes} alt="Weddings at Sinclairs Hotels &amp; Resorts" />
         <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/95 via-forest-dark/50 to-forest-dark/15" />
         <div className="pointer-events-none absolute inset-4 border border-cream/25 sm:inset-8" />
         <div className="relative mx-auto w-full max-w-7xl px-6 pb-16 text-cream">
@@ -133,7 +145,7 @@ export default function WeddingsPage() {
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-4">
-            {moments.map((moment, i) => (
+            {shownMoments.map((moment, i) => (
               <div key={moment.title} className={i % 2 === 1 ? 'sm:mt-10' : ''}>
                 <div className="relative aspect-[3/4] overflow-hidden rounded-lg shadow-sm">
                   <Image
@@ -210,7 +222,7 @@ export default function WeddingsPage() {
       </section>
 
       <ClosingCta
-        image="/images/weddings/Wedding-Portrait.webp"
+        image={photoUrl('/images/weddings/Wedding-Portrait.webp', overrides)}
         heading="Contact Us, We Are Happy to Help"
         body="Share your wedding dates, guest count, and preferred property, and our events team will reach out with options."
         href="/enquiry?type=wedding"

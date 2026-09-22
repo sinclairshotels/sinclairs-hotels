@@ -35,7 +35,9 @@ current phase.
 - **No comments explaining what code does.** Only comment non-obvious *why*.
 - **All content lives in code** (`content/`), typed via a shared `Hotel`, `Page`, etc.
   interface in `content/types.ts`. Editing a hotel's copy means editing a `.ts` file
-  and opening a PR — there is no admin CMS in this phase.
+  and opening a PR — there is no admin CMS in this phase. **Photos are the one
+  exception**: staff replace them from `/admin/photos` without a deploy. See
+  "Photos" below.
 - **Images**: `public/images/` is **WebP only** — no JPEG, PNG (one favicon
   exception) or anything else. This is a hard rule, not tidiness: every Vercel
   deployment uploads `public/` in full and Vercel *retains every deployment*, so
@@ -403,6 +405,52 @@ also means **tests must not rely on it**: one leftover row turns every
 bootstrap sign-in into a failed login, which is why `test-utils/auth.ts`
 exposes `ensureE2EAdmin`.
 
+## Photos
+
+**Photos are the one content type staff manage from the admin.** Every other
+field on a hotel is edited in `content/hotels/*.ts` and shipped in a PR; a
+photograph is replaced at `/admin/photos`, which is Admin-only
+(`photos:manage`, held by ADMIN alone).
+
+`/admin/photos` is a contact sheet, not a file browser: Home, then each hotel in
+site order with its sections (Overview, Rooms, Dining, Weddings, Meetings,
+Gallery, Explore), then the enquiry and contact pages, then the remaining
+marketing pages, then everything the site renders nowhere. Each position is a
+named slot showing the thumbnail, file name, dimensions, size and a Copy name
+button, because the name is what a conversation about a photo uses.
+
+**A replaced photo cannot be written back to `public/`.** That directory is
+baked into the deployment and Vercel's filesystem is read-only at runtime, so
+the converted bytes go into `PhotoAsset` in Postgres and `app/api/photos/[id]`
+serves them. The id changes on every upload, which is what lets that response be
+cached forever. `lib/photos.ts`'s `withPhotos()` / `photoUrl()` swap the URL in
+wherever the original path is rendered, and the pages that render photos are
+`revalidate = 600` rather than static so a replacement appears without a deploy.
+A page that renders an image and does *not* go through one of those two will
+keep showing the repository's copy — that is the thing to check first if a
+replacement "didn't take".
+
+**An upload is converted, never trusted.** `sharp` re-encodes it to WebP at
+quality 82, resized to the slot's width (3840 for full-bleed heroes, 2400
+otherwise) and **never enlarged** — upscaling a 1200px photo to 3840 adds bytes
+and no detail. The result must fit the same two limits the build check applies
+to `public/`, which is why both read `config/image-budget.json`: a form that
+accepted what the next build rejects would be worse than no check at all.
+
+**Nothing is deleted in the moment.** A replaced photo is marked superseded and
+kept for `PHOTO_RETENTION_DAYS` (30), so a wrong photo noticed a fortnight later
+can still be put back. Deleting an unused image writes a `RetiredPhoto` row and
+hides it from the sheet; the file itself leaves the repository through
+`pnpm photos:prune`, in a commit a person makes — a runtime cannot delete from
+`public/` any more than it can write to it. Both actions write an `AuditEvent`
+(`photo.replaced`, `photo.retired`).
+
+**"Not used on any page" is only as honest as `lib/photo-slots.ts`.** An image a
+page hard-codes but no slot claims is listed there, one click from being retired.
+`lib/photo-slots.test.ts` scans `app/`, `components/` and `content/` for
+`/images/…` literals and fails if any is unclaimed, which is what makes that list
+safe to act on. Add a photo to a page, add its slot.
+
 ## Server logging
 
 `lib/log.ts` emits one line of JSON per server event; Vercel indexes the fields,
@@ -544,6 +592,8 @@ rollback story. Storage is not a place to keep history.
 - `pnpm test:e2e` — Playwright smoke suite
 - `pnpm sync:rooms` — reconcile `RoomType`/`RatePlan`/`HotelSettings` with the content
   files and seed holidays. Run after adding a room type to `content/hotels`.
+- `pnpm photos:prune` — drop superseded uploads past their 30 days and delete the files
+  staff retired from `public/`. Leaves the deletions staged for a person to commit.
 - `pnpm prisma:generate` / `pnpm prisma:migrate` — Prisma client / migrations (dev)
 - `pnpm prisma:migrate:deploy` — `prisma migrate deploy`, the non-interactive form CI uses
 - `pnpm verify:ci` — `prisma migrate deploy && lint && typecheck && test:ci-local && build`,

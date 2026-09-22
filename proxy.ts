@@ -29,6 +29,12 @@ export async function proxy(request: NextRequest) {
     // A preview serves both halves of the site from one deployment, so only
     // the staff hostname is admin-only.
     if (!isStaffHost) return NextResponse.next();
+    // Except for the API, which the admin pages themselves call: a photo served
+    // from /api/photos is requested by an <img> on a staff page, and turning
+    // that into a redirect to the dashboard hands the browser an HTML document
+    // where an image should be. It renders as a blank box, which is how this
+    // was found.
+    if (request.nextUrl.pathname.startsWith('/api/')) return NextResponse.next();
     return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 

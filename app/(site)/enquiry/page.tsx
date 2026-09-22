@@ -1,5 +1,6 @@
 import { EnquiryForm } from '@/components/enquiry-form';
 import { hotels } from '@/content/hotels';
+import { currentOverrides, photoUrl } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -21,13 +22,17 @@ export default async function EnquiryPage({
     guests?: string;
   }>;
 }) {
+  const overrides = await currentOverrides();
   const { property, type, checkIn, checkOut, guests } = await searchParams;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2">
       <div className="relative hidden aspect-[4/3] lg:sticky lg:top-0 lg:block lg:aspect-auto lg:h-screen">
         <Image
-          src="/images/hotels/darjeeling/destination/Sinclairs-Darjeeling-Entrance-1.webp"
+          src={photoUrl(
+            '/images/hotels/darjeeling/destination/Sinclairs-Darjeeling-Entrance-1.webp',
+            overrides,
+          )}
           alt="The warmly lit entrance porch at Sinclairs Darjeeling"
           fill
           priority

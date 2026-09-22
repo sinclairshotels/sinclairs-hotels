@@ -8,26 +8,34 @@ import { JourneyHero } from '@/components/journey-hero';
 import { Reveal } from '@/components/reveal';
 import { SectionHeading } from '@/components/section-heading';
 import { SpotlightGallery } from '@/components/spotlight-gallery';
-import { awards } from '@/content/awards';
-import { experiences } from '@/content/experiences';
-import { hotels } from '@/content/hotels';
+import { awards as contentAwards } from '@/content/awards';
+import { experiences as contentExperiences } from '@/content/experiences';
+import { hotels as contentHotels } from '@/content/hotels';
 import { reviews } from '@/content/reviews';
 import { diningPhotos } from '@/lib/dining';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { totalEventSpaces } from '@/lib/venues';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const sightseeingPhotos = hotels.flatMap((hotel) =>
-  hotel.sightseeing
-    .filter((spot) => spot.image)
-    .slice(0, 3)
-    .map((spot) => ({
-      src: spot.image as string,
-      alt: `${spot.name}, near ${hotel.name} in ${hotel.location}`,
-    })),
-);
+// Photos are staff-editable without a deploy, so the page is revalidated rather
+// than frozen at build time.
+export const revalidate = 600;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const overrides = await currentOverrides();
+  const hotels = withPhotos(contentHotels, overrides);
+  const experiences = withPhotos(contentExperiences, overrides);
+  const awards = withPhotos(contentAwards, overrides);
+  const sightseeingPhotos = hotels.flatMap((hotel) =>
+    hotel.sightseeing
+      .filter((spot) => spot.image)
+      .slice(0, 3)
+      .map((spot) => ({
+        src: spot.image as string,
+        alt: `${spot.name}, near ${hotel.name} in ${hotel.location}`,
+      })),
+  );
   const [, , secondaryBottom] = hotels;
   const states = new Set(hotels.map((h) => h.state)).size;
   const totalDining = hotels.reduce((sum, h) => sum + h.dining.length, 0);
@@ -183,7 +191,10 @@ export default function HomePage() {
           <div className="group overflow-hidden rounded-lg border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
             <div className="relative aspect-[16/11] overflow-hidden">
               <Image
-                src="/images/hotels/darjeeling/amenities/Sinclairs-Darjeeling-Pinnacle-Setup-1.webp"
+                src={photoUrl(
+                  '/images/hotels/darjeeling/amenities/Sinclairs-Darjeeling-Pinnacle-Setup-1.webp',
+                  overrides,
+                )}
                 alt="A conference set up in The Pinnacle banquet hall at Sinclairs Darjeeling"
                 fill
                 sizes="(min-width: 640px) 50vw, 100vw"
@@ -206,7 +217,7 @@ export default function HomePage() {
           <div className="group overflow-hidden rounded-lg border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
             <div className="relative aspect-[16/11] overflow-hidden">
               <Image
-                src="/images/weddings/Wedding-Portrait.webp"
+                src={photoUrl('/images/weddings/Wedding-Portrait.webp', overrides)}
                 alt="A wedding celebration at a Sinclairs property"
                 fill
                 sizes="(min-width: 640px) 50vw, 100vw"

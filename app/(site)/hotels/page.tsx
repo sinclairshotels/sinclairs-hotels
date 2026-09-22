@@ -1,7 +1,8 @@
 import { ClosingCta } from '@/components/closing-cta';
 import { EditorialRow } from '@/components/editorial-row';
 import { HotelCard } from '@/components/hotel-card';
-import { hotels } from '@/content/hotels';
+import { hotels as contentHotels } from '@/content/hotels';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -17,16 +18,24 @@ const milestones = [
   { year: '1971', label: 'Founded in Kolkata' },
   { year: '1976', label: 'First Hotel Opens in Siliguri' },
   { year: '1986', label: 'Listed on the Stock Exchange' },
-  { year: 'Today', label: `${hotels.length} Destinations Across India` },
+  { year: 'Today', label: `${contentHotels.length} Destinations Across India` },
 ];
 
-export default function HotelsPage() {
+export const revalidate = 600;
+
+export default async function HotelsPage() {
+  const overrides = await currentOverrides();
+  const hotels = withPhotos(contentHotels, overrides);
+
   return (
     <div>
       <section className="relative flex h-[62vh] min-h-[440px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src="/images/hotels/port-blair/destination/SinclairsBayviewAerielView.webp"
+            src={photoUrl(
+              '/images/hotels/port-blair/destination/SinclairsBayviewAerielView.webp',
+              overrides,
+            )}
             alt="Sinclairs Bayview perched on a coastal headland above the Bay of Bengal"
             fill
             priority
@@ -59,7 +68,10 @@ export default function HotelsPage() {
         <EditorialRow
           title="A Legacy Since 1971"
           body="Sinclairs Hotels &amp; Resorts was founded in 1971 by Kolkata entrepreneur H.C. Suchanti, opening its first hotel in Siliguri in 1976 and a second in the hills of Darjeeling in 1981. The company went public in 1986, listing on the Bombay and Calcutta Stock Exchanges. Since 1990, under the stewardship of the Suchanti family, the group has grown from those early Himalayan beginnings into nine destinations spanning the Dooars, the Nilgiris, Rajasthan and the Andaman Islands — each still built around the same promise of comfortable, well-run hospitality in some of India's most memorable places."
-          image="/images/hotels/darjeeling/dining/Sinclairs Darjeeling Lobby.webp"
+          image={photoUrl(
+            '/images/hotels/darjeeling/dining/Sinclairs Darjeeling Lobby.webp',
+            overrides,
+          )}
           alt="A colonial-style lounge at Sinclairs Darjeeling, one of the group's earliest properties"
           imageSide="right"
         />
@@ -86,7 +98,10 @@ export default function HotelsPage() {
       </div>
 
       <ClosingCta
-        image="/images/hotels/darjeeling/amenities/Sinclairs Darjeeling Kanchenjunga view.webp"
+        image={photoUrl(
+          '/images/hotels/darjeeling/amenities/Sinclairs Darjeeling Kanchenjunga view.webp',
+          overrides,
+        )}
         heading="Find Your Sinclairs"
         body="Share your travel dates and preferred destination, and our reservations team will help you choose the right property."
         href="/enquiry"

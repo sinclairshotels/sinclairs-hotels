@@ -1,5 +1,6 @@
 import { EditorialRow } from '@/components/editorial-row';
 import { fraudAlert, pressMentions } from '@/content/site';
+import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -16,13 +17,21 @@ export const metadata: Metadata = pageMetadata({
   path: '/media',
 });
 
-export default function MediaPage() {
+export const revalidate = 600;
+
+export default async function MediaPage() {
+  const overrides = await currentOverrides();
+  const mentions = withPhotos(pressMentions, overrides);
+
   return (
     <div>
       <section className="relative flex h-[42vh] min-h-[320px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src="/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp"
+            src={photoUrl(
+              '/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp',
+              overrides,
+            )}
             alt="Sinclairs Gangtok at night"
             fill
             priority

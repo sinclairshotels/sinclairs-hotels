@@ -87,6 +87,14 @@ describe('proxy', () => {
       expect(redirectedTo(response)).toContain('/admin/dashboard');
     });
 
+    it('lets the API through, because admin pages call it for their own images', async () => {
+      const proxy = await proxyUnder('production');
+      const response = await proxy(request(STAFF_HOST, '/api/photos/abc123'));
+
+      expect(passedThrough(response)).toBe(true);
+      expect(redirectedTo(response)).toBeNull();
+    });
+
     it('lets the sign-in page through without a session', async () => {
       const proxy = await proxyUnder('production');
       const response = await proxy(request(STAFF_HOST, '/admin/login'));
