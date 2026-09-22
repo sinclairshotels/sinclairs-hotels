@@ -38,7 +38,7 @@ describe('BookHotelCard', () => {
 
     expect(screen.getByText('Enquire')).toBeInTheDocument();
     expect(screen.queryByText(/₹/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/enquiry?property=burdwan');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/contact?property=burdwan');
   });
 
   it('shows a price of zero rather than treating it as nothing loaded', () => {

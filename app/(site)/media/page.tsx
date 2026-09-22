@@ -130,7 +130,7 @@ export default function MediaPage() {
             Share your travel dates and let our reservations team find the perfect stay for you.
           </p>
           <Link
-            href="/enquiry"
+            href="/contact"
             className="mt-6 inline-block rounded bg-gold px-8 py-3 text-sm uppercase tracking-wider text-forest transition hover:bg-gold-light"
           >
             Enquire Now

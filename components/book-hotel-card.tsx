@@ -12,7 +12,7 @@ export function BookHotelCard({ hotel, fromPrice }: { hotel: Hotel; fromPrice?: 
 
   return (
     <Link
-      href={bookable ? `/book/${hotel.slug}` : `/enquiry?property=${hotel.slug}`}
+      href={bookable ? `/book/${hotel.slug}` : `/contact?property=${hotel.slug}`}
       className="group relative block aspect-[4/3.4] overflow-hidden rounded-xl shadow-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-2xl"
     >
       <Image

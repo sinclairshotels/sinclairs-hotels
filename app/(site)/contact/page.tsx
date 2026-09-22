@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/contact-link';
+import { EnquiryForm } from '@/components/enquiry-form';
 import { hotels } from '@/content/hotels';
 import { contactNumbers } from '@/content/site';
 import { pageMetadata } from '@/lib/seo';
@@ -12,7 +13,22 @@ export const metadata: Metadata = pageMetadata({
   path: '/contact',
 });
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  // The same parameters /enquiry took. That page is gone and 301s here, so a
+  // link printed on a voucher or sitting in an old email still lands on a form
+  // with the property and type already chosen.
+  searchParams: Promise<{
+    property?: string;
+    type?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: string;
+  }>;
+}) {
+  const { property, type, checkIn, checkOut, guests } = await searchParams;
+
   return (
     <div>
       <section className="relative flex h-[42vh] min-h-[320px] items-end overflow-hidden">
@@ -44,76 +60,89 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-6 py-10 sm:py-16">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
-          <div className="rounded-lg border border-forest/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <h2 className="font-display text-xl text-forest">Reservations &amp; Sales</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-ink/50">Toll Free</dt>
-                <dd className="mt-1">
-                  <ContactLink
-                    method="phone"
-                    href={contactNumbers.tollFreeHref}
-                    ctaSource="contact_page_reservations"
-                    className="hover:text-gold"
-                  >
-                    {contactNumbers.tollFree}
-                  </ContactLink>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-ink/50">WhatsApp</dt>
-                <dd className="mt-1">
-                  <a
-                    href={contactNumbers.whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-gold"
-                  >
-                    {contactNumbers.whatsapp}
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wider text-ink/50">Everything else</dt>
-                <dd className="mt-1 text-ink/70">
-                  Use the enquiry form and the right team will answer — it reaches reservations,
-                  sales and the property itself.
-                </dd>
-              </div>
-            </dl>
-            <Link
-              href="/enquiry"
-              className="mt-6 inline-block rounded bg-forest px-6 py-3 text-sm uppercase tracking-wider text-cream transition hover:bg-forest-dark"
-            >
-              Send an Enquiry
-            </Link>
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:py-16">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[3fr_2fr]">
+          <div className="rounded-xl border border-forest/10 bg-white p-6 shadow-xl sm:p-10">
+            <h2 className="font-display text-xl text-forest">Send an enquiry</h2>
+            <p className="mt-2 text-sm text-ink/70">
+              Share your dates and requirements and our reservations team will come back to you.
+            </p>
+            <div className="mt-6">
+              <EnquiryForm
+                hotels={hotels}
+                defaultProperty={property}
+                defaultType={type}
+                defaultCheckIn={checkIn}
+                defaultCheckOut={checkOut}
+                defaultGuests={guests}
+              />
+            </div>
           </div>
 
-          <div className="rounded-lg border border-forest/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <h2 className="font-display text-xl text-forest">Our Properties</h2>
-            <ul className="mt-4 divide-y divide-forest/10 text-sm">
-              {hotels.map((hotel) => (
-                <li
-                  key={hotel.slug}
-                  className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-                >
-                  <div>
-                    <p className="text-ink/90">{hotel.name}</p>
-                    <p className="text-xs text-ink/50">
-                      {hotel.location}, {hotel.state}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/enquiry?property=${hotel.slug}&type=hotel`}
-                    className="shrink-0 text-gold-dark hover:text-gold"
+          <div className="space-y-10">
+            <div className="rounded-lg border border-forest/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <h2 className="font-display text-xl text-forest">Reservations &amp; Sales</h2>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="text-xs uppercase tracking-wider text-ink/50">Toll Free</dt>
+                  <dd className="mt-1">
+                    <ContactLink
+                      method="phone"
+                      href={contactNumbers.tollFreeHref}
+                      ctaSource="contact_page_reservations"
+                      className="hover:text-gold"
+                    >
+                      {contactNumbers.tollFree}
+                    </ContactLink>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wider text-ink/50">WhatsApp</dt>
+                  <dd className="mt-1">
+                    <a
+                      href={contactNumbers.whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-gold"
+                    >
+                      {contactNumbers.whatsapp}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wider text-ink/50">Everything else</dt>
+                  <dd className="mt-1 text-ink/70">
+                    Use the enquiry form and the right team will answer — it reaches reservations,
+                    sales and the property itself.
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="rounded-lg border border-forest/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <h2 className="font-display text-xl text-forest">Our Properties</h2>
+              <ul className="mt-4 divide-y divide-forest/10 text-sm">
+                {hotels.map((hotel) => (
+                  <li
+                    key={hotel.slug}
+                    className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                   >
-                    Enquire
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                    <div>
+                      <p className="text-ink/90">{hotel.name}</p>
+                      <p className="text-xs text-ink/50">
+                        {hotel.location}, {hotel.state}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/contact?property=${hotel.slug}&type=hotel`}
+                      className="shrink-0 text-gold-dark hover:text-gold"
+                    >
+                      Enquire
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

@@ -89,7 +89,7 @@ export default function HotelsPage() {
         image="/images/hotels/darjeeling/amenities/Sinclairs Darjeeling Kanchenjunga view.webp"
         heading="Find Your Sinclairs"
         body="Share your travel dates and preferred destination, and our reservations team will help you choose the right property."
-        href="/enquiry"
+        href="/contact"
       />
     </div>
   );

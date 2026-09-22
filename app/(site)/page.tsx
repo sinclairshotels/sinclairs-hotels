@@ -13,6 +13,7 @@ import { experiences } from '@/content/experiences';
 import { hotels } from '@/content/hotels';
 import { reviews } from '@/content/reviews';
 import { diningPhotos } from '@/lib/dining';
+import { fromPricePerHotel } from '@/lib/from-price';
 import { totalEventSpaces } from '@/lib/venues';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -27,7 +28,12 @@ const sightseeingPhotos = hotels.flatMap((hotel) =>
     })),
 );
 
-export default function HomePage() {
+// The entry price comes from the rate rows, which staff change without a
+// deploy, so the page is revalidated rather than frozen at build time.
+export const revalidate = 600;
+
+export default async function HomePage() {
+  const fromPrices = await fromPricePerHotel();
   const [, , secondaryBottom] = hotels;
   const states = new Set(hotels.map((h) => h.state)).size;
   const totalDining = hotels.reduce((sum, h) => sum + h.dining.length, 0);
@@ -124,7 +130,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {hotels.map((hotel, i) => (
             <Reveal key={hotel.slug} delay={(i % 3) * 80}>
-              <HotelCard hotel={hotel} />
+              <HotelCard hotel={hotel} fromPrice={fromPrices.get(hotel.slug) ?? null} />
             </Reveal>
           ))}
         </div>
@@ -266,7 +272,7 @@ export default function HomePage() {
             Share your travel dates and let our reservations team find the perfect stay for you.
           </p>
           <Link
-            href="/enquiry"
+            href="/contact"
             className="mt-6 inline-block rounded bg-gold px-7 py-3 text-sm uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
           >
             Enquire Now

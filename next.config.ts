@@ -18,7 +18,15 @@ const nextConfig: NextConfig = {
     qualities: [75, 90],
   },
   async redirects() {
-    return legacyRedirects();
+    return [
+      // /enquiry was a page of its own until the enquiry form moved onto
+      // /contact. Next carries the query string across a redirect by itself,
+      // so ?property=&type= still arrives and the form still pre-fills — which
+      // matters because those links are printed on vouchers and sitting in
+      // sent email.
+      { source: '/enquiry', destination: '/contact', statusCode: 301 as const },
+      ...legacyRedirects(),
+    ];
   },
   async headers() {
     const csp = [

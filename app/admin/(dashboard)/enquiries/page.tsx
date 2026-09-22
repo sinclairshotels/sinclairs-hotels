@@ -31,7 +31,7 @@ const typeLabels: Record<string, string> = {
 // Imported legacy rows (scripts/migrate-legacy-data.ts) fold fields the
 // current schema has no column for — subject/room/persons/source — into this
 // message, marked off after the guest's own query text. Live enquiries
-// submitted through the actual site (app/(site)/enquiry/actions.ts) never
+// submitted through the actual site (app/(site)/contact/actions.ts) never
 // contain this marker — enquirySchema requires a real 10-2000 char message,
 // so those always render as plain text with no legacy block below.
 const LEGACY_MESSAGE_MARKER = '[Legacy enquiry details]';

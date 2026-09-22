@@ -243,7 +243,7 @@ export default async function BookHotelPage({
           <p className="mt-6 text-center text-sm text-ink/60">
             Prefer to talk it through?{' '}
             <Link
-              href={`/enquiry?property=${slug}&type=HOTEL`}
+              href={`/contact?property=${slug}&type=HOTEL`}
               className="text-forest underline underline-offset-4 hover:text-gold-dark"
             >
               Send an enquiry

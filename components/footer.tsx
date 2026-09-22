@@ -83,7 +83,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/enquiry"
+                  href="/contact"
                   className="transition hover:text-gold-light hover:underline hover:underline-offset-4"
                 >
                   Enquire Now
@@ -127,7 +127,7 @@ export function Footer() {
               <div>
                 <dt className="text-xs text-cream/50">Enquiries</dt>
                 <dd className="mt-0.5">
-                  <Link href="/enquiry" className="transition hover:text-gold-light">
+                  <Link href="/contact" className="transition hover:text-gold-light">
                     Send an enquiry
                   </Link>
                 </dd>

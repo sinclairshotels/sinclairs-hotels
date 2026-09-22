@@ -25,13 +25,13 @@ export const socialLinks = [
   { label: 'Twitter', href: 'https://www.twitter.com/sinclairshotels' },
 ] as const;
 
+// The top bar carries only what a guest is deciding between, with Book Now as
+// the one CTA. Home is the logo, Media sits in the footer, and Enquire is gone
+// as a destination of its own — /contact is the enquiry form now.
 export const primaryNav = [
-  { label: 'Home', href: '/' },
   { label: 'Hotels', href: '/hotels' },
-  { label: 'Meetings', href: '/meetings-events' },
   { label: 'Weddings', href: '/weddings' },
-  { label: 'Media', href: '/media' },
-  { label: 'Enquire Now', href: '/enquiry' },
+  { label: 'Meetings', href: '/meetings-events' },
   { label: 'Contact', href: '/contact' },
 ] as const;
 

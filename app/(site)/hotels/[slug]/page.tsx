@@ -15,6 +15,8 @@ import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { contactNumbers, siteConfig } from '@/content/site';
+import { formatInr } from '@/lib/booking';
+import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { mapsEmbedEnabled } from '@/lib/maps';
 import { roomDisplayNames } from '@/lib/room-display';
 import { pageMetadata } from '@/lib/seo';
@@ -66,6 +68,8 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
   const hotel = getHotelBySlug(slug);
   if (!hotel) notFound();
 
+  const fromPrice = (await fromPricePerHotel()).get(hotel.slug) ?? null;
+
   const display = await roomDisplayNames(hotel.slug);
   const visibleRooms = hotel.rooms
     .map((room) => ({ ...room, ...(display.get(room.name) ?? { name: room.name, active: true }) }))
@@ -95,6 +99,28 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       '@type': 'LocationFeatureSpecification',
       name,
     })),
+    // Only stated when a rate is actually loaded. An Offer quoting a price the
+    // engine would not sell is worse than no Offer: Google shows it, a guest
+    // clicks it, and the search returns something else.
+    ...(fromPrice !== null && {
+      priceRange: `From ${formatInr(fromPrice)} per night`,
+      makesOffer: {
+        '@type': 'Offer',
+        name: 'Room Only',
+        availability: 'https://schema.org/InStock',
+        url: `${siteConfig.url}/book/${hotel.slug}`,
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: fromPrice,
+          priceCurrency: 'INR',
+          referenceQuantity: {
+            '@type': 'QuantitativeValue',
+            value: 1,
+            unitCode: 'DAY',
+          },
+        },
+      },
+    }),
   };
 
   const breadcrumbJsonLd = {
@@ -162,6 +188,9 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
               <Stat value={String(eventSpaceCount(hotel))} label="Event Spaces" />
             )}
             <Stat value={String(hotel.amenities.length)} label="Amenities" />
+            {fromPrice !== null && (
+              <Stat value={`From ${formatInr(fromPrice)}`} label="Per Night" />
+            )}
           </div>
           <ReservationLink
             ctaSource="hotel_stat_bar"
@@ -370,7 +399,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                       <dt className="text-xs uppercase tracking-wider text-ink/50">Enquiries</dt>
                       <dd className="mt-2 text-sm text-ink/80">
                         <Link
-                          href={`/enquiry?property=${hotel.slug}&type=hotel`}
+                          href={`/contact?property=${hotel.slug}&type=hotel`}
                           className="border-b border-gold pb-0.5 hover:text-forest"
                         >
                           Send an enquiry
@@ -396,9 +425,16 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
 
       <ClosingCta
         image={hotel.heroImage}
-        heading={`Ready to Stay at ${hotel.name}?`}
-        body="Share your travel dates and our reservations team will get back to you with availability and rates."
-        href={`/enquiry?property=${hotel.slug}&type=hotel`}
+        heading={fromPrice !== null ? `Stay from ${formatInr(fromPrice)}` : `Stay at ${hotel.name}`}
+        body={
+          fromPrice !== null
+            ? `The lowest room-only rate at ${hotel.name} over the next ${FROM_PRICE_DAYS} days. Pick your dates to see what is available.`
+            : 'Tell us your dates and our reservations team will come back to you with availability and rates.'
+        }
+        href={
+          fromPrice !== null ? `/book/${hotel.slug}` : `/contact?property=${hotel.slug}&type=hotel`
+        }
+        cta={fromPrice !== null ? 'Check Availability' : undefined}
       />
     </div>
   );
