@@ -14,7 +14,12 @@ export interface DashboardToday {
   refundsDue: Booking[];
   awaitingPayment: number;
   nextSeven: number;
+  // New enquiries nobody has touched for a day. Same threshold the enquiries
+  // list colours red, shared so the two cannot disagree.
+  staleEnquiries: number;
 }
+
+export const ENQUIRY_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 // Everything the dashboard shows, read in one place so the tiles and the lists
 // below them can never disagree about what "today" contains.
@@ -40,6 +45,7 @@ export async function dashboardToday(
     refundsDue,
     awaitingPayment,
     nextSeven,
+    staleEnquiries,
   ] = await Promise.all([
     prisma.booking.findMany({
       where: { ...live, checkIn: today },
@@ -77,6 +83,17 @@ export async function dashboardToday(
     prisma.booking.count({
       where: { ...live, checkIn: { gte: tomorrow, lt: addDays(today, 8) } },
     }),
+    // Enquiries carry `property`, not `hotelSlug`, so hotelScopeFilter does not
+    // apply to them directly — the same restriction is spelled out here.
+    prisma.enquiry.count({
+      where: {
+        status: 'NEW',
+        createdAt: { lt: new Date(now.getTime() - ENQUIRY_STALE_AFTER_MS) },
+        ...(viewer.role === 'ADMIN' || viewer.allProperties
+          ? {}
+          : { property: { in: viewer.hotels } }),
+      },
+    }),
   ]);
 
   return {
@@ -88,5 +105,6 @@ export async function dashboardToday(
     refundsDue,
     awaitingPayment,
     nextSeven,
+    staleEnquiries,
   };
 }

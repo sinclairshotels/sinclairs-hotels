@@ -13,6 +13,15 @@ enum EnquiryStatus {
   CLOSED
 }
 
+// Why an enquiry was closed. "Closed" alone loses the only thing anyone asks
+// afterwards, which is whether it turned into a booking.
+enum EnquiryCloseReason {
+  BOOKED
+  DECLINED
+  NO_RESPONSE
+  SPAM
+}
+
 enum EnquiryType {
   GENERAL
   HOTEL
@@ -36,8 +45,42 @@ model Enquiry {
   legacyTicket String?       @unique
   createdAt    DateTime      @default(now())
 
+  // Who is dealing with it. SetNull rather than Cascade: deleting a member of
+  // staff must not delete the enquiries they were handling.
+  assignedToUserId String?
+  assignedTo       User?     @relation("EnquiryAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedAt       DateTime?
+
+  // Who last moved it and when. The label is stored beside the key for the same
+  // reason AuditEvent stores one — the row still reads correctly after the
+  // account is gone.
+  closeReason        EnquiryCloseReason?
+  statusChangedAt    DateTime?
+  statusChangedLabel String?
+
+  // What was said back, in one line, written by whoever replied. Not a thread:
+  // the mailbox is the thread, and this is the summary that saves opening it.
+  replyNote String?
+
   @@index([createdAt])
   @@index([property])
+  @@index([assignedToUserId])
+  @@index([status, createdAt])
+}
+
+// Where enquiry and booking notifications go, per property plus one central
+// address. A null hotelSlug is the central one.
+//
+// These override the addresses in content/hotels/*.ts, which stay as the
+// fallback: an empty table behaves exactly as the site did before, so this can
+// be filled in property by property rather than all at once.
+model NotificationEmail {
+  id        String   @id @default(cuid())
+  hotelSlug String?
+  address   String
+  createdAt DateTime @default(now())
+
+  @@index([hotelSlug])
 }
 
 model Voucher {
@@ -471,6 +514,7 @@ model User {
   grants      UserSectionGrant[]
   sessions    Session[]
   auditEvents AuditEvent[]
+  enquiries   Enquiry[]          @relation("EnquiryAssignee")
 
   @@index([role])
 }

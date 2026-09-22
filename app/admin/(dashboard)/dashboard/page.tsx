@@ -97,6 +97,17 @@ export default async function DashboardPage({
           </section>
         )}
 
+        {today.staleEnquiries > 0 && can(viewer, 'enquiries:read') && (
+          <p className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-ink/70">
+            <Link href="/admin/enquiries" className="font-medium text-red-700 hover:underline">
+              {today.staleEnquiries} new{' '}
+              {today.staleEnquiries === 1 ? 'enquiry has' : 'enquiries have'} been waiting over 24
+              hours
+            </Link>{' '}
+            — nobody has marked them contacted.
+          </p>
+        )}
+
         {today.awaitingPayment > 0 && (
           <p className="rounded border border-gold/50 bg-gold/10 px-4 py-3 text-sm text-ink/70">
             {today.awaitingPayment} {today.awaitingPayment === 1 ? 'booking is' : 'bookings are'}{' '}

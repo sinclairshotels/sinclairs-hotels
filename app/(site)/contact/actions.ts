@@ -3,7 +3,8 @@
 import { prisma } from '@/lib/db';
 import { enquiryNotificationHtml } from '@/lib/email-templates/enquiry-notification';
 import { log } from '@/lib/log';
-import { STAFF_NOTIFY_EMAIL, sendMail } from '@/lib/mail';
+import { sendMail } from '@/lib/mail';
+import { notificationRecipients } from '@/lib/notification-emails';
 import { clientIp, isRateLimited } from '@/lib/rate-limit';
 import { enquirySchema } from '@/lib/validation';
 import { headers } from 'next/headers';
@@ -78,7 +79,7 @@ export async function submitEnquiry(
   log.info('enquiry.created', { enquiry_id: enquiry.id, property, type, guests: guests ?? null });
 
   await sendMail({
-    to: STAFF_NOTIFY_EMAIL,
+    to: await notificationRecipients(property),
     kind: 'enquiry-notification',
     replyTo: email,
     subject: `New ${typeLabel} enquiry — ${property} (${name})`,

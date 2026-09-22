@@ -15,7 +15,8 @@ import {
   verifyHashV1,
 } from '@/lib/icici';
 import { errorFields, log } from '@/lib/log';
-import { STAFF_NOTIFY_EMAIL, sendMail } from '@/lib/mail';
+import { sendMail } from '@/lib/mail';
+import { notificationRecipients } from '@/lib/notification-emails';
 import { publicSiteUrl } from '@/lib/site-url';
 import type { Booking } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -282,7 +283,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       });
 
       await sendMail({
-        to: STAFF_NOTIFY_EMAIL,
+        to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-oversold-staff',
         subject: `REFUND DUE: ${settled.reference} paid but not confirmed — ${hotelName}`,
         html: bookingOversoldHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
@@ -299,10 +300,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
       });
 
-      const hotelInbox = hotel?.contact?.notificationEmail ?? STAFF_NOTIFY_EMAIL;
+      // The property's addresses and the central one, resolved together —
+      // notificationRecipients already merges them, so the separate bcc that
+      // used to carry the central copy is no longer needed.
       await sendMail({
-        to: hotelInbox,
-        bcc: hotelInbox === STAFF_NOTIFY_EMAIL ? undefined : STAFF_NOTIFY_EMAIL,
+        to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-hotel',
         subject: `New direct booking ${settled.reference} — ${hotelName}`,
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
@@ -337,7 +339,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   });
 
   await sendMail({
-    to: STAFF_NOTIFY_EMAIL,
+    to: await notificationRecipients(updated.hotelSlug),
     kind: 'ipay-staff',
     subject: `${subject} — ${hotelName}`,
     html: ipayConfirmationHtml(emailData),

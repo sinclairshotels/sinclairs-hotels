@@ -537,6 +537,39 @@ page hard-codes but no slot claims is listed there, one click from being retired
 `/images/…` literals and fails if any is unclaimed, which is what makes that list
 safe to act on. Add a photo to a page, add its slot.
 
+## Enquiries
+
+`/admin/enquiries` is a worklist, not a log. Four things carry weight:
+
+**Where notifications go is data, not content.** `NotificationEmail` holds one
+or more addresses per property plus a central list, edited from the Admin-only
+panel on that page and audited like everything else. `notificationRecipients()`
+(`lib/notification-emails.ts`) resolves them for both enquiry and booking mail.
+An empty table behaves exactly as the site did before, falling back to
+`content/hotels/*.ts` and `STAFF_NOTIFY_EMAIL`, so the lists can be filled in
+one property at a time. A property's own list and the central list are used
+**together** — the central address is an addition, not a default a property
+replaces, or someone watching everything would become a property's only
+recipient the moment it gets an address of its own.
+
+**An enquiry is assigned to a person**, who is emailed a link to it. That email
+deliberately carries no guest name, message or contact details: it lands in a
+staff inbox that may be shared, and the enquiry itself is one click away behind
+a sign-in. *Forward* sends the whole thing to any typed address and records
+where it went in the audit log.
+
+**Closing needs a reason** — Booked, Declined, No response or Spam. "Closed"
+alone loses the only thing anyone asks afterwards, which is whether it turned
+into a booking. Every change records who and when on the row (`statusChangedAt`
+/ `statusChangedLabel`) and writes an `AuditEvent`; reopening clears the reason,
+because it described a close that no longer stands.
+
+**The default filter is the work still open.** The legacy import brought in
+35,837 rows and they would otherwise be the whole screen, so an absent `status`
+parameter means New and Contacted; `status=ALL` is how you ask for everything.
+A New enquiry older than `STALE_AFTER_MS` (24h) is red in the list and counted
+on the Today dashboard — one constant, shared, so the two cannot disagree.
+
 ## Funnel
 
 `/admin/dashboard` shows the booking funnel per property and in total, over 7 or
