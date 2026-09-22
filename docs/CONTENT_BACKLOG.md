@@ -67,6 +67,14 @@ Recorded so nobody re-raises them:
 
 ## Open
 
+- [ ] **Food ratings for the hotel Dining sections.** `content/reviews.ts` has
+      `foodRatings`, and the Dining section shows an entry where one exists —
+      it is empty because no source in this repository publishes a score for
+      the food, as opposed to the stay. Each entry needs the property name, the
+      score, the scale, the source and its URL, and the review count where the
+      source gives one. Deliberately **not** derived from the overall rating: a
+      stay scored 5 for its view is not a restaurant scored 5.
+
 - [ ] Dates for the guest reviews in `content/reviews.ts`. The Tripadvisor import
       did not carry them, so the quotes on the room list credit their source and
       say nothing about when — an undated quote is honest, a guessed date is not.

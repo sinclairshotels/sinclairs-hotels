@@ -3,6 +3,7 @@ import { BookingWidget } from '@/components/booking-widget';
 import { ClosingCta } from '@/components/closing-cta';
 import { ContactLink } from '@/components/contact-link';
 import { ExploreSection } from '@/components/explore-section';
+import { FoodRating } from '@/components/food-rating';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { HeroCarousel } from '@/components/hero-carousel';
 import { HotelViewTracking } from '@/components/hotel-view-tracking';
@@ -313,6 +314,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
               title={`Dining at ${hotel.name}`}
               lede="Signature venues for every hour of the day, from a fresh multi-cuisine table to an evening drink with a view."
             />
+            <FoodRating hotelName={hotel.name} />
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {hotel.dining.map((venue, i) => (
                 <div

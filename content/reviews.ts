@@ -57,3 +57,32 @@ export const reviews: Review[] = [
     url: 'https://www.tripadvisor.com/ShowUserReviews-g9456047-d9452634-r937533959-Sinclairs_Burdwan-Burdwan_Bardhaman_District_West_Bengal.html',
   },
 ];
+
+// A rating for the food specifically, as a source publishes it — separate from
+// the overall review scores above, which are about the stay as a whole and say
+// nothing about the restaurant.
+export interface FoodRating {
+  propertyName: string;
+  rating: number;
+  outOf: number;
+  source: string;
+  url: string;
+  // How many reviews the score is drawn from, where the source publishes it. A
+  // 5.0 from three diners and a 4.3 from four hundred are not the same claim.
+  reviewCount?: number;
+}
+
+// Deliberately empty. No source in this repository carries a food score — the
+// Tripadvisor import brought overall ratings only, and none of the six quotes
+// above is about the food. The hotel page's Dining section reads this and shows
+// nothing where there is no entry, so filling it in is a content edit and needs
+// no code change. Tracked in docs/CONTENT_BACKLOG.md.
+//
+// Never derive one from the overall rating: a stay scored 5 for its view is not
+// a restaurant scored 5, and printing it next to the menu would be inventing a
+// number a named source never published.
+export const foodRatings: FoodRating[] = [];
+
+export function foodRatingFor(propertyName: string): FoodRating | undefined {
+  return foodRatings.find((entry) => entry.propertyName === propertyName);
+}
