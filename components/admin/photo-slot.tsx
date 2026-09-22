@@ -1,8 +1,9 @@
 'use client';
 
 import { type PhotoState, replacePhoto, retirePhoto } from '@/app/admin/(dashboard)/photos/actions';
+import { usePhotoLibrary } from '@/components/admin/photo-library';
 import Image from 'next/image';
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 
 const idle: PhotoState = { status: 'idle' };
 
@@ -16,7 +17,14 @@ export interface SlotView {
   width: number;
   height: number;
   size: string;
-  replaced?: { uploadedLabel: string; uploadedAt: string; originalName: string };
+  replaced?: {
+    uploadedLabel: string;
+    uploadedAt: string;
+    originalName: string;
+    // Set when the position was pointed at another photo already in the
+    // repository rather than given an upload of its own.
+    fromLibrary?: boolean;
+  };
   missing?: boolean;
 }
 
@@ -26,7 +34,14 @@ export function PhotoSlotCard({
   replaceable = true,
 }: { slot: SlotView; deletable?: boolean; replaceable?: boolean }) {
   const [state, action, pending] = useActionState(replacePhoto, idle);
-  const mine = state.slotKey === slot.key ? state : idle;
+  const library = usePhotoLibrary();
+  const form = useRef<HTMLFormElement>(null);
+  const file = useRef<HTMLInputElement>(null);
+
+  // Either action can have been the last to speak about this position.
+  const uploaded = state.slotKey === slot.key ? state : idle;
+  const assigned = library.result.slotKey === slot.key ? library.result : idle;
+  const mine = uploaded.message ? uploaded : assigned;
 
   return (
     <div
@@ -50,7 +65,7 @@ export function PhotoSlotCard({
         )}
         {slot.replaced && (
           <span className="absolute left-2 top-2 rounded-full bg-gold px-2 py-0.5 text-[10px] uppercase tracking-wider text-forest-dark">
-            Replaced
+            {slot.replaced.fromLibrary ? 'From library' : 'Replaced'}
           </span>
         )}
       </div>
@@ -63,36 +78,58 @@ export function PhotoSlotCard({
         </p>
         {slot.replaced && (
           <p className="text-[11px] leading-snug text-ink/50">
-            {slot.replaced.originalName} · {slot.replaced.uploadedAt} ·{' '}
-            {slot.replaced.uploadedLabel}
+            {slot.replaced.fromLibrary
+              ? `Using ${slot.replaced.originalName}`
+              : slot.replaced.originalName}{' '}
+            · {slot.replaced.uploadedAt} · {slot.replaced.uploadedLabel}
           </p>
         )}
 
         {replaceable && (
-          <form action={action} className="mt-auto space-y-2 pt-2">
-            <input type="hidden" name="slotKey" value={slot.key} />
-            <label className="block text-[11px] uppercase tracking-wider text-ink/40">
-              Replace
+          <div className="mt-auto space-y-2 pt-2">
+            <p className="text-[11px] uppercase tracking-wider text-ink/40">Replace</p>
+            {/* One click reaches the system file dialog, and choosing a file
+                uploads it. A separate "now press Upload" step only invited
+                half-finished changes. */}
+            <form ref={form} action={action} className="contents">
+              <input type="hidden" name="slotKey" value={slot.key} />
               <input
+                ref={file}
                 type="file"
                 name="file"
                 accept="image/jpeg,image/png,image/webp"
-                required
-                className="mt-1 block w-full text-xs text-ink/70 file:mr-2 file:rounded file:border-0 file:bg-forest file:px-2 file:py-1 file:text-xs file:text-cream hover:file:bg-forest-dark"
+                className="hidden"
+                onChange={(event) => {
+                  if (event.target.files?.length) form.current?.requestSubmit();
+                }}
               />
-            </label>
-            <p className="text-[11px] text-ink/40">
-              JPG, PNG or WebP — converted to WebP at {slot.targetWidth.toLocaleString('en-IN')}px
-              wide.
-            </p>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => file.current?.click()}
+                className="w-full rounded bg-forest px-3 py-1.5 text-xs uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
+              >
+                {pending ? 'Uploading…' : 'Upload from computer'}
+              </button>
+            </form>
             <button
-              type="submit"
+              type="button"
               disabled={pending}
-              className="w-full rounded bg-forest px-3 py-1.5 text-xs uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
+              onClick={() =>
+                library.open({
+                  slotKey: slot.key,
+                  label: slot.label,
+                  contentPath: slot.contentPath,
+                })
+              }
+              className="w-full rounded border border-forest px-3 py-1.5 text-xs uppercase tracking-wider text-forest transition hover:bg-forest hover:text-cream disabled:opacity-60"
             >
-              {pending ? 'Uploading…' : 'Upload'}
+              Choose from library
             </button>
-          </form>
+            <p className="text-[11px] text-ink/40">
+              An upload is converted to WebP at {slot.targetWidth.toLocaleString('en-IN')}px wide.
+            </p>
+          </div>
         )}
 
         {mine.message && (

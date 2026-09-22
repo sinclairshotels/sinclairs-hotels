@@ -531,7 +531,11 @@ model PhotoAsset {
   // The public/ path this replaces, e.g. /images/hotels/gangtok/hero.webp.
   contentPath   String
   slotKey       String
-  data          Bytes
+  // Exactly one of these is set. `data` holds an upload converted here;
+  // `sourcePath` points at a photo already in the repository, chosen from the
+  // library — the whole point of that being that no second copy is made.
+  data          Bytes?
+  sourcePath    String?
   contentType   String    @default("image/webp")
   width         Int
   height        Int

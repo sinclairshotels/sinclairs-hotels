@@ -11,7 +11,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     where: { id },
     select: { data: true, contentType: true },
   });
-  if (!asset) return new NextResponse('Not found', { status: 404 });
+  // A row with no bytes is a position pointed at a photo already in the
+  // repository; that renders as the file's own URL and never reaches here.
+  if (!asset?.data) return new NextResponse('Not found', { status: 404 });
 
   return new NextResponse(new Uint8Array(asset.data), {
     headers: {

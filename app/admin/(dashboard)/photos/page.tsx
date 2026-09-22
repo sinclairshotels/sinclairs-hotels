@@ -1,3 +1,4 @@
+import { PhotoLibraryProvider } from '@/components/admin/photo-library';
 import { PhotoSlotCard, type SlotView } from '@/components/admin/photo-slot';
 import { formatDate } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
@@ -43,7 +44,7 @@ export default async function PhotosPage() {
       label: slot.label,
       contentPath: slot.contentPath,
       targetWidth: slot.targetWidth,
-      src: override ? photoHref(override.id) : slot.contentPath,
+      src: override ? (override.sourcePath ?? photoHref(override.id)) : slot.contentPath,
       fileName: fileNameOf(slot.contentPath),
       width: shown?.width ?? 0,
       height: shown?.height ?? 0,
@@ -94,49 +95,51 @@ export default async function PhotosPage() {
         </p>
       </div>
 
-      <div className="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-        {pages.map((page, i) => (
-          <details key={page.key} open={i === 0} className="rounded-lg border border-ink/10">
+      <PhotoLibraryProvider>
+        <div className="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          {pages.map((page, i) => (
+            <details key={page.key} open={i === 0} className="rounded-lg border border-ink/10">
+              <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-forest">
+                {page.title}
+                <span className="ml-2 font-normal text-ink/40">{page.href}</span>
+              </summary>
+              <div className="space-y-6 border-t border-ink/10 px-5 py-5">
+                {page.sections.map((section) => (
+                  <section key={section.key}>
+                    <p className="text-xs uppercase tracking-wider text-ink/50">{section.title}</p>
+                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {section.slots.map((slot) => (
+                        <PhotoSlotCard key={slot.key} slot={view(slot)} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </details>
+          ))}
+
+          <details className="rounded-lg border border-ink/10">
             <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-forest">
-              {page.title}
-              <span className="ml-2 font-normal text-ink/40">{page.href}</span>
+              Not used on any page
+              <span className="ml-2 font-normal text-ink/40">{unused.length} files</span>
             </summary>
-            <div className="space-y-6 border-t border-ink/10 px-5 py-5">
-              {page.sections.map((section) => (
-                <section key={section.key}>
-                  <p className="text-xs uppercase tracking-wider text-ink/50">{section.title}</p>
-                  <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {section.slots.map((slot) => (
-                      <PhotoSlotCard key={slot.key} slot={view(slot)} />
-                    ))}
-                  </div>
-                </section>
-              ))}
+            <div className="border-t border-ink/10 px-5 py-5">
+              <p className="text-xs text-ink/50">
+                In the repository but rendered nowhere. Deleting one records the decision and hides
+                it here; the file itself leaves on the next <code>pnpm photos:prune</code> commit.
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {unused.map((slot) => (
+                  <PhotoSlotCard key={slot.key} slot={slot} deletable replaceable={false} />
+                ))}
+              </div>
+              {unused.length === 0 && (
+                <p className="mt-4 text-sm text-ink/60">Every image in the repository is in use.</p>
+              )}
             </div>
           </details>
-        ))}
-
-        <details className="rounded-lg border border-ink/10">
-          <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-forest">
-            Not used on any page
-            <span className="ml-2 font-normal text-ink/40">{unused.length} files</span>
-          </summary>
-          <div className="border-t border-ink/10 px-5 py-5">
-            <p className="text-xs text-ink/50">
-              In the repository but rendered nowhere. Deleting one records the decision and hides it
-              here; the file itself leaves on the next <code>pnpm photos:prune</code> commit.
-            </p>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {unused.map((slot) => (
-                <PhotoSlotCard key={slot.key} slot={slot} deletable replaceable={false} />
-              ))}
-            </div>
-            {unused.length === 0 && (
-              <p className="mt-4 text-sm text-ink/60">Every image in the repository is in use.</p>
-            )}
-          </div>
-        </details>
-      </div>
+        </div>
+      </PhotoLibraryProvider>
     </div>
   );
 }
@@ -146,5 +149,6 @@ function replacedBy(override: PhotoOverride) {
     uploadedLabel: override.uploadedLabel,
     uploadedAt: formatDate(override.uploadedAt),
     originalName: override.originalName,
+    fromLibrary: override.sourcePath !== null,
   };
 }

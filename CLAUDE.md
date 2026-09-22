@@ -430,6 +430,21 @@ A page that renders an image and does *not* go through one of those two will
 keep showing the repository's copy — that is the thing to check first if a
 replacement "didn't take".
 
+**Each position offers two ways to change it**, and only one of them adds
+bytes. *Upload from computer* opens the file picker and uploads on choosing —
+there is no second "now press Upload" step, which only invited half-finished
+changes. *Choose from library* opens a picker of every photo in the repository,
+grouped by property in site order, searchable, each thumbnail saying which
+positions it already fills; picking one writes a `PhotoAsset` with `sourcePath`
+set and no `data`, so the position renders that file's own URL and **nothing is
+copied**. Choosing a position's own photo clears the override instead, which is
+how a change is undone.
+
+Resolution is deliberately **one hop**: pointing A at B while B points at C
+shows B, and two positions aimed at each other do not spin. Both paths remain
+keyed by `contentPath`, so a file used in two positions still changes in both —
+giving them different photos is a content change, not an admin one.
+
 **An upload is converted, never trusted.** `sharp` re-encodes it to WebP at
 quality 82, resized to the slot's width (3840 for full-bleed heroes, 2400
 otherwise) and **never enlarged** — upscaling a 1200px photo to 3840 adds bytes

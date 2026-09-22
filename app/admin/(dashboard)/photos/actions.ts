@@ -11,7 +11,9 @@ import {
   formatBytes,
   publicImageBytes,
 } from '@/lib/photo-files';
+import { type LibraryPhoto, photoLibrary } from '@/lib/photo-library';
 import { claimedPaths, slotByKey } from '@/lib/photo-slots';
+import { retiredPaths } from '@/lib/photos';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
@@ -212,4 +214,109 @@ export async function retirePhoto(_prev: PhotoState, formData: FormData): Promis
   revalidatePath('/admin/photos');
 
   return { status: 'success', slotKey: contentPath, message: 'Deleted.' };
+}
+
+// Loaded when the picker is first opened rather than shipped with the page:
+// every file on the site is a long list, and most visits never open it.
+export async function loadPhotoLibrary(): Promise<LibraryPhoto[]> {
+  const auth = await authorize('photos:manage');
+  if (!auth.ok) return [];
+  return photoLibrary();
+}
+
+// Point a position at a photo that is already in the repository. Nothing is
+// copied — the slot simply renders that file's own URL — so this costs no
+// bytes and needs no budget check.
+export async function assignPhoto(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
+  const auth = await authorize('photos:manage');
+  if (!auth.ok) return { status: 'error', message: auth.message };
+
+  const slotKey = String(formData.get('slotKey') ?? '');
+  const sourcePath = String(formData.get('sourcePath') ?? '');
+  const fail = (message: string): PhotoState => ({ status: 'error', message, slotKey });
+
+  const ip = clientIp(await headers());
+  if (isRateLimited(`photos:${auth.user.id}`, ADMIN_REQUESTS_PER_WINDOW)) {
+    return fail('Too many changes. Please try again in a minute.');
+  }
+
+  const slot = slotByKey(slotKey);
+  if (!slot) return fail('That photo position no longer exists. Reload the page.');
+
+  if (!sourcePath.startsWith('/images/')) return fail('Choose a photo from the library.');
+  const source = await fileInfo(sourcePath);
+  if (!source) return fail('That photo is no longer in the repository.');
+  if ((await retiredPaths()).has(sourcePath)) return fail('That photo has been deleted.');
+
+  const existing = await prisma.photoAsset.findFirst({
+    where: { contentPath: slot.contentPath, supersededAt: null },
+    select: { id: true, sourcePath: true, originalName: true },
+  });
+
+  // Choosing the position's own photo is how it is put back, so it clears the
+  // override rather than recording one that changes nothing.
+  if (sourcePath === slot.contentPath) {
+    if (!existing) return { status: 'success', slotKey, message: 'Already the original photo.' };
+    await prisma.photoAsset.update({
+      where: { id: existing.id },
+      data: { supersededAt: new Date() },
+    });
+    await recordAudit({
+      user: auth.user,
+      action: 'photo.restored',
+      entity: 'PhotoAsset',
+      entityId: existing.id,
+      hotelSlug: slot.hotelSlug ?? null,
+      summary: `${slot.label} back to ${slot.contentPath}`,
+      before: { source: existing.sourcePath ?? existing.originalName },
+      after: null,
+      ip,
+    });
+    revalidatePath('/admin/photos');
+    revalidatePath('/', 'layout');
+    return { status: 'success', slotKey, message: 'Back to the original photo.' };
+  }
+
+  const fileName = sourcePath.slice(sourcePath.lastIndexOf('/') + 1);
+
+  const created = await prisma.$transaction(async (tx) => {
+    if (existing) {
+      await tx.photoAsset.update({
+        where: { id: existing.id },
+        data: { supersededAt: new Date() },
+      });
+    }
+    return tx.photoAsset.create({
+      data: {
+        contentPath: slot.contentPath,
+        slotKey: slot.key,
+        sourcePath,
+        width: source.width,
+        height: source.height,
+        bytes: source.bytes,
+        originalName: fileName,
+        uploadedLabel: `${auth.user.name} <${auth.user.email}>`,
+      },
+      select: { id: true },
+    });
+  });
+
+  await recordAudit({
+    user: auth.user,
+    action: 'photo.assigned',
+    entity: 'PhotoAsset',
+    entityId: created.id,
+    hotelSlug: slot.hotelSlug ?? null,
+    summary: `${slot.label} now uses ${sourcePath}`,
+    before: { contentPath: slot.contentPath },
+    after: { sourcePath, width: source.width, height: source.height },
+    ip,
+  });
+
+  log.info('photo.assigned', { slot: slot.key, path: slot.contentPath, source: sourcePath });
+
+  revalidatePath('/admin/photos');
+  revalidatePath('/', 'layout');
+
+  return { status: 'success', slotKey, message: `Now using ${fileName}.` };
 }

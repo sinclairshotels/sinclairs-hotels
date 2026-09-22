@@ -13,6 +13,10 @@ export interface PhotoOverride {
   originalName: string;
   uploadedAt: Date;
   uploadedLabel: string;
+  // Set when the position was pointed at a photo already in the repository
+  // rather than given one of its own. Nothing was copied, so this renders as
+  // that file's own URL.
+  sourcePath: string | null;
 }
 
 // The bytes are deliberately not selected: a page listing 900 photos would
@@ -26,6 +30,7 @@ const OVERRIDE_FIELDS = {
   originalName: true,
   uploadedAt: true,
   uploadedLabel: true,
+  sourcePath: true,
 } as const;
 
 export async function currentOverrides(): Promise<Map<string, PhotoOverride>> {
@@ -44,7 +49,10 @@ export function photoHref(id: string): string {
 // override map pass it in; the site pages do, so one query serves a page.
 export function photoUrl(contentPath: string, overrides: Map<string, PhotoOverride>): string {
   const override = overrides.get(contentPath);
-  return override ? photoHref(override.id) : contentPath;
+  if (!override) return contentPath;
+  // Deliberately one hop, not a chain: pointing A at B while B points at C
+  // should show B, and two positions pointed at each other should not spin.
+  return override.sourcePath ?? photoHref(override.id);
 }
 
 export async function retiredPaths(): Promise<Set<string>> {
