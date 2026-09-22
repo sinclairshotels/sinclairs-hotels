@@ -1,6 +1,13 @@
 import { rm } from 'node:fs/promises';
 import { prisma } from '../lib/db';
-import { publicPathOf } from '../lib/photo-files';
+import {
+  fileInfo,
+  formatBytes,
+  publicImageBytes,
+  publicImagePaths,
+  publicPathOf,
+} from '../lib/photo-files';
+import { claimedPaths } from '../lib/photo-slots';
 import { deletePhoto, photoStorageConfigured } from '../lib/photo-storage';
 import { PHOTO_RETENTION_DAYS } from '../lib/photos';
 
@@ -57,6 +64,28 @@ async function main() {
     }
   }
   console.log(`retired files removed from public/: ${removed}`);
+
+  // --unused goes wider than the retired rows: every file in public/images that
+  // no slot claims. Retiring 400 photographs one button at a time is not a
+  // thing to ask of anyone, and the registry already knows the answer — the
+  // same answer the contact sheet shows under "Not used on any page", and the
+  // same one photo-slots.test.ts fails on if a page renders something
+  // unclaimed. The files are in git, so this is recoverable from history; the
+  // photographs themselves are not recoverable from anywhere else, which is why
+  // it is a flag and not the default.
+  if (process.argv.includes('--unused')) {
+    const claimed = claimedPaths();
+    const unused = (await publicImagePaths()).filter((path) => !claimed.has(path));
+
+    let freed = 0;
+    for (const path of unused) {
+      freed += (await fileInfo(path))?.bytes ?? 0;
+      await rm(publicPathOf(path), { force: true });
+    }
+
+    console.log(`\nunused files removed: ${unused.length} (${formatBytes(freed)} freed)`);
+    console.log(`public/images now: ${formatBytes(await publicImageBytes())}`);
+  }
   if (removed > 0)
     console.log('\nCommit the deletions — the rows stay as the record of who retired them.');
 
