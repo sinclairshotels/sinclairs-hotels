@@ -18,6 +18,7 @@ export const kalimpongHotel: Hotel = {
     '/images/hotels/kalimpong/amenities/Swimming pool completeview.webp',
   ],
   thumbnailImage: '/images/hotels/kalimpong/destination/SinclairsKalimpongentrance1.webp',
+  sceneryImage: '/images/hotels/kalimpong/explore/deolo.webp',
   amenities: [
     'Multicuisine Restaurant',
     '24 hrs front desk (staffed)',

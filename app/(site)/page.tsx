@@ -57,15 +57,16 @@ export default async function HomePage() {
     <>
       <FunnelStep step="home_view" />
       <section className="relative h-[86vh] min-h-[760px] overflow-hidden">
+        {/* Scenery, not buildings: the hero sells the places these hotels are
+            in, and a facade says nothing a guest is choosing between. One
+            view per property, in site order. */}
         <JourneyHero
-          slides={[...hotels]
-            .sort((a, b) => (a.slug === 'burdwan' ? 1 : b.slug === 'burdwan' ? -1 : 0))
-            .map((hotel) => ({
-              image: hotel.heroImage,
-              name: hotel.name,
-              location: `${hotel.location}, ${hotel.state}`,
-              slug: hotel.slug,
-            }))}
+          slides={hotels.map((hotel) => ({
+            image: hotel.sceneryImage,
+            name: hotel.name,
+            location: `${hotel.location}, ${hotel.state}`,
+            slug: hotel.slug,
+          }))}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/95 via-forest-dark/50 to-forest-dark/15" />
         <div className="absolute inset-x-0 bottom-0 pb-12 sm:pb-16">
@@ -105,6 +106,24 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-6 py-14 sm:py-20">
+        <Reveal className="mb-12">
+          <SectionHeading
+            align="center"
+            eyebrow="Featured Properties"
+            title="Hotels and Resorts"
+            lede="Whether staying for business or leisure, discover our properties across India."
+          />
+        </Reveal>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          {hotels.map((hotel, i) => (
+            <Reveal key={hotel.slug} delay={(i % 3) * 80}>
+              <HotelCard hotel={hotel} fromPrice={fromPrices.get(hotel.slug) ?? null} />
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
       <BookDirect />
 
       <section className="bg-forest py-14 sm:py-20 text-cream">
@@ -127,36 +146,6 @@ export default async function HomePage() {
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-14 sm:py-20">
-        <Reveal className="mb-12">
-          <SectionHeading
-            align="center"
-            eyebrow="Featured Properties"
-            title="Hotels and Resorts"
-            lede="Whether staying for business or leisure, discover our properties across India."
-          />
-        </Reveal>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-          {hotels.map((hotel, i) => (
-            <Reveal key={hotel.slug} delay={(i % 3) * 80}>
-              <HotelCard hotel={hotel} fromPrice={fromPrices.get(hotel.slug) ?? null} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-10">
-        <Reveal className="mb-6">
-          <SectionHeading
-            align="center"
-            eyebrow="Nearby Every Property"
-            title="A World to Explore, Just Outside"
-            lede="From misty tea gardens to royal forts, ancient monasteries to island beaches — a glimpse of what’s waiting near every Sinclairs address."
-          />
-        </Reveal>
-        <SpotlightGallery images={sightseeingPhotos} />
-      </section>
-
       <section className="border-y border-forest/10 bg-white py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-6">
           <Reveal className="mb-10">
@@ -171,18 +160,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-forest/10 bg-forest-dark py-14 sm:py-20">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-10">
+        <Reveal className="mb-6">
           <SectionHeading
-            tone="dark"
-            eyebrow="Culinary Journey"
-            title="A Journey of Delectable Flavours"
-            lede="Every property cooks for its own place — a Bengali thali in Burdwan, thukpa in the hills, seafood off the Andaman coast. Open a hotel to see what it serves."
+            align="center"
+            eyebrow="Nearby Every Property"
+            title="A World to Explore, Just Outside"
+            lede="From misty tea gardens to royal forts, ancient monasteries to island beaches — a glimpse of what’s waiting near every Sinclairs address."
           />
-          <div className="mt-10">
-            <DiningShowcase entries={diningPhotos(hotels)} />
-          </div>
-        </div>
+        </Reveal>
+        <SpotlightGallery images={sightseeingPhotos} />
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-14 sm:py-20">
@@ -249,6 +236,20 @@ export default async function HomePage() {
                 Learn More
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-forest/10 bg-forest-dark py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <SectionHeading
+            tone="dark"
+            eyebrow="Culinary Journey"
+            title="A Journey of Delectable Flavours"
+            lede="Every property cooks for its own place — a Bengali thali in Burdwan, thukpa in the hills, seafood off the Andaman coast. Open a hotel to see what it serves."
+          />
+          <div className="mt-10">
+            <DiningShowcase entries={diningPhotos(hotels)} />
           </div>
         </div>
       </section>

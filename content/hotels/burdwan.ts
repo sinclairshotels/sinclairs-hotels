@@ -18,6 +18,7 @@ export const burdwanHotel: Hotel = {
     '/images/hotels/burdwan/destination/Lobby.webp',
   ],
   thumbnailImage: '/images/hotels/burdwan/gallery/Building.webp',
+  sceneryImage: '/images/hotels/burdwan/explore/Bishnupur.webp',
   amenities: [
     'Multicuisine Restaurant',
     'Doctor by Appointment',

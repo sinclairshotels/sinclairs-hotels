@@ -67,6 +67,18 @@ Recorded so nobody re-raises them:
 
 ## Open
 
+- [ ] **A scenery photograph for Siliguri.** Every property now has a
+      `sceneryImage` for the home page hero carousel — a view of the landscape
+      it sits in. Siliguri is the only one without a real candidate: the
+      repository holds a stadium and the Salugara Monastery gate, and the
+      monastery is standing in. Note that the four `hotels/siliguri/gallery/ADS_*`
+      files in git history are **not Siliguri** — they show a hill town and the
+      white Ooty property, so they are mislabelled and must not be used here.
+- [ ] **A better scenery photograph for Burdwan.** Bishnupur is standing in. It
+      is a landmark rather than a view, which is the best the plains-town set
+      offers; the alternatives are a duck close-up, a street and a yellow
+      building.
+
 - [ ] **Food ratings for the hotel Dining sections.** `content/reviews.ts` has
       `foodRatings`, and the Dining section shows an entry where one exists —
       it is empty because no source in this repository publishes a score for

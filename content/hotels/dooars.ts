@@ -17,6 +17,7 @@ export const dooarsHotel: Hotel = {
     '/images/hotels/dooars/destination/DSC_0438.webp',
   ],
   thumbnailImage: '/images/hotels/dooars/amenities/DSC_1316-Enhanced-NR.webp',
+  sceneryImage: '/images/hotels/dooars/explore/samsing.webp',
   amenities: [
     'Free Wi-Fi',
     "Outdoor swimming pool with children's wading pool",

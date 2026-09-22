@@ -79,6 +79,11 @@ export interface Hotel {
   heroImage: string;
   heroGallery?: string[];
   thumbnailImage: string;
+  // The landscape this property sits in, for the home page's hero carousel:
+  // a view, not the building, the lobby or the pool. Required so the choice is
+  // made in content per property rather than guessed from a folder at render
+  // time, and registered as a photo slot so staff can change it.
+  sceneryImage: string;
   amenities: string[];
   rooms: RoomType[];
   dining: DiningVenue[];

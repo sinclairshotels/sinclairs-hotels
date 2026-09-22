@@ -18,6 +18,7 @@ export const ootyHotel: Hotel = {
     '/images/hotels/ooty/dining/ALTO ESPIRITO.webp',
   ],
   thumbnailImage: '/images/hotels/ooty/gallery/Ivy Hill.webp',
+  sceneryImage: '/images/hotels/ooty/explore/Pykara Lake.webp',
   amenities: [
     'Free Wi-Fi',
     'Health Club & Gym',

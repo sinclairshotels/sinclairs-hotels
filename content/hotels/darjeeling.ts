@@ -18,6 +18,7 @@ export const darjeelingHotel: Hotel = {
     '/images/hotels/darjeeling/destination/Sinclairs-Darjeeling-Entrance-2.webp',
   ],
   thumbnailImage: '/images/hotels/darjeeling/destination/Sinclairs-Darjeeling-Entrance-2.webp',
+  sceneryImage: '/images/hotels/darjeeling/amenities/Sinclairs Darjeeling Kanchenjunga View 2.webp',
   amenities: [
     'Multicuisine Restaurant',
     'Doctor by Appointment',

@@ -21,6 +21,7 @@ const hotel = (slug: string, name: string): Hotel => ({
   description: 'A description.',
   heroImage: `/images/hotels/${slug}/hero.webp`,
   thumbnailImage: `/images/hotels/${slug}/thumb.webp`,
+  sceneryImage: '/images/scenery.webp',
   amenities: [],
   rooms: [],
   dining: [],

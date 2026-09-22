@@ -12,6 +12,7 @@ const fixtureHotel: Hotel = {
   description: 'A full description of the property.',
   heroImage: '/images/hotels/burdwan/hero.webp',
   thumbnailImage: '/images/hotels/burdwan/thumb.webp',
+  sceneryImage: '/images/scenery.webp',
   amenities: ['Wi-Fi', 'Restaurant'],
   rooms: [],
   dining: [],

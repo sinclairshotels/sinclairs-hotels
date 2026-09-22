@@ -70,6 +70,13 @@ function hotelPage(hotel: Hotel): PhotoPage {
     slot(`${h}:overview:thumb`, 'Thumbnail — cards and nav', hotel.thumbnailImage, STANDARD_WIDTH, [
       'thumbnailImage',
     ]),
+    slot(
+      `${h}:overview:scenery`,
+      'Scenery — home page hero carousel',
+      hotel.sceneryImage,
+      HERO_WIDTH,
+      ['sceneryImage'],
+    ),
   ];
 
   const rooms = hotel.rooms.flatMap((room, r) =>
