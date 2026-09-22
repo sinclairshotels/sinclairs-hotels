@@ -1,7 +1,7 @@
 import {
   AssigneeSelect,
   ForwardForm,
-  ReplyNoteForm,
+  NotesThread,
   StatusControls,
 } from '@/components/admin/enquiry-controls';
 import { getHotelBySlug } from '@/content/hotels';
@@ -30,7 +30,10 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const enquiry = await prisma.enquiry.findUnique({
     where: { id },
-    include: { assignedTo: { select: { id: true, name: true } } },
+    include: {
+      assignedTo: { select: { id: true, name: true } },
+      notes: { orderBy: { at: 'desc' } },
+    },
   });
   // notFound() rather than a refusal: someone typing a URL for a property they
   // do not have should not learn that the enquiry exists.
@@ -83,12 +86,20 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
             </section>
 
             <section className="rounded-lg border border-ink/10 bg-white p-5">
-              <p className="text-xs uppercase tracking-wider text-ink/50">Reply summary</p>
+              <p className="text-xs uppercase tracking-wider text-ink/50">Notes</p>
               <p className="mt-1 text-xs text-ink/50">
-                What was said back, so the next person does not have to open the mailbox.
+                What was said back. Newest first, and nothing here is overwritten.
               </p>
               <div className="mt-3">
-                <ReplyNoteForm enquiryId={enquiry.id} value={enquiry.replyNote} />
+                <NotesThread
+                  enquiryId={enquiry.id}
+                  notes={enquiry.notes.map((note) => ({
+                    id: note.id,
+                    body: note.body,
+                    authorLabel: note.authorLabel,
+                    at: `${formatDate(note.at)} · ${formatTime(note.at)}`,
+                  }))}
+                />
               </div>
             </section>
 

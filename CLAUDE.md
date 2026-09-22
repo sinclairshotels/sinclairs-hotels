@@ -558,6 +558,13 @@ staff inbox that may be shared, and the enquiry itself is one click away behind
 a sign-in. *Forward* sends the whole thing to any typed address and records
 where it went in the audit log.
 
+**Notes are a thread, not a field.** `EnquiryNote` holds one entry per reply
+with its author and time, newest first, and there is no edit or delete. An
+entry records what somebody did at a moment; letting a later hand rewrite it
+would make the thread a worse account of the conversation than the mailbox it
+exists to save opening. It was a single `Enquiry.replyNote` column for one
+commit, which lost the previous reply every time somebody added to it.
+
 **Closing needs a reason** — Booked, Declined, No response or Spam. "Closed"
 alone loses the only thing anyone asks afterwards, which is whether it turned
 into a booking. Every change records who and when on the row (`statusChangedAt`

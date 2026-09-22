@@ -2,9 +2,9 @@
 
 import {
   type EnquiryActionState,
+  addEnquiryNote,
   assignEnquiry,
   forwardEnquiry,
-  saveReplyNote,
   setEnquiryStatus,
 } from '@/app/admin/(dashboard)/enquiries/actions';
 import type { EnquiryCloseReason, EnquiryStatus } from '@prisma/client';
@@ -172,33 +172,64 @@ export function ForwardForm({ enquiryId }: { enquiryId: string }) {
   );
 }
 
-export function ReplyNoteForm({ enquiryId, value }: { enquiryId: string; value: string | null }) {
-  const [state, action, pending] = useActionState(saveReplyNote, initial);
+export interface EnquiryNoteEntry {
+  id: string;
+  body: string;
+  authorLabel: string;
+  at: string;
+}
+
+// Newest first, and nothing here edits or removes an entry — see
+// addEnquiryNote for why.
+export function NotesThread({
+  enquiryId,
+  notes,
+}: { enquiryId: string; notes: EnquiryNoteEntry[] }) {
+  const [state, action, pending] = useActionState(addEnquiryNote, initial);
 
   return (
-    <form action={action} className="space-y-2">
-      <input type="hidden" name="id" value={enquiryId} />
-      <textarea
-        name="replyNote"
-        rows={4}
-        defaultValue={value ?? ''}
-        placeholder="What was said back — one or two lines, so the next person does not have to open the mailbox."
-        className="input w-full text-sm"
-      />
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-forest px-5 py-2 text-xs uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
-        >
-          {pending ? 'Saving…' : 'Save note'}
-        </button>
-        {state.message && (
-          <span className={`text-xs ${state.status === 'error' ? 'text-red-600' : 'text-ink/50'}`}>
-            {state.message}
-          </span>
-        )}
-      </div>
-    </form>
+    <div className="space-y-4">
+      <form action={action} className="space-y-2">
+        <input type="hidden" name="id" value={enquiryId} />
+        <textarea
+          name="body"
+          rows={3}
+          required
+          placeholder="What was said back — one or two lines, so the next person does not have to open the mailbox."
+          className="input w-full text-sm"
+        />
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded bg-forest px-5 py-2 text-xs uppercase tracking-wider text-cream transition hover:bg-forest-dark disabled:opacity-60"
+          >
+            {pending ? 'Adding…' : 'Add note'}
+          </button>
+          {state.message && (
+            <span
+              className={`text-xs ${state.status === 'error' ? 'text-red-600' : 'text-ink/50'}`}
+            >
+              {state.message}
+            </span>
+          )}
+        </div>
+      </form>
+
+      {notes.length === 0 ? (
+        <p className="text-sm text-ink/40">No notes yet.</p>
+      ) : (
+        <ol className="space-y-3">
+          {notes.map((note) => (
+            <li key={note.id} className="rounded border border-ink/10 bg-forest/[0.02] p-3">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{note.body}</p>
+              <p className="mt-2 text-xs text-ink/45">
+                {note.authorLabel.replace(/\s*<.*>$/, '')} · {note.at}
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }

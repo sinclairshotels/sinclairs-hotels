@@ -58,14 +58,31 @@ model Enquiry {
   statusChangedAt    DateTime?
   statusChangedLabel String?
 
-  // What was said back, in one line, written by whoever replied. Not a thread:
-  // the mailbox is the thread, and this is the summary that saves opening it.
-  replyNote String?
+  notes EnquiryNote[]
 
   @@index([createdAt])
   @@index([property])
   @@index([assignedToUserId])
   @@index([status, createdAt])
+}
+
+// What was said back, one entry per reply, newest first on screen. Append-only:
+// an entry is a record of what someone did at a time, and editing one would
+// make the thread a worse account of the conversation than the mailbox it is
+// meant to save opening.
+//
+// The author is a label beside the key for the same reason AuditEvent stores
+// one — the entry still reads correctly after the account is gone.
+model EnquiryNote {
+  id           String   @id @default(cuid())
+  enquiryId    String
+  enquiry      Enquiry  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  body         String
+  authorUserId String?
+  authorLabel  String
+  at           DateTime @default(now())
+
+  @@index([enquiryId, at])
 }
 
 // Where enquiry and booking notifications go, per property plus one central

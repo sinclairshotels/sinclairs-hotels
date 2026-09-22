@@ -338,7 +338,10 @@ export async function setEnquiryStatus(
   return { status: 'success', message: `${described}.` };
 }
 
-export async function saveReplyNote(
+// Append-only. There is no edit and no delete: an entry records what somebody
+// did at a time, and letting a later hand rewrite it would make the thread a
+// worse account of the conversation than the mailbox it exists to save opening.
+export async function addEnquiryNote(
   _prev: EnquiryActionState,
   formData: FormData,
 ): Promise<EnquiryActionState> {
@@ -346,27 +349,37 @@ export async function saveReplyNote(
   if (!auth.ok) return { status: 'error', message: auth.message };
 
   const id = String(formData.get('id') ?? '');
-  const note = String(formData.get('replyNote') ?? '')
+  const body = String(formData.get('body') ?? '')
     .trim()
     .slice(0, 2000);
+
+  if (!body) return { status: 'error', message: 'Write something first.' };
 
   const enquiry = await prisma.enquiry.findUnique({ where: { id } });
   if (!enquiry) return { status: 'error', message: 'That enquiry no longer exists.' };
 
-  await prisma.enquiry.update({ where: { id }, data: { replyNote: note || null } });
+  const note = await prisma.enquiryNote.create({
+    data: {
+      enquiryId: id,
+      body,
+      authorUserId: auth.user.id,
+      authorLabel: `${auth.user.name} <${auth.user.email}>`,
+    },
+  });
 
   await recordAudit({
     user: auth.user,
-    action: 'enquiry.note_saved',
+    action: 'enquiry.note_added',
     entity: 'Enquiry',
     entityId: id,
     hotelSlug: enquiry.property,
-    summary: note ? 'Reply summary updated' : 'Reply summary cleared',
-    before: { replyNote: enquiry.replyNote },
-    after: { replyNote: note || null },
+    // The note itself is on the enquiry; the audit line records that one was
+    // added, without copying guest correspondence into a second place.
+    summary: 'Note added',
+    after: { noteId: note.id },
     ip: clientIp(await headers()),
   });
 
   revalidatePath(`/admin/enquiries/${id}`);
-  return { status: 'success', message: 'Saved.' };
+  return { status: 'success', message: 'Added.' };
 }

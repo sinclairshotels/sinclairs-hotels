@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { sendMail } from '@/lib/mail';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
-import { assignEnquiry, forwardEnquiry, saveReplyNote, setEnquiryStatus } from './actions';
+import { addEnquiryNote, assignEnquiry, forwardEnquiry, setEnquiryStatus } from './actions';
 
 const mockState = vi.hoisted(() => ({
   cookieValue: undefined as string | undefined,
@@ -188,21 +188,60 @@ describe('forwardEnquiry', () => {
   });
 });
 
-describe('saveReplyNote', () => {
-  it('stores the note and clears it when emptied', async () => {
+describe('addEnquiryNote', () => {
+  it('appends an entry with its author and time', async () => {
     const enquiry = await makeEnquiry();
 
-    await saveReplyNote(
+    await addEnquiryNote(
       { status: 'idle' },
-      form({ id: enquiry.id, replyNote: 'Quoted 8,500 for two nights.' }),
-    );
-    expect((await prisma.enquiry.findUniqueOrThrow({ where: { id: enquiry.id } })).replyNote).toBe(
-      'Quoted 8,500 for two nights.',
+      form({ id: enquiry.id, body: 'Quoted 8,500 for two nights.' }),
     );
 
-    await saveReplyNote({ status: 'idle' }, form({ id: enquiry.id, replyNote: '   ' }));
-    expect(
-      (await prisma.enquiry.findUniqueOrThrow({ where: { id: enquiry.id } })).replyNote,
-    ).toBeNull();
+    const notes = await prisma.enquiryNote.findMany({ where: { enquiryId: enquiry.id } });
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.body).toBe('Quoted 8,500 for two nights.');
+    expect(notes[0]?.authorLabel).toContain('@');
+    expect(notes[0]?.authorUserId).not.toBeNull();
+    expect(notes[0]?.at).toBeInstanceOf(Date);
+  });
+
+  // The whole point of the change: a second note must not cost the first one.
+  it('never overwrites an earlier note, and reads newest first', async () => {
+    const enquiry = await makeEnquiry();
+
+    await addEnquiryNote(
+      { status: 'idle' },
+      form({ id: enquiry.id, body: 'First: left a voicemail.' }),
+    );
+    await addEnquiryNote(
+      { status: 'idle' },
+      form({ id: enquiry.id, body: 'Second: they called back.' }),
+    );
+
+    const notes = await prisma.enquiryNote.findMany({
+      where: { enquiryId: enquiry.id },
+      orderBy: { at: 'desc' },
+    });
+    expect(notes).toHaveLength(2);
+    expect(notes.map((n) => n.body)).toContain('First: left a voicemail.');
+    expect(notes[0]?.at.getTime()).toBeGreaterThanOrEqual(notes[1]?.at.getTime() ?? 0);
+  });
+
+  it('refuses an empty note rather than storing a blank entry', async () => {
+    const enquiry = await makeEnquiry();
+
+    const state = await addEnquiryNote({ status: 'idle' }, form({ id: enquiry.id, body: '   ' }));
+
+    expect(state.status).toBe('error');
+    expect(await prisma.enquiryNote.count({ where: { enquiryId: enquiry.id } })).toBe(0);
+  });
+
+  it('goes away with the enquiry rather than being orphaned', async () => {
+    const enquiry = await makeEnquiry();
+    await addEnquiryNote({ status: 'idle' }, form({ id: enquiry.id, body: 'A note.' }));
+
+    await prisma.enquiry.delete({ where: { id: enquiry.id } });
+
+    expect(await prisma.enquiryNote.count({ where: { enquiryId: enquiry.id } })).toBe(0);
   });
 });
