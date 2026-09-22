@@ -21,7 +21,7 @@ const fileNameOf = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
 export default async function PhotosPage() {
   const viewer = await getSession();
-  if (!viewer || !can(viewer, 'photos:manage')) notFound();
+  if (!viewer || !can(viewer, 'photos:read')) notFound();
 
   const pages = photoPages();
   const claimed = claimedPaths();

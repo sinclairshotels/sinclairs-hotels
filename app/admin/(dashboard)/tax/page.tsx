@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function TaxPage() {
   const viewer = await getSession();
-  if (!viewer || !can(viewer, 'users:manage')) notFound();
+  if (!viewer || !can(viewer, 'tax:manage')) notFound();
 
   const [settings, history] = await Promise.all([
     prisma.taxSetting.findMany({ orderBy: { effectiveFrom: 'desc' }, take: 10 }),

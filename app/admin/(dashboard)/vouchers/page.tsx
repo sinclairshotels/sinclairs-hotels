@@ -1,11 +1,13 @@
 import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
+import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -15,6 +17,11 @@ export default async function VouchersPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string; pageSize?: string; hotel?: string }>;
 }) {
+  // The sidebar hides this link, and a hidden link is presentation,
+  // never a permission — typing the URL has to hit the same wall.
+  const viewer = await getSession();
+  if (!viewer || !can(viewer, 'vouchers:read')) notFound();
+
   const { q, page: pageParam, pageSize: pageSizeParam, hotel } = await searchParams;
   const query = q?.trim() ?? '';
   const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);

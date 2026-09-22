@@ -9,7 +9,7 @@ const OTHER_HOTEL = 'darjeeling';
 const ROOM = 'Premier Room';
 const TEST_EMAIL_DOMAIN = 'vitest-dashboard.invalid';
 
-const ALL_HOTELS = { restrictedToHotels: null };
+const ALL_HOTELS = { role: 'USER' as const, allProperties: true, hotels: [] };
 
 let room: LoadedRoom;
 
@@ -114,7 +114,11 @@ describe('dashboardToday', () => {
     await book({ checkIn: today, checkOut: addDays(today, 1) });
     await book({ checkIn: today, checkOut: addDays(today, 1), hotelSlug: OTHER_HOTEL });
 
-    const scoped = await dashboardToday({ restrictedToHotels: [HOTEL] });
+    const scoped = await dashboardToday({
+      role: 'USER' as const,
+      allProperties: false,
+      hotels: [HOTEL],
+    });
     const mine = scoped.arrivals.filter((b) => b.reference.startsWith('DASH-'));
     expect(mine).toHaveLength(1);
     expect(mine[0]?.hotelSlug).toBe(HOTEL);

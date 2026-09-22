@@ -378,9 +378,34 @@ letting them fail at payment.
 
 ## Staff accounts and roles
 
-`/admin` is per-person, not a shared password. `User`, `UserHotel` and `Session`
-are real tables; `lib/auth.ts` owns passwords and sessions, `lib/roles.ts` owns
-the capability matrix.
+`/admin` is per-person, not a shared password. `User`, `UserHotel`,
+`UserSectionGrant` and `Session` are real tables; `lib/auth.ts` owns passwords
+and sessions, `lib/roles.ts` owns what a role and a grant mean.
+
+**Two roles, not five.** Admin is everything, including Users, Tax and creating
+accounts. A User holds a grant per **section** — one per sidebar item (Today,
+Bookings, Rates, Vouchers, Payments, Enquiries, Newsletter, Photos, Audit) — at
+**View** or **Edit**; a section with no grant is not visible at all. Users and
+Tax are deliberately not sections, so no combination of ticks reaches them:
+`CAPABILITY_SECTION` maps them to `null` and `can()` refuses them for any User.
+The five roles were a guess at which jobs exist; the checklist is the same
+question asked directly.
+
+Pages and actions still check `can(user, 'rates:write')` rather than a
+(section, level) pair — there are twenty call sites, they read well, and
+`CAPABILITY_SECTION` is the single place the two vocabularies have to agree.
+
+**Grants are read on every request, never copied into the session.** So an
+Admin changing what someone may do takes effect on that person's next page
+load, without signing them out mid-task. Deactivating still revokes sessions,
+because that is ending access rather than changing it. Every change writes an
+`AuditEvent` with the before and after.
+
+**`allProperties` is a column, not an absence.** "No `UserHotel` rows means
+every property" was the old rule, which quietly promoted a scoped user to every
+property if their rows were ever lost. Ticking *All properties* also covers
+hotels added later, which is what the central team wants and what a list of
+slugs cannot express.
 
 **Three modules, because of where the code can run.** `lib/auth.ts` reaches
 Prisma, `node:crypto` and `next/headers`, so it is server-only; `lib/roles.ts`
@@ -411,10 +436,10 @@ returns its message on failure. **A hidden nav link is presentation, never a
 permission**: pages check again with `can()`, and `notFound()` is the right
 response to someone typing a URL they may not have.
 
-**`UserHotel` is a restriction, not a grant** — no rows means every property,
-which is how the central team is modelled. `hotelScopeFilter(user)` spreads into
-a Prisma `where` so a scoped user's list query cannot return another property's
-rows even if the page forgets to filter.
+`hotelScopeFilter(user)` spreads into a Prisma `where` so a scoped user's list
+query cannot return another property's rows even if the page forgets to filter.
+It returns `{}` for an Admin or an `allProperties` user and `{ hotelSlug: { in:
+[] } }` for a scoped user with nothing — nothing, not everything.
 
 The first Admin is bootstrapped from `ADMIN_PASSWORD` on the first sign-in
 against an empty `User` table, under whatever email is typed. That branch is

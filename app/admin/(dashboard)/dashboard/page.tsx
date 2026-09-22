@@ -7,6 +7,7 @@ import { formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
 import { dashboardToday } from '@/lib/dashboard';
 import { FUNNEL_STEPS, type Funnel, type FunnelStep, funnelCounts, toRows } from '@/lib/funnel';
 import { COVERAGE_WARNING_DAYS, coverageWarnings } from '@/lib/rate-calendar';
+import { canAccessHotel } from '@/lib/roles';
 import type { Booking } from '@prisma/client';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -21,7 +22,7 @@ export default async function DashboardPage({
   searchParams: Promise<{ funnel?: string }>;
 }) {
   const viewer = await getSession();
-  if (!viewer || !can(viewer, 'bookings:read')) notFound();
+  if (!viewer || !can(viewer, 'today:read')) notFound();
 
   const { funnel: funnelParam } = await searchParams;
   const funnelDays = funnelParam === '30' ? 30 : 7;
@@ -52,10 +53,7 @@ export default async function DashboardPage({
       })),
   ];
 
-  const visibleWarnings = warnings.filter(
-    (warning) =>
-      !viewer.restrictedToHotels || viewer.restrictedToHotels.includes(warning.hotelSlug),
-  );
+  const visibleWarnings = warnings.filter((warning) => canAccessHotel(viewer, warning.hotelSlug));
 
   return (
     <div className="flex h-full min-h-0 flex-col">

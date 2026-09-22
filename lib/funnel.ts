@@ -52,15 +52,17 @@ function since(days: number, now: Date): Date {
 }
 
 export async function funnelCounts(
-  viewer: Pick<AuthedUser, 'restrictedToHotels'>,
+  viewer: Pick<AuthedUser, 'role' | 'allProperties' | 'hotels'>,
   days: number,
   now: Date = new Date(),
 ): Promise<Map<string | null, Record<FunnelStep, number>>> {
   const from = since(days, now);
   const scope = hotelScopeFilter(viewer);
-  const allowed = viewer.restrictedToHotels;
+  // An event with no property (a home view) belongs to nobody in particular,
+  // so a user scoped to one hotel does not see it.
+  const everywhere = viewer.role === 'ADMIN' || viewer.allProperties;
   const withinScope = (slug: string | null) =>
-    !allowed || (slug !== null && allowed.includes(slug));
+    everywhere || (slug !== null && viewer.hotels.includes(slug));
 
   const [events, guestDetails, paymentStarted, confirmed] = await Promise.all([
     prisma.funnelEvent.groupBy({

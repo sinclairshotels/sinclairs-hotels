@@ -181,7 +181,9 @@ describe('replacePhoto', () => {
 
   it('turns a photo editor away — this is Admin-only', async () => {
     if (!SLOT) throw new Error('the gangtok hero slot is missing');
-    const revenue = await createTestStaff({ role: 'REVENUE' });
+    // Photos at View: they can open the contact sheet, and replacing is
+    // still beyond them. Nothing a User can be granted reaches it.
+    const revenue = await createTestStaff({ role: 'USER', sections: { photos: 'VIEW' } });
     mockState.cookieValue = revenue.token;
 
     const state = await replace(form({ slotKey: SLOT.key, file: await png(10, 10) }));
@@ -360,7 +362,9 @@ describe('assignPhoto', () => {
 
   it('turns away anyone who is not an Admin', async () => {
     if (!SLOT || !SOURCE) throw new Error('fixture slots are missing');
-    const revenue = await createTestStaff({ role: 'REVENUE' });
+    // Photos at View: they can open the contact sheet, and replacing is
+    // still beyond them. Nothing a User can be granted reaches it.
+    const revenue = await createTestStaff({ role: 'USER', sections: { photos: 'VIEW' } });
     mockState.cookieValue = revenue.token;
 
     const state = await assignPhoto(

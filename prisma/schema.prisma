@@ -432,12 +432,18 @@ model Holiday {
 // Staff accounts
 // ---------------------------------------------------------------------------
 
+// Two roles, because five was a guess at what jobs exist and this is a
+// checklist of what a person may touch. Admin is everything, including Users,
+// Tax and creating accounts; a User has exactly the sections granted below and
+// can never reach those three.
 enum UserRole {
   ADMIN
-  REVENUE
-  RESERVATIONS
-  HOTEL
-  VIEWER
+  USER
+}
+
+enum SectionLevel {
+  VIEW
+  EDIT
 }
 
 model User {
@@ -455,11 +461,36 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  // Every property, including ones added after this account was made. The
+  // alternative is the explicit list in `hotels`. This used to be implied by
+  // "no rows in UserHotel", which silently promoted a scoped user to every
+  // property if their rows were ever lost.
+  allProperties Boolean @default(false)
+
   hotels      UserHotel[]
+  grants      UserSectionGrant[]
   sessions    Session[]
   auditEvents AuditEvent[]
 
   @@index([role])
+}
+
+// What one User may do in one section of /admin — the sidebar's own list, minus
+// Users and Tax, which are Admin-only and therefore never granted. A missing
+// row is no access at all; VIEW is read; EDIT is read and write.
+//
+// Grants are read from here on every request rather than copied into the
+// session, so an Admin changing someone's access takes effect on that person's
+// next page load without signing them out.
+model UserSectionGrant {
+  id      String       @id @default(cuid())
+  userId  String
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section String
+  level   SectionLevel
+
+  @@unique([userId, section])
+  @@index([userId])
 }
 
 // Which properties a user may see and act on. No rows means every property —

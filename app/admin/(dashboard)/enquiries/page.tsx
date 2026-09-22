@@ -2,9 +2,11 @@ import { AdminPagination } from '@/components/admin/pagination';
 import { StatTiles } from '@/components/admin/stat-tiles';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
+import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { EnquiryStatus, EnquiryType, type Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 const STATUS_LABELS: Record<EnquiryStatus, string> = {
   NEW: 'New',
@@ -56,6 +58,11 @@ export default async function EnquiriesPage({
     property?: string;
   }>;
 }) {
+  // The sidebar hides this link, and a hidden link is presentation,
+  // never a permission — typing the URL has to hit the same wall.
+  const viewer = await getSession();
+  if (!viewer || !can(viewer, 'enquiries:read')) notFound();
+
   const {
     q,
     page: pageParam,

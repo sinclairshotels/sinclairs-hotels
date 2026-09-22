@@ -23,7 +23,7 @@ export interface DashboardToday {
 // today falls inside the stay but is not the checkout day, which is never a
 // night the guest paid for. Cancelled and failed bookings are nobody's arrival.
 export async function dashboardToday(
-  viewer: Pick<AuthedUser, 'restrictedToHotels'>,
+  viewer: Pick<AuthedUser, 'role' | 'allProperties' | 'hotels'>,
   now: Date = new Date(),
 ): Promise<DashboardToday> {
   const today = todayUtc(now);

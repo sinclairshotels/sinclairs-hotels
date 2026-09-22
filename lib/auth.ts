@@ -13,6 +13,7 @@ import {
   can,
   canAccessHotel,
   hotelScopeFilter,
+  isSection,
 } from '@/lib/roles';
 import type { User } from '@prisma/client';
 import { cookies } from 'next/headers';
@@ -120,7 +121,7 @@ export async function getSession(): Promise<AuthedUser | null> {
 
   const session = await prisma.session.findUnique({
     where: { tokenHash: tokenHash(token) },
-    include: { user: { include: { hotels: true } } },
+    include: { user: { include: { hotels: true, grants: true } } },
   });
 
   if (!session || session.revokedAt) return null;
@@ -142,14 +143,22 @@ export async function getSession(): Promise<AuthedUser | null> {
     await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } });
   }
 
-  const restrictions = session.user.hotels.map((row) => row.hotelSlug);
+  // Read from the row on every request, never copied into the session at
+  // sign-in: an Admin changing what someone may do takes effect on that
+  // person's next page load, without them signing out and back in.
+  const grants: AuthedUser['grants'] = {};
+  for (const grant of session.user.grants) {
+    if (isSection(grant.section)) grants[grant.section] = grant.level;
+  }
 
   return {
     id: session.user.id,
     email: session.user.email,
     name: session.user.name,
     role: session.user.role,
-    restrictedToHotels: restrictions.length > 0 ? restrictions : null,
+    grants,
+    allProperties: session.user.allProperties,
+    hotels: session.user.hotels.map((row) => row.hotelSlug),
     sessionId: session.id,
   };
 }

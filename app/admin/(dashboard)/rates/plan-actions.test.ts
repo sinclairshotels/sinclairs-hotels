@@ -93,7 +93,7 @@ describe('the monthly and daily rate screens', () => {
       where: { hotelSlug: HOTEL, guestEmail: { endsWith: TEST_EMAIL_DOMAIN } },
     });
     await cleanupTestStaff();
-    staffUser = await createTestStaff({ role: 'REVENUE' });
+    staffUser = await createTestStaff({ role: 'USER', sections: { rates: 'EDIT' } });
     mockState.cookieValue = staffUser.token;
   });
 
@@ -349,7 +349,7 @@ describe('the monthly and daily rate screens', () => {
 
   it('refuses a user without rates:write', async () => {
     await cleanupTestStaff();
-    const staff = await createTestStaff({ role: 'RESERVATIONS' });
+    const staff = await createTestStaff({ role: 'USER', sections: { rates: 'VIEW' } });
     mockState.cookieValue = staff.token;
 
     const result = await saveMonth(
@@ -362,7 +362,11 @@ describe('the monthly and daily rate screens', () => {
 
   it('is scoped to a hotel the user may touch', async () => {
     await cleanupTestStaff();
-    const staff = await createTestStaff({ role: 'REVENUE', hotels: ['gangtok'] });
+    const staff = await createTestStaff({
+      role: 'USER',
+      sections: { rates: 'EDIT' },
+      hotels: ['gangtok'],
+    });
     mockState.cookieValue = staff.token;
 
     const result = await saveMonth(

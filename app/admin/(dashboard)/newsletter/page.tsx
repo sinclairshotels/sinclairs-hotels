@@ -1,9 +1,11 @@
 import { AdminPagination } from '@/components/admin/pagination';
 import { StatTiles } from '@/components/admin/stat-tiles';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
+import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import type { Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -13,6 +15,12 @@ export default async function NewsletterSubscribersPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string; pageSize?: string; status?: string }>;
 }) {
+  // This page had no check at all — the sidebar hid the link and that was it,
+  // which is exactly the "a hidden nav link is presentation, never a
+  // permission" case CLAUDE.md warns about. Typing the URL was enough.
+  const viewer = await getSession();
+  if (!viewer || !can(viewer, 'newsletter:read')) notFound();
+
   const { q, page: pageParam, pageSize: pageSizeParam, status } = await searchParams;
   const query = q?.trim() ?? '';
   const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);

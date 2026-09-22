@@ -4,7 +4,7 @@ import { FUNNEL_STEPS, funnelCounts, toRows } from '@/lib/funnel';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 const TEST_EMAIL_DOMAIN = 'vitest-funnel.invalid';
-const ALL = { restrictedToHotels: null };
+const ALL = { role: 'USER' as const, allProperties: true, hotels: [] };
 const HOTEL = 'gangtok';
 const OTHER = 'darjeeling';
 
@@ -85,7 +85,10 @@ describe('funnelCounts', () => {
     await event('room_view', HOTEL);
     await event('room_view', OTHER);
 
-    const scoped = await funnelCounts({ restrictedToHotels: [HOTEL] }, 7);
+    const scoped = await funnelCounts(
+      { role: 'USER' as const, allProperties: false, hotels: [HOTEL] },
+      7,
+    );
     expect(scoped.get(OTHER)).toBeUndefined();
     expect(scoped.get(null)?.room_view).toBe(1);
   });
