@@ -84,7 +84,7 @@ export async function replacePhoto(_prev: PhotoState, formData: FormData): Promi
   }
 
   const existing = await prisma.photoAsset.findFirst({
-    where: { contentPath: slot.contentPath, supersededAt: null },
+    where: { slotKey: slot.key, supersededAt: null },
     select: { id: true, bytes: true, width: true, height: true, originalName: true },
   });
 
@@ -249,7 +249,7 @@ export async function assignPhoto(_prev: PhotoState, formData: FormData): Promis
   if ((await retiredPaths()).has(sourcePath)) return fail('That photo has been deleted.');
 
   const existing = await prisma.photoAsset.findFirst({
-    where: { contentPath: slot.contentPath, supersededAt: null },
+    where: { slotKey: slot.key, supersededAt: null },
     select: { id: true, sourcePath: true, originalName: true },
   });
 

@@ -2,6 +2,7 @@ import { ClosingCta } from '@/components/closing-cta';
 import { EditorialRow } from '@/components/editorial-row';
 import { HotelCard } from '@/components/hotel-card';
 import { hotels as contentHotels } from '@/content/hotels';
+import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -25,7 +26,7 @@ export const revalidate = 600;
 
 export default async function HotelsPage() {
   const overrides = await currentOverrides();
-  const hotels = withPhotos(contentHotels, overrides);
+  const hotels = contentHotels.map((hotel) => withPhotos(hotel, hotelSlots(hotel), overrides));
 
   return (
     <div>
@@ -33,6 +34,7 @@ export default async function HotelsPage() {
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
             src={photoUrl(
+              'hotels-listing:hero',
               '/images/hotels/port-blair/destination/SinclairsBayviewAerielView.webp',
               overrides,
             )}
@@ -69,6 +71,7 @@ export default async function HotelsPage() {
           title="A Legacy Since 1971"
           body="Sinclairs Hotels &amp; Resorts was founded in 1971 by Kolkata entrepreneur H.C. Suchanti, opening its first hotel in Siliguri in 1976 and a second in the hills of Darjeeling in 1981. The company went public in 1986, listing on the Bombay and Calcutta Stock Exchanges. Since 1990, under the stewardship of the Suchanti family, the group has grown from those early Himalayan beginnings into nine destinations spanning the Dooars, the Nilgiris, Rajasthan and the Andaman Islands — each still built around the same promise of comfortable, well-run hospitality in some of India's most memorable places."
           image={photoUrl(
+            'hotels-listing:editorial',
             '/images/hotels/darjeeling/dining/Sinclairs Darjeeling Lobby.webp',
             overrides,
           )}
@@ -99,6 +102,7 @@ export default async function HotelsPage() {
 
       <ClosingCta
         image={photoUrl(
+          'hotels-listing:closing',
           '/images/hotels/darjeeling/amenities/Sinclairs Darjeeling Kanchenjunga view.webp',
           overrides,
         )}

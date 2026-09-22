@@ -458,10 +458,23 @@ set and no `data`, so the position renders that file's own URL and **nothing is
 copied**. Choosing a position's own photo clears the override instead, which is
 how a change is undone.
 
+**An override belongs to a position, not to a file.** `PhotoAsset.slotKey` is
+the identity and a partial unique index enforces one live row per slot. Two
+positions rendering the same photo is normal — a hotel's hero is also its
+listing card, the weddings carousel reuses the portrait the home page shows —
+and replacing one of them must leave the other alone. Keying by `contentPath`
+made that impossible to say, so every position now has its own slot, including
+ones that share a file, and `withPhotos()` applies an override **at its slot's
+locator** (`PhotoSlot.at`, a path into the content object) rather than by
+matching image strings. A page that renders a literal passes the slot key
+alongside it — `photoUrl('meetings:hero', '/images/…', overrides)` — and
+`lib/photo-slots.test.ts` fails if a call site names a slot the registry does
+not hold, or names one that renders a different file. Without that check a
+mistyped key is silent: the position just renders its literal for ever and
+staff cannot change it.
+
 Resolution is deliberately **one hop**: pointing A at B while B points at C
-shows B, and two positions aimed at each other do not spin. Both paths remain
-keyed by `contentPath`, so a file used in two positions still changes in both —
-giving them different photos is a content change, not an admin one.
+shows B, and two positions aimed at each other do not spin.
 
 **An upload is converted, never trusted.** `sharp` re-encodes it to WebP at
 quality 82, resized to the slot's width (3840 for full-bleed heroes, 2400

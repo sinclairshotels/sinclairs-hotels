@@ -12,6 +12,7 @@ import {
 import { VenueDirectory } from '@/components/venue-directory';
 import { WeddingVenueCard } from '@/components/wedding-venue-card';
 import { hotels as contentHotels } from '@/content/hotels';
+import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import { totalEventSpaces, venuesByHotel } from '@/lib/venues';
@@ -95,12 +96,12 @@ export const revalidate = 600;
 
 export default async function WeddingsPage() {
   const overrides = await currentOverrides();
-  const hotels = withPhotos(contentHotels, overrides);
+  const hotels = contentHotels.map((hotel) => withPhotos(hotel, hotelSlots(hotel), overrides));
   const weddingHotels = hotels.filter((hotel) => hotel.weddings);
-  const heroes = heroImages.map((src) => photoUrl(src, overrides));
-  const shownMoments = moments.map((moment) => ({
+  const heroes = heroImages.map((src, i) => photoUrl(`weddings:hero:${i}`, src, overrides));
+  const shownMoments = moments.map((moment, i) => ({
     ...moment,
-    image: photoUrl(moment.image, overrides),
+    image: photoUrl(`weddings:moment:${i}`, moment.image, overrides),
   }));
 
   return (
@@ -222,7 +223,7 @@ export default async function WeddingsPage() {
       </section>
 
       <ClosingCta
-        image={photoUrl('/images/weddings/Wedding-Portrait.webp', overrides)}
+        image={photoUrl('weddings:closing', '/images/weddings/Wedding-Portrait.webp', overrides)}
         heading="Contact Us, We Are Happy to Help"
         body="Share your wedding dates, guest count, and preferred property, and our events team will reach out with options."
         href="/contact?type=wedding"

@@ -15,6 +15,7 @@ import { hotels as contentHotels } from '@/content/hotels';
 import { reviews } from '@/content/reviews';
 import { diningPhotos } from '@/lib/dining';
 import { fromPricePerHotel } from '@/lib/from-price';
+import { awardSlots, experienceSlots, hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { totalEventSpaces } from '@/lib/venues';
 import Image from 'next/image';
@@ -27,9 +28,9 @@ export const revalidate = 600;
 
 export default async function HomePage() {
   const [overrides, fromPrices] = await Promise.all([currentOverrides(), fromPricePerHotel()]);
-  const hotels = withPhotos(contentHotels, overrides);
-  const experiences = withPhotos(contentExperiences, overrides);
-  const awards = withPhotos(contentAwards, overrides);
+  const hotels = contentHotels.map((hotel) => withPhotos(hotel, hotelSlots(hotel), overrides));
+  const experiences = withPhotos(contentExperiences, experienceSlots(), overrides);
+  const awards = withPhotos(contentAwards, awardSlots(), overrides);
   const sightseeingPhotos = hotels.flatMap((hotel) =>
     hotel.sightseeing
       .filter((spot) => spot.image)
@@ -198,6 +199,7 @@ export default async function HomePage() {
             <div className="relative aspect-[16/11] overflow-hidden">
               <Image
                 src={photoUrl(
+                  'home:events-card',
                   '/images/hotels/darjeeling/amenities/Sinclairs-Darjeeling-Pinnacle-Setup-1.webp',
                   overrides,
                 )}
@@ -223,7 +225,11 @@ export default async function HomePage() {
           <div className="group overflow-hidden rounded-lg border border-forest/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
             <div className="relative aspect-[16/11] overflow-hidden">
               <Image
-                src={photoUrl('/images/weddings/Wedding-Portrait.webp', overrides)}
+                src={photoUrl(
+                  'home:weddings-card',
+                  '/images/weddings/Wedding-Portrait.webp',
+                  overrides,
+                )}
                 alt="A wedding celebration at a Sinclairs property"
                 fill
                 sizes="(min-width: 640px) 50vw, 100vw"

@@ -1,5 +1,6 @@
 import { EditorialRow } from '@/components/editorial-row';
 import { fraudAlert, pressMentions } from '@/content/site';
+import { pressSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -21,7 +22,7 @@ export const revalidate = 600;
 
 export default async function MediaPage() {
   const overrides = await currentOverrides();
-  const mentions = withPhotos(pressMentions, overrides);
+  const mentions = withPhotos(pressMentions, pressSlots(), overrides);
 
   return (
     <div>
@@ -29,6 +30,7 @@ export default async function MediaPage() {
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
             src={photoUrl(
+              'media:hero',
               '/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp',
               overrides,
             )}

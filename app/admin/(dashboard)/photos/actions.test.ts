@@ -242,7 +242,7 @@ describe('assignPhoto', () => {
       form({ slotKey: SLOT.key, sourcePath: SOURCE.contentPath }),
     );
 
-    expect(photoUrl(SLOT.contentPath, await currentOverrides())).toBe(SOURCE.contentPath);
+    expect(photoUrl(SLOT.key, SLOT.contentPath, await currentOverrides())).toBe(SOURCE.contentPath);
   });
 
   it('resolves one hop only, so two positions pointed at each other cannot spin', async () => {
@@ -258,8 +258,8 @@ describe('assignPhoto', () => {
     );
 
     const overrides = await currentOverrides();
-    expect(photoUrl(SLOT.contentPath, overrides)).toBe(SOURCE.contentPath);
-    expect(photoUrl(SOURCE.contentPath, overrides)).toBe(SLOT.contentPath);
+    expect(photoUrl(SLOT.key, SLOT.contentPath, overrides)).toBe(SOURCE.contentPath);
+    expect(photoUrl(SOURCE.key, SOURCE.contentPath, overrides)).toBe(SLOT.contentPath);
   });
 
   it('puts the original back when the position’s own photo is chosen', async () => {
@@ -276,7 +276,7 @@ describe('assignPhoto', () => {
 
     expect(state.status).toBe('success');
     expect(await prisma.photoAsset.count({ where: { supersededAt: null } })).toBe(0);
-    expect(photoUrl(SLOT.contentPath, await currentOverrides())).toBe(SLOT.contentPath);
+    expect(photoUrl(SLOT.key, SLOT.contentPath, await currentOverrides())).toBe(SLOT.contentPath);
   });
 
   it('supersedes an upload rather than deleting it, same as a second upload would', async () => {

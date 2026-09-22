@@ -4,6 +4,7 @@ import { MeetingVenueCard } from '@/components/meeting-venue-card';
 import { SectionHeading } from '@/components/section-heading';
 import { CateringIcon } from '@/components/service-icons';
 import { hotels as contentHotels } from '@/content/hotels';
+import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -59,10 +60,12 @@ export const revalidate = 600;
 
 export default async function MeetingsEventsPage() {
   const overrides = await currentOverrides();
-  const venueHotels = withPhotos(contentHotels, overrides).filter((hotel) => hotel.eventSpaces);
-  const shownFeatures = features.map((feature) => ({
+  const venueHotels = contentHotels
+    .map((hotel) => withPhotos(hotel, hotelSlots(hotel), overrides))
+    .filter((hotel) => hotel.eventSpaces);
+  const shownFeatures = features.map((feature, i) => ({
     ...feature,
-    image: photoUrl(feature.image, overrides),
+    image: photoUrl(`meetings:feature:${i}`, feature.image, overrides),
   }));
 
   return (
@@ -70,7 +73,11 @@ export default async function MeetingsEventsPage() {
       <section className="relative flex h-[58vh] min-h-[400px] items-end overflow-hidden">
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
-            src={photoUrl('/images/hotels/kalimpong/amenities/The Orchid 1.webp', overrides)}
+            src={photoUrl(
+              'meetings:hero',
+              '/images/hotels/kalimpong/amenities/The Orchid 1.webp',
+              overrides,
+            )}
             alt="The Orchid, a banquet hall at Sinclairs Retreat Kalimpong, set up for a conference"
             fill
             priority
@@ -165,7 +172,11 @@ export default async function MeetingsEventsPage() {
       </section>
 
       <ClosingCta
-        image={photoUrl('/images/hotels/ooty/gallery/The Regal room.webp', overrides)}
+        image={photoUrl(
+          'meetings:closing',
+          '/images/hotels/ooty/gallery/The Regal room.webp',
+          overrides,
+        )}
         heading="Plan Your Event"
         body="Tell us about your requirements and our sales team will get back to you with venue options and a quote."
         href="/contact?type=meetings"

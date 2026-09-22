@@ -41,6 +41,46 @@ describe('the photo slot registry', () => {
     expect([...missing].sort()).toEqual([]);
   });
 
+  // Two positions rendering the same file is normal — a hotel's hero is also its
+  // listing card, and the weddings carousel reuses the portrait the home page
+  // shows. Under the old contentPath keying that made them one photo; under slot
+  // keying they are separate positions, and this is the check that says so.
+  it('gives every position its own key, including ones that share a file', () => {
+    const slots = allSlots();
+    const byPath = new Map<string, string[]>();
+    for (const s of slots) byPath.set(s.contentPath, [...(byPath.get(s.contentPath) ?? []), s.key]);
+
+    const shared = [...byPath.entries()].filter(([, keys]) => keys.length > 1);
+    expect(shared.length).toBeGreaterThan(0);
+    for (const [, keys] of shared) expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  // A page that names a slot the registry does not hold renders its own literal
+  // for ever: no error, no override, just a position staff cannot change. The
+  // scan above proves the *path* is claimed; this proves the page and the
+  // registry agree about which position it is.
+  it('agrees with every photoUrl() call site about slot key and path', () => {
+    const wrong: string[] = [];
+    const byKey = new Map(allSlots().map((s) => [s.key, s.contentPath]));
+
+    for (const dir of SCAN_DIRS) {
+      for (const file of walk(dir)) {
+        const source = readFileSync(file, 'utf8');
+        for (const match of source.matchAll(
+          /photoUrl\(\s*'([^']+)',\s*\n?\s*'(\/images\/[^']+)'/g,
+        )) {
+          const [, key, path] = match;
+          if (!key || !path) continue;
+          if (!byKey.has(key)) wrong.push(`${key} is not a slot  (${file})`);
+          else if (byKey.get(key) !== path)
+            wrong.push(`${key} renders ${byKey.get(key)}, page passes ${path}  (${file})`);
+        }
+      }
+    }
+
+    expect(wrong.sort()).toEqual([]);
+  });
+
   it('points every slot at a file that is actually in the repository', () => {
     const missing = allSlots()
       .filter((slot) => {

@@ -43,6 +43,7 @@ export default async function ContactPage({
         <div className="absolute inset-0 animate-hero-zoom">
           <Image
             src={photoUrl(
+              'contact:hero',
               '/images/hotels/dooars/amenities/Welcoming guest with the traditional khada.webp',
               overrides,
             )}

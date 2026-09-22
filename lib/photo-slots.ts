@@ -1,6 +1,7 @@
 import { awards } from '@/content/awards';
 import { experiences } from '@/content/experiences';
 import { hotels } from '@/content/hotels';
+import { pressMentions } from '@/content/site';
 import type { Hotel } from '@/content/types';
 
 // The widest a browser is ever served. A replacement is resized to its slot's
@@ -18,6 +19,11 @@ export interface PhotoSlot {
   // The public/ path this position renders today.
   contentPath: string;
   targetWidth: number;
+  // Where this image sits inside the content object the page renders, so an
+  // override can be applied to that one position rather than to every field
+  // that happens to hold the same file. Absent for a slot a page names as a
+  // literal, which resolves through photoUrl(slot.key, ...) instead.
+  at?: (string | number)[];
   // Set for a slot that belongs to a property, so the audit log can be filtered
   // by hotel the way every other entry is.
   hotelSlug?: string;
@@ -36,8 +42,14 @@ export interface PhotoPage {
   sections: PhotoSection[];
 }
 
-function slot(key: string, label: string, contentPath: string, targetWidth = STANDARD_WIDTH) {
-  return { key, label, contentPath, targetWidth };
+function slot(
+  key: string,
+  label: string,
+  contentPath: string,
+  targetWidth = STANDARD_WIDTH,
+  at?: (string | number)[],
+): PhotoSlot {
+  return { key, label, contentPath, targetWidth, at };
 }
 
 function forHotel(slots: PhotoSlot[], hotelSlug: string): PhotoSlot[] {
@@ -48,44 +60,82 @@ function hotelPage(hotel: Hotel): PhotoPage {
   const h = hotel.slug;
 
   const overview: PhotoSlot[] = [
-    slot(`${h}:overview:hero`, 'Hero image', hotel.heroImage, HERO_WIDTH),
+    slot(`${h}:overview:hero`, 'Hero image', hotel.heroImage, HERO_WIDTH, ['heroImage']),
     ...(hotel.heroGallery ?? []).map((src, i) =>
-      slot(`${h}:overview:hero-gallery:${i}`, `Hero carousel ${i + 1}`, src, HERO_WIDTH),
+      slot(`${h}:overview:hero-gallery:${i}`, `Hero carousel ${i + 1}`, src, HERO_WIDTH, [
+        'heroGallery',
+        i,
+      ]),
     ),
-    slot(`${h}:overview:thumb`, 'Thumbnail — cards and nav', hotel.thumbnailImage),
+    slot(`${h}:overview:thumb`, 'Thumbnail — cards and nav', hotel.thumbnailImage, STANDARD_WIDTH, [
+      'thumbnailImage',
+    ]),
   ];
 
-  const rooms = hotel.rooms.flatMap((room) =>
+  const rooms = hotel.rooms.flatMap((room, r) =>
     (room.images ?? []).map((src, i) =>
-      slot(`${h}:rooms:${room.name}:${i}`, `${room.name} — photo ${i + 1}`, src),
+      slot(`${h}:rooms:${room.name}:${i}`, `${room.name} — photo ${i + 1}`, src, STANDARD_WIDTH, [
+        'rooms',
+        r,
+        'images',
+        i,
+      ]),
     ),
   );
 
   const dining = [
-    ...hotel.dining.flatMap((venue) =>
+    ...hotel.dining.flatMap((venue, d) =>
       (venue.images ?? []).map((src, i) =>
-        slot(`${h}:dining:${venue.name}:${i}`, `${venue.name} — photo ${i + 1}`, src),
+        slot(
+          `${h}:dining:${venue.name}:${i}`,
+          `${venue.name} — photo ${i + 1}`,
+          src,
+          STANDARD_WIDTH,
+          ['dining', d, 'images', i],
+        ),
       ),
     ),
     ...(hotel.foodGallery ?? []).map((image, i) =>
-      slot(`${h}:dining:food:${i}`, `Food gallery ${i + 1}`, image.src),
+      slot(`${h}:dining:food:${i}`, `Food gallery ${i + 1}`, image.src, STANDARD_WIDTH, [
+        'foodGallery',
+        i,
+        'src',
+      ]),
     ),
   ];
 
   const weddings = (hotel.weddings?.gallery ?? []).map((image, i) =>
-    slot(`${h}:weddings:${i}`, `Weddings ${i + 1}`, image.src),
+    slot(`${h}:weddings:${i}`, `Weddings ${i + 1}`, image.src, STANDARD_WIDTH, [
+      'weddings',
+      'gallery',
+      i,
+      'src',
+    ]),
   );
 
   const meetings = (hotel.meetings?.gallery ?? []).map((image, i) =>
-    slot(`${h}:meetings:${i}`, `Meetings ${i + 1}`, image.src),
+    slot(`${h}:meetings:${i}`, `Meetings ${i + 1}`, image.src, STANDARD_WIDTH, [
+      'meetings',
+      'gallery',
+      i,
+      'src',
+    ]),
   );
 
   const gallery = hotel.gallery.map((image, i) =>
-    slot(`${h}:gallery:${i}`, `Gallery ${i + 1}`, image.src),
+    slot(`${h}:gallery:${i}`, `Gallery ${i + 1}`, image.src, STANDARD_WIDTH, ['gallery', i, 'src']),
   );
 
-  const explore = hotel.sightseeing.flatMap((spot) =>
-    spot.image ? [slot(`${h}:explore:${spot.name}`, spot.name, spot.image)] : [],
+  const explore = hotel.sightseeing.flatMap((spot, i) =>
+    spot.image
+      ? [
+          slot(`${h}:explore:${spot.name}`, spot.name, spot.image, STANDARD_WIDTH, [
+            'sightseeing',
+            i,
+            'image',
+          ]),
+        ]
+      : [],
   );
 
   const sections: PhotoSection[] = [
@@ -138,14 +188,23 @@ const HOME: PhotoPage = {
       key: 'home:experiences',
       title: 'Signature experiences',
       slots: experiences.map((experience, i) =>
-        slot(`home:experience:${i}`, experience.title, experience.image),
+        slot(`home:experience:${i}`, experience.title, experience.image, STANDARD_WIDTH, [
+          i,
+          'image',
+        ]),
       ),
     },
     {
       key: 'home:awards',
       title: 'Awards',
-      slots: awards.map((award) =>
-        slot(`home:award:${award.propertySlug}`, `${award.propertySlug} badge`, award.badgeImage),
+      slots: awards.map((award, i) =>
+        slot(
+          `home:award:${award.propertySlug}`,
+          `${award.propertySlug} badge`,
+          award.badgeImage,
+          STANDARD_WIDTH,
+          [i, 'badgeImage'],
+        ),
       ),
     },
   ],
@@ -212,28 +271,59 @@ const OTHER_PAGES: PhotoPage[] = [
     href: '/weddings',
     sections: [
       {
+        key: 'weddings:hero',
+        title: 'Hero carousel',
+        slots: [
+          slot(
+            'weddings:hero:0',
+            'Carousel 1',
+            '/images/weddings/Wedding-Portrait.webp',
+            HERO_WIDTH,
+          ),
+          slot(
+            'weddings:hero:1',
+            'Carousel 2 — palace',
+            '/images/hotels/udaipur/weddings/A Royal Fairytale.webp',
+            HERO_WIDTH,
+          ),
+          slot(
+            'weddings:hero:2',
+            'Carousel 3',
+            '/images/weddings/Wedding-Lattice.webp',
+            HERO_WIDTH,
+          ),
+        ],
+      },
+      {
         key: 'weddings:moments',
         title: 'Moments',
         slots: [
           slot(
-            'weddings:moment:haldi',
+            'weddings:moment:0',
             'Memorable weddings',
             '/images/hotels/darjeeling/weddings/Haldi.webp',
           ),
+          slot('weddings:moment:1', 'Help us plan your day', '/images/weddings/Mehendi.webp'),
           slot(
-            'weddings:moment:feast',
+            'weddings:moment:2',
             'A tasteful wedding menu',
             '/images/hotels/burdwan/weddings/wedding feast.webp',
           ),
           slot(
-            'weddings:moment:stays',
+            'weddings:moment:3',
             'Lavish stays',
             '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 1.webp',
           ),
+        ],
+      },
+      {
+        key: 'weddings:closing',
+        title: 'Closing band',
+        slots: [
           slot(
-            'weddings:hero:royal',
-            'Hero carousel — palace',
-            '/images/hotels/udaipur/weddings/A Royal Fairytale.webp',
+            'weddings:closing',
+            'Closing band',
+            '/images/weddings/Wedding-Portrait.webp',
             HERO_WIDTH,
           ),
         ],
@@ -256,17 +346,17 @@ const OTHER_PAGES: PhotoPage[] = [
             HERO_WIDTH,
           ),
           slot(
-            'meetings:feature:iris',
+            'meetings:feature:0',
             'Feature — banqueting',
             '/images/hotels/dooars/amenities/The Iris Hall 1 (2).webp',
           ),
           slot(
-            'meetings:feature:catering',
+            'meetings:feature:1',
             'Feature — catering',
             '/images/hotels/gangtok/dining/RestaurantBuffet2.webp',
           ),
           slot(
-            'meetings:feature:offsite',
+            'meetings:feature:2',
             'Feature — offsites',
             '/images/hotels/gangtok/explore/Gangtok Tsogmo Lake.webp',
           ),
@@ -286,12 +376,36 @@ const OTHER_PAGES: PhotoPage[] = [
     href: '/media',
     sections: [
       {
+        key: 'media:images',
+        title: 'Page images',
+        slots: [
+          slot(
+            'media:hero',
+            'Hero image',
+            '/images/hotels/gangtok/destination/SinclairsGangtoknightview.webp',
+            HERO_WIDTH,
+          ),
+        ],
+      },
+      {
         key: 'media:clippings',
         title: 'Clippings',
-        slots: [
-          slot('media:dooars', 'Dooars — The Telegraph', '/images/press/dooars-telegraph.webp'),
-          slot('media:gangtok', 'Gangtok — The Telegraph', '/images/press/gangtok-telegraph.webp'),
-        ],
+        // Derived from the content rather than listed, so a slot's locator can
+        // never drift from the entry it names.
+        slots: pressMentions.flatMap((mention, i) => {
+          const image = 'image' in mention ? mention.image : undefined;
+          return image
+            ? [
+                slot(
+                  `media:${i}`,
+                  `${mention.outlet} — ${mention.title}`,
+                  image,
+                  STANDARD_WIDTH,
+                  [i, 'image'],
+                ),
+              ]
+            : [];
+        }),
       },
     ],
   },
@@ -302,6 +416,30 @@ const OTHER_PAGES: PhotoPage[] = [
 // lib/photo-files.ts, so it is only ever as correct as this list.
 export function photoPages(): PhotoPage[] {
   return [HOME, ...hotels.map(hotelPage), CONTACT, ...OTHER_PAGES];
+}
+
+// The slots whose locators are relative to one hotel object, one array of
+// experiences, awards or press mentions. withPhotos() applies an override at
+// the locator, so it needs the slots for exactly the value it is given.
+export function hotelSlots(hotel: Hotel): PhotoSlot[] {
+  return hotelPage(hotel).sections.flatMap((section) => section.slots);
+}
+
+export function experienceSlots(): PhotoSlot[] {
+  return sectionSlots(HOME, 'home:experiences');
+}
+
+export function awardSlots(): PhotoSlot[] {
+  return sectionSlots(HOME, 'home:awards');
+}
+
+export function pressSlots(): PhotoSlot[] {
+  const media = OTHER_PAGES.find((page) => page.key === 'media');
+  return media ? sectionSlots(media, 'media:clippings') : [];
+}
+
+function sectionSlots(page: PhotoPage, sectionKey: string): PhotoSlot[] {
+  return page.sections.find((section) => section.key === sectionKey)?.slots ?? [];
 }
 
 export function allSlots(): PhotoSlot[] {

@@ -561,9 +561,13 @@ model FunnelEvent {
 // record of who changed what, and this row only needs to say it on screen.
 model PhotoAsset {
   id            String    @id @default(cuid())
-  // The public/ path this replaces, e.g. /images/hotels/gangtok/hero.webp.
-  contentPath   String
+  // The position this fills — lib/photo-slots.ts's slot key. This, not the
+  // file, is the identity: two positions can render the same photo, and
+  // replacing one of them must leave the other alone.
   slotKey       String
+  // The public/ path that position renders when nothing overrides it, kept so
+  // the library can say which positions a file already fills.
+  contentPath   String
   // Exactly one of these is set. `data` holds an upload converted here;
   // `sourcePath` points at a photo already in the repository, chosen from the
   // library — the whole point of that being that no second copy is made.
@@ -580,6 +584,7 @@ model PhotoAsset {
   // replacement can be undone until it is pruned — see PHOTO_RETENTION_DAYS.
   supersededAt  DateTime?
 
+  @@index([slotKey, supersededAt])
   @@index([contentPath, supersededAt])
   @@index([supersededAt])
 }
