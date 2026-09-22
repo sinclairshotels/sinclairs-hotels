@@ -214,6 +214,10 @@ model Booking {
   // must never be enough to open someone else's booking.
   reference String @unique
   viewToken String @unique
+  // When the one recovery email went out. Its presence is the guarantee there
+  // is never a second: the query that finds abandoned bookings requires it to
+  // be null, so a row can only ever be picked up once.
+  abandonedEmailSentAt DateTime?
 
   hotelSlug  String
   // The room type this booking consumes. Nullable only so the migration can

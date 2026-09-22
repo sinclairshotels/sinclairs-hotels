@@ -359,6 +359,21 @@ on `/book` to choose. The warning that used to sit here still applies, just with
 no fallback behind it: a property with no rates loaded is now a dead end rather
 than a handoff, so load rates before pointing traffic at it.
 
+**A booking that is never paid for gets one email, an hour after its hold let
+go.** `lib/abandoned.ts` finds them and `/api/cron/abandoned-bookings` (hourly)
+sends them. `Booking.abandonedEmailSentAt` is claimed *before* the mail goes
+out, not after: a crash between the two costs one guest their reminder, where
+marking afterwards would risk a second email on the next run — and a duplicate
+is the one thing this is not allowed to do. Bookings older than
+`ABANDONED_MAX_AGE_DAYS` are skipped so switching the cron on does not email
+everyone who ever failed to pay.
+
+The link in it lands on `/book/resume/<viewToken>`, which **re-checks
+availability before it promises anything**: the hold let go an hour before the
+email was sent, so the room may be gone. Free, and the guest goes to the confirm
+page with the same dates and room; gone, and the page says so rather than
+letting them fail at payment.
+
 ## Staff accounts and roles
 
 `/admin` is per-person, not a shared password. `User`, `UserHotel` and `Session`
