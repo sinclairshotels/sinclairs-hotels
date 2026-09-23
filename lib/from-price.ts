@@ -1,4 +1,4 @@
-import { addDays, todayUtc } from '@/lib/booking';
+import { addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 
 // The "from ₹X per night" figure on /book. It is the cheapest Room Only night
@@ -10,7 +10,7 @@ export const FROM_PRICE_DAYS = 30;
 export async function fromPricePerHotel(
   days: number = FROM_PRICE_DAYS,
 ): Promise<Map<string, number>> {
-  const from = todayUtc();
+  const from = todayInIndia();
 
   const rows = await prisma.ratePrice.groupBy({
     by: ['hotelSlug'],

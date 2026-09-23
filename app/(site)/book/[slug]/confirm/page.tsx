@@ -8,7 +8,7 @@ import {
   formatStayDate,
   nightsBetween,
   parseDateOnly,
-  todayUtc,
+  todayInIndia,
 } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
@@ -65,7 +65,7 @@ export default async function ConfirmBookingPage({
     ...(query.children ? { children: query.children } : {}),
   })}`;
 
-  if (!parsed.success || !query.roomType || !checkIn || !checkOut || checkIn < todayUtc()) {
+  if (!parsed.success || !query.roomType || !checkIn || !checkOut || checkIn < todayInIndia()) {
     return <Expired hotelName={hotel.name} searchHref={searchHref} />;
   }
 

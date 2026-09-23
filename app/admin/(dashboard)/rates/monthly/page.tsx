@@ -4,7 +4,7 @@ import { type MonthlyBaseline, MonthlyRatesTable } from '@/components/admin/mont
 import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
-import { dateKey, todayUtc } from '@/lib/booking';
+import { dateKey, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { MONTHS_AHEAD, monthKey, monthsAhead } from '@/lib/rate-plan';
 import type { Metadata } from 'next';
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 // monthly value, and showing either would invite staff to "confirm" a number
 // that would flatten the other.
 async function monthlyBaseline(hotelSlug: string, months: string[]) {
-  const today = todayUtc();
+  const today = todayInIndia();
   const first = new Date(`${months[0]}-01T00:00:00.000Z`);
   const lastKey = months[months.length - 1] as string;
   const [lastYear, lastMonth] = lastKey.split('-').map(Number) as [number, number];
@@ -100,7 +100,7 @@ export default async function MonthlyRatesPage({
     visibleHotels.find((hotel) => hotel.slug === hotelParam)?.slug ??
     (visibleHotels[0]?.slug as string);
 
-  const months = monthsAhead(todayUtc(), MONTHS_AHEAD);
+  const months = monthsAhead(todayInIndia(), MONTHS_AHEAD);
   const [roomTypes, settings] = await Promise.all([
     prisma.roomType.findMany({
       where: { hotelSlug: selected, active: true },
@@ -113,6 +113,10 @@ export default async function MonthlyRatesPage({
   // A room added in the back office has no entry in content/hotels, so the
   // website has no photograph for it until one is added there.
   const photographed = new Set(getHotelBySlug(selected)?.rooms.map((room) => room.name) ?? []);
+
+  // Named rather than counted: "3 rooms have no size" sends staff hunting down
+  // the column for which three.
+  const unmeasured = roomTypes.filter((room) => room.sizeSqFt === null).map((room) => room.name);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -162,6 +166,13 @@ export default async function MonthlyRatesPage({
           rate only; fill both to offer a refundable rate alongside it.
         </p>
 
+        {unmeasured.length > 0 && (
+          <p className="mt-2 text-xs text-gold-dark">
+            No room size on file for {unmeasured.join(', ')}. The website shows no size for those
+            rooms until one is entered.
+          </p>
+        )}
+
         <div className="mt-4 pb-6">
           {roomTypes.length === 0 ? (
             <p className="rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
@@ -179,6 +190,7 @@ export default async function MonthlyRatesPage({
                 maxChildren: room.maxChildren,
                 extraAdultCharge: room.extraAdultCharge.toNumber(),
                 extraChildCharge: room.extraChildCharge.toNumber(),
+                sizeSqFt: room.sizeSqFt,
                 hasPhoto: photographed.has(room.contentKey),
               }))}
               months={months}

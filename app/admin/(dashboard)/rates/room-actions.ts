@@ -143,6 +143,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       maxTotal: input.maxAdults + input.maxChildren,
       extraAdultCharge: input.extraAdultCharge,
       extraChildCharge: input.extraChildCharge,
+      sizeSqFt: input.sizeSqFt ?? null,
     },
   });
 
@@ -161,6 +162,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       maxChildren: before.maxChildren,
       extraAdultCharge: before.extraAdultCharge.toNumber(),
       extraChildCharge: before.extraChildCharge.toNumber(),
+      sizeSqFt: before.sizeSqFt,
     },
     after: {
       name: after.name,
@@ -169,6 +171,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       maxChildren: after.maxChildren,
       extraAdultCharge: after.extraAdultCharge.toNumber(),
       extraChildCharge: after.extraChildCharge.toNumber(),
+      sizeSqFt: after.sizeSqFt,
     },
     ip: auth.ip,
   });

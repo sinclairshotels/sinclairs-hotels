@@ -3,7 +3,7 @@ import {
   abandonedBookings,
   markAbandonedEmailSent,
 } from '@/lib/abandoned';
-import { HOLD_MINUTES, addDays, todayUtc } from '@/lib/booking';
+import { HOLD_MINUTES, addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -20,7 +20,7 @@ async function booking({
   emailSent?: boolean;
 }) {
   const suffix = Math.random().toString(36).slice(2, 10);
-  const today = todayUtc();
+  const today = todayInIndia();
   return prisma.booking.create({
     data: {
       reference: `AB-${suffix}`,

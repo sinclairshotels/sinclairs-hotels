@@ -23,6 +23,7 @@ import { mapsEmbedEnabled } from '@/lib/maps';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, withPhotos } from '@/lib/photos';
 import { roomDisplayNames } from '@/lib/room-display';
+import { formatRoomSize } from '@/lib/room-size';
 import { pageMetadata } from '@/lib/seo';
 import { eventSpaceCount } from '@/lib/venues';
 import type { Metadata } from 'next';
@@ -81,7 +82,17 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
 
   const display = await roomDisplayNames(hotel.slug);
   const visibleRooms = hotel.rooms
-    .map((room) => ({ ...room, ...(display.get(room.name) ?? { name: room.name, active: true }) }))
+    .map((room) => {
+      const staff = display.get(room.name);
+      return {
+        ...room,
+        name: staff?.name ?? room.name,
+        active: staff?.active ?? true,
+        // Staff's figure wins where they have entered one; the content file is
+        // the fallback, since that is where the seeded values came from.
+        sizeSqFt: staff?.sizeSqFt ?? room.sizeSqFt ?? null,
+      };
+    })
     .filter((room) => room.active)
     .map((room) => ({ ...room, displayName: room.name }));
 
@@ -286,6 +297,11 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                   />
                   <div className="flex flex-1 flex-col p-5">
                     <h3 className="font-display text-lg text-forest">{room.displayName}</h3>
+                    {formatRoomSize(room.sizeSqFt) ? (
+                      <p className="mt-1 text-xs tracking-wide text-ink/50">
+                        {formatRoomSize(room.sizeSqFt)}
+                      </p>
+                    ) : null}
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/70">
                       {room.description}
                     </p>
@@ -339,6 +355,19 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                     <p className="mt-3 text-sm leading-relaxed text-cream/75">
                       {venue.description}
                     </p>
+                    {venue.openingHours ? (
+                      <p className="mt-3 text-xs text-cream/60">
+                        <span className="uppercase tracking-wider text-gold-light/80">
+                          Opening hours
+                        </span>{' '}
+                        {venue.openingHours.split(' · ').map((sitting, s) => (
+                          <span key={sitting} className="whitespace-nowrap">
+                            {s > 0 ? ' · ' : ''}
+                            {sitting}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ))}

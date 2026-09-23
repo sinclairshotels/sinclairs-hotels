@@ -1,4 +1,4 @@
-import { HOLD_MINUTES, addDays, todayUtc } from '@/lib/booking';
+import { HOLD_MINUTES, addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { hashV1 } from '@/lib/icici';
 import { sendMail } from '@/lib/mail';
@@ -25,9 +25,9 @@ const originalHmacKey = process.env.ICICI_HMAC_KEY;
 const HOTEL = 'gangtok';
 const ROOM = 'Deluxe Room';
 const TEST_EMAIL_DOMAIN = 'vitest-callback-test.invalid';
-const CHECK_IN = addDays(todayUtc(), 250);
+const CHECK_IN = addDays(todayInIndia(), 250);
 const CHECK_OUT = addDays(CHECK_IN, 2);
-const RATE_WINDOW = { gte: addDays(todayUtc(), 240), lt: addDays(todayUtc(), 270) };
+const RATE_WINDOW = { gte: addDays(todayInIndia(), 240), lt: addDays(todayInIndia(), 270) };
 
 let orderCounter = 0;
 

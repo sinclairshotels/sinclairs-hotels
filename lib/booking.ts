@@ -40,8 +40,35 @@ export function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * MS_PER_DAY);
 }
 
-export function todayUtc(now: Date = new Date()): Date {
-  return new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);
+// Every property is in India, so "today" is today in India — not in UTC and not
+// in whatever zone the guest's laptop is set to. Getting this wrong is not
+// cosmetic: between midnight and 05:30 IST the UTC date is still yesterday, so
+// a UTC "today" offered a guest a night that had already started.
+//
+// A fixed offset rather than Intl: India has never observed DST, and a fixed
+// number computes identically on the server and in the browser, which is what
+// keeps a date out of a hydration mismatch.
+const INDIA_OFFSET_MINUTES = 330;
+
+export function todayInIndia(now: Date = new Date()): Date {
+  const shifted = new Date(now.getTime() + INDIA_OFFSET_MINUTES * 60_000);
+  return new Date(`${shifted.toISOString().slice(0, 10)}T00:00:00.000Z`);
+}
+
+// The stay a search box starts on, in one place because three surfaces offer
+// one: the home hero, a hotel page's widget, and the booking page itself when
+// it is opened without dates. They used to compute their own — the hotel page
+// from tomorrow, the booking page from today — so a room's Book Now landed on
+// a different week from the one the guest had just been looking at.
+//
+// Tomorrow and the day after: a stay that can actually be booked, rather than
+// tonight, which is often past a property's cut-off by the time anyone looks.
+export function defaultStayWindow(now: Date = new Date()): {
+  checkIn: string;
+  checkOut: string;
+} {
+  const today = todayInIndia(now);
+  return { checkIn: dateKey(addDays(today, 1)), checkOut: dateKey(addDays(today, 2)) };
 }
 
 export function nightsBetween(checkIn: Date, checkOut: Date): number {

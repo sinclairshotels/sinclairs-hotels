@@ -16,7 +16,7 @@ export const VOUCHER_TERMS_HTML = `
 
   <p style="font-size:13px; font-weight:bold; margin:0 0 8px;">Terms and Conditions</p>
   <ul style="margin:0 0 16px; padding-left:18px;">
-    <li>Check in/ Check out time: Siliguri, Burdwan, Darjeeling and Kalimpong 12 noon/11 am; Dooars, Ooty and Port Blair 12 noon/10 am; Udaipur 1 pm/11 am; Gangtok 2pm/12 noon.</li>
+    <li>Check in/ Check out time: Siliguri, Burdwan, Darjeeling and Kalimpong 12 noon/11 am; Dooars, Ooty and Port Blair 12 noon/10 am; Udaipur 1 pm/11 am; Gangtok 2 pm/12 noon.</li>
     <li>No Show &mdash; Room kept only till following midday.</li>
     <li>Settlement of Invoice &mdash; At check out time, by cash/credit card (cash payment can only be accepted for amounts below Rs 2,00,000). For payments of Rs 50,000 and above, furnishing of PAN is mandatory. Credit card guarantee/deposit at the time of check in.</li>
     <li>In case of booking through Travel Agent or Tour Operator, the liability of the guest remains till hotel receives full payment from the agent/operator.</li>

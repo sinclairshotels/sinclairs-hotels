@@ -3,7 +3,7 @@
 import { recordAudit } from '@/lib/audit';
 import { authorizeHotel } from '@/lib/auth';
 import { heldBookingFilter } from '@/lib/availability';
-import { addDays, dateKey, eachNight, parseDateOnly, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, eachNight, parseDateOnly, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
@@ -180,7 +180,7 @@ export async function saveMonthlyRates(
     return { status: 'error', message: 'Nothing to save — fill in at least one month.' };
   }
 
-  const today = todayUtc();
+  const today = todayInIndia();
   const allowedMonths = new Set(monthsAhead(today, MONTHS_AHEAD));
   if (cells.some((cell) => !allowedMonths.has(cell.month))) {
     return { status: 'error', message: 'That month is outside the twelve months on offer.' };
@@ -464,7 +464,7 @@ export async function saveDailyRate(
 
   const date = parseDateOnly(input.date);
   if (!date) return { status: 'error', message: 'Pick a date.' };
-  if (date < todayUtc()) {
+  if (date < todayInIndia()) {
     return { status: 'error', message: 'That night is in the past — nobody can book it.' };
   }
 

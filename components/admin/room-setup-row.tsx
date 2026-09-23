@@ -17,6 +17,7 @@ export interface SetupRoom {
   maxChildren: number;
   extraAdultCharge: number;
   extraChildCharge: number;
+  sizeSqFt: number | null;
   hasPhoto: boolean;
 }
 
@@ -73,6 +74,27 @@ export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: Set
         {!room.hasPhoto && (
           <p className="mt-0.5 text-[10px] uppercase tracking-wider text-gold-dark">No photo yet</p>
         )}
+        {room.sizeSqFt === null && (
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider text-gold-dark">No size yet</p>
+        )}
+
+        {/* Square feet only. The site prints metres beside it, worked out from
+            this one number, so there is nothing here for the two to disagree
+            about. Blank is a real answer — the tile then shows no size. */}
+        <FieldGroup label="Room size">
+          <label className="block">
+            <span className="block text-[9px] uppercase tracking-wider text-ink/40">Sq ft</span>
+            <input
+              type="number"
+              min={0}
+              name="sizeSqFt"
+              defaultValue={room.sizeSqFt ?? ''}
+              placeholder="not measured"
+              aria-label={`${room.roomName} size in square feet`}
+              className="input w-full px-1.5 py-0.5 text-xs"
+            />
+          </label>
+        </FieldGroup>
 
         <FieldGroup label="Included in the rate">
           <div className="grid grid-cols-3 gap-1">

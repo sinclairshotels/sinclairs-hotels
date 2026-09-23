@@ -27,6 +27,9 @@ export interface RoomOffer {
   ratePlanId: string;
   ratePlanCode: RatePlanCode;
   ratePlanName: string;
+  // Square feet, staff's figure first and the content file's as a fallback.
+  // Null where the room has never been measured.
+  sizeSqFt: number | null;
   roomsLeft: number;
   nightlyRates: number[];
   // Guests this plan feeds. Zero on Room Only.
@@ -294,6 +297,7 @@ export async function availability(
           ratePlanId: plan.id,
           ratePlanCode: plan.code,
           ratePlanName: plan.name,
+          sizeSqFt: roomType.sizeSqFt ?? contentRooms.get(roomType.contentKey)?.sizeSqFt ?? null,
           roomsLeft,
           nightlyRates,
           // Zero on Room Only, so a quote can say "with breakfast for N guests"

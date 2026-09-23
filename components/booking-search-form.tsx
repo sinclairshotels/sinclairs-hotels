@@ -4,7 +4,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import type { Hotel } from '@/content/types';
 import { hotelItem, pushEcommerceEvent, recordFunnelStep } from '@/lib/analytics';
-import { addDays, dateKey, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, defaultStayWindow, parseDateOnly, todayInIndia } from '@/lib/booking';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -33,12 +33,14 @@ export function BookingSearchForm({
   compact?: boolean;
 }) {
   const router = useRouter();
-  const today = dateKey(todayUtc());
-  const tomorrow = dateKey(addDays(todayUtc(), 1));
+  const today = dateKey(todayInIndia());
+  // Opened without dates, this offers the same stay the hotel page's widget
+  // does — one function, so the two cannot drift apart again.
+  const [fallback] = useState(defaultStayWindow);
 
   const [hotelSlug, setHotelSlug] = useState(defaultHotel ?? hotels[0]?.slug ?? '');
-  const [checkIn, setCheckIn] = useState(defaultCheckIn ?? today);
-  const [checkOut, setCheckOut] = useState(defaultCheckOut ?? tomorrow);
+  const [checkIn, setCheckIn] = useState(defaultCheckIn ?? fallback.checkIn);
+  const [checkOut, setCheckOut] = useState(defaultCheckOut ?? fallback.checkOut);
   const [rooms, setRooms] = useState(String(defaultRooms ?? 1));
   const [adults, setAdults] = useState(String(defaultAdults ?? 2));
   const [children, setChildren] = useState(String(defaultChildren ?? 0));
@@ -92,7 +94,15 @@ export function BookingSearchForm({
       </Field>
 
       <Field label="Check Out">
-        <DatePicker bare label="Check out" value={checkOut} onChange={setCheckOut} min={tomorrow} />
+        {/* The day after the chosen check-in, not the day after today: a stay
+            starting next month cannot check out tomorrow. */}
+        <DatePicker
+          bare
+          label="Check out"
+          value={checkOut}
+          onChange={setCheckOut}
+          min={dateKey(addDays(parseDateOnly(checkIn) ?? todayInIndia(), 1))}
+        />
       </Field>
 
       <Field label="Rooms">

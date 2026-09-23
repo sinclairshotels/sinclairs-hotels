@@ -1,5 +1,5 @@
 import { heldBookingFilter } from '@/lib/availability';
-import { addDays, todayUtc } from '@/lib/booking';
+import { addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { AuthedUser } from '@/lib/roles';
 import { hotelScopeFilter } from '@/lib/roles';
@@ -31,7 +31,7 @@ export async function dashboardToday(
   viewer: Pick<AuthedUser, 'role' | 'allProperties' | 'hotels'>,
   now: Date = new Date(),
 ): Promise<DashboardToday> {
-  const today = todayUtc(now);
+  const today = todayInIndia(now);
   const tomorrow = addDays(today, 1);
   const scope = hotelScopeFilter(viewer);
   const live: Prisma.BookingWhereInput = { ...scope, status: { in: ['CONFIRMED'] } };

@@ -6,6 +6,11 @@ export interface NavItem {
 export interface RoomType {
   name: string;
   description: string;
+  // Square feet, as the properties themselves measure rooms. Metres are
+  // derived for display rather than stored, so the two can never disagree.
+  // Absent where nobody has measured the room — the tile then shows nothing
+  // rather than an empty label, and /admin/rates/monthly lists it as missing.
+  sizeSqFt?: number;
   images?: string[];
 }
 
@@ -17,6 +22,11 @@ export interface GalleryImage {
 export interface DiningVenue {
   name: string;
   description: string;
+  // Shown on its own line, never inside the prose: hours change and a sentence
+  // is the worst place to find one. One house format throughout — lowercase
+  // am/pm, no leading zero, an en dash with spaces, sittings joined by ' · '
+  // — enforced by content/opening-hours.test.ts rather than by good intentions.
+  openingHours?: string;
   images?: string[];
 }
 

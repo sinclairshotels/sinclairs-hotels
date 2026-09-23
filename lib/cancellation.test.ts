@@ -88,11 +88,15 @@ describe('withinFreeCancellation', () => {
   it('is true up to and including the deadline day, and false after it', () => {
     const deadline = utc('2026-10-13');
     expect(withinFreeCancellation('REFUNDABLE', deadline, utc('2026-10-12'))).toBe(true);
-    // The whole of the deadline day counts — a guest cancelling that evening
-    // has not missed it.
+    // The whole of the deadline day counts — a guest cancelling at 11:59 that
+    // night has not missed it. The day is the day *in India*, where the hotel
+    // is, so it ends at 18:30 UTC and not at midnight UTC.
+    expect(
+      withinFreeCancellation('REFUNDABLE', deadline, new Date('2026-10-13T18:29:59.999Z')),
+    ).toBe(true);
     expect(
       withinFreeCancellation('REFUNDABLE', deadline, new Date('2026-10-13T18:30:00.000Z')),
-    ).toBe(true);
+    ).toBe(false);
     expect(withinFreeCancellation('REFUNDABLE', deadline, utc('2026-10-14'))).toBe(false);
   });
 

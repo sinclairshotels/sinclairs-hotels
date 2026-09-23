@@ -1,4 +1,4 @@
-import { addDays, dateKey, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type LoadedRoom, clearNights, findRoom, loadNights } from '../../../test-utils/inventory';
@@ -39,9 +39,9 @@ const TEST_EMAIL_DOMAIN = 'vitest-booking-action.invalid';
 
 // Far enough out that these rows can never collide with real data, and
 // cleanup can safely target the whole window.
-const CHECK_IN = addDays(todayUtc(), 300);
+const CHECK_IN = addDays(todayInIndia(), 300);
 const CHECK_OUT = addDays(CHECK_IN, 2);
-const RATE_WINDOW = { gte: addDays(todayUtc(), 290), lt: addDays(todayUtc(), 320) };
+const RATE_WINDOW = { gte: addDays(todayInIndia(), 290), lt: addDays(todayInIndia(), 320) };
 
 let room: LoadedRoom;
 
@@ -169,8 +169,8 @@ describe('createBooking', () => {
     await loadRates(3);
     const { state } = await submit(
       bookingFormData({
-        checkIn: dateKey(addDays(todayUtc(), -3)),
-        checkOut: dateKey(addDays(todayUtc(), -1)),
+        checkIn: dateKey(addDays(todayInIndia(), -3)),
+        checkOut: dateKey(addDays(todayInIndia(), -1)),
       }),
     );
     expect(state?.status).toBe('error');

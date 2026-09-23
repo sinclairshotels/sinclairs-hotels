@@ -36,24 +36,27 @@ export const siliguriHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      sizeSqFt: 192,
       description:
-        'Recently refurbished with modern comforts, the room is equipped with ensuite bathrooms and rain showers. Room size: 192 sq. ft., with herbal bathroom amenities, a rain shower, twin lighting options, an LCD TV with satellite channels, split AC system and free Wi-Fi.',
+        'Recently refurbished with modern comforts, the room is equipped with an ensuite bathroom, herbal bathroom amenities, a rain shower, twin lighting options, an LCD TV with satellite channels, split AC system and free Wi-Fi.',
       images: [
         '/images/hotels/siliguri/accommodations/premier-room/Sinclairs-Siliguri-Premier-Room.webp',
       ],
     },
     {
       name: 'Garden Suite',
+      sizeSqFt: 290,
       description:
-        'A bedroom with ensuite bathroom and shower, attached with a small seating area and a private terrace. Room size: 290 sq. ft., with a king size bed, writing desk, attached terrace garden with sit out, LCD TV with satellite channels, tea/coffee set, safe and free Wi-Fi.',
+        'A bedroom with ensuite bathroom and shower, attached with a small seating area and a private terrace. It has a king size bed, a writing desk, attached terrace garden with sit out, LCD TV with satellite channels, tea/coffee set, safe and free Wi-Fi.',
       images: [
         '/images/hotels/siliguri/accommodations/garden-suite/Sinclairs-Siliguri-Garden-Suite.webp',
       ],
     },
     {
       name: 'Premier Suite',
+      sizeSqFt: 450,
       description:
-        'The rooms are luxurious and contemporary with a spacious bedroom, living room and two ensuite bathrooms and showers. Room size: 450 sq. ft., with a king size bed, separate living room, writing desk, two 32-inch LCD televisions, tea/coffee set, safe and free Wi-Fi.',
+        'The rooms are luxurious and contemporary with a spacious bedroom, living room and two ensuite bathrooms and showers. There is a king size bed, a separate living room, a writing desk, two 32-inch LCD televisions, tea/coffee set, safe and free Wi-Fi.',
       images: [
         '/images/hotels/siliguri/accommodations/premier-suite/Sinclairs-Siliguri-Premier-Suite.webp',
       ],
@@ -63,7 +66,8 @@ export const siliguriHotel: Hotel = {
     {
       name: 'The Palms',
       description:
-        'Serves classic favourites in international and local cuisine, with soothing views of the poolside and gardens and a bar offering a variety of premium drinks. Multicuisine, casual dress code, open 7.30 AM to 10.30 PM.',
+        'Serves classic favourites in international and local cuisine, with soothing views of the poolside and gardens and a bar offering a variety of premium drinks. Multicuisine, casual dress code.',
+      openingHours: '7:30 am – 10:30 pm',
       images: ['/images/hotels/siliguri/dining/Sinclairs-Siliguri-The-Palms-Restaurant.webp'],
     },
   ],
