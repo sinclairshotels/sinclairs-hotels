@@ -1,7 +1,11 @@
 'use client';
 
 import { type SetupState, saveHotelSetup } from '@/app/admin/(dashboard)/rates/room-actions';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
+
+// How long a "Saved" stays on screen. Long enough to notice, short enough that
+// it is gone before anyone wonders whether it is still true.
+const SAVED_MS = 3000;
 
 const initial: SetupState = { status: 'idle' };
 
@@ -20,6 +24,10 @@ export function HotelSetupForm({
   freeCancellationDays: number | null;
 }) {
   const [state, formAction, pending] = useActionState(saveHotelSetup, initial);
+  // A success says "Saved" and then goes, rather than describing what was
+  // saved: the fields on screen already say that, and a sentence that outlives
+  // the next edit is a sentence that starts lying.
+  const [saved, setSaved] = useState(false);
   const [breakfast, setBreakfast] = useState(String(amount));
   const [uplift, setUplift] = useState(
     refundableUpliftPct === null ? '' : String(refundableUpliftPct),
@@ -27,6 +35,13 @@ export function HotelSetupForm({
   const [days, setDays] = useState(
     freeCancellationDays === null ? '' : String(freeCancellationDays),
   );
+
+  useEffect(() => {
+    if (state.status !== 'success') return;
+    setSaved(true);
+    const id = setTimeout(() => setSaved(false), SAVED_MS);
+    return () => clearTimeout(id);
+  }, [state]);
 
   const unchanged =
     breakfast === String(amount) &&
@@ -38,7 +53,7 @@ export function HotelSetupForm({
       <input type="hidden" name="hotelSlug" value={hotelSlug} />
 
       <label htmlFor="breakfastSupplement" className="shrink-0 text-sm text-ink/70">
-        Breakfast supplement ₹
+        Breakfast supplement (₹ per person per night)
       </label>
       <input
         id="breakfastSupplement"
@@ -93,13 +108,15 @@ export function HotelSetupForm({
         {pending ? 'Saving…' : 'Save'}
       </button>
 
-      {state.message && (
-        <p
-          className={`w-full text-xs ${state.status === 'error' ? 'text-red-700' : 'text-forest'}`}
-          aria-live="polite"
-        >
+      {state.status === 'error' && state.message && (
+        <p className="w-full text-xs text-red-700" aria-live="polite">
           {state.message}
         </p>
+      )}
+      {saved && (
+        <span className="text-xs text-forest" aria-live="polite">
+          Saved
+        </span>
       )}
     </form>
   );

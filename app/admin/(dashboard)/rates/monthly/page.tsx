@@ -139,8 +139,7 @@ export default async function MonthlyRatesPage({
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Set-up: rooms and monthly rates</p>
         <p className="mt-1 text-sm text-ink/60">
-          The rooms this property sells and what they cost. A month is the baseline — one save
-          applies each value to every night of it.
+          The rooms this property sells, and the rate and rooms on sale for each month.
         </p>
         <RatesTabs active="/admin/rates/monthly" />
       </div>
@@ -177,15 +176,12 @@ export default async function MonthlyRatesPage({
         </div>
 
         <p className="mt-2 text-xs text-ink/50">
-          With Breakfast is Room Only plus the supplement, per person per night, times the
-          room&rsquo;s base guests. Leave both refundable boxes empty to sell the non-refundable
-          rate only; fill both to offer a refundable rate alongside it.
+          Added to the Room Only rate for each guest on a With Breakfast booking.
         </p>
 
         {unmeasured.length > 0 && (
           <p className="mt-2 text-xs text-gold-dark">
-            No room size on file for {unmeasured.join(', ')}. The website shows no size for those
-            rooms until one is entered.
+            No room size for {unmeasured.join(', ')} — those rooms show no size on the site.
           </p>
         )}
 
@@ -230,11 +226,11 @@ export default async function MonthlyRatesPage({
           </div>
 
           <p className="mt-6 text-xs text-ink/50">
-            Setting a single night instead?{' '}
+            Setting a single night?{' '}
             <Link href="/admin/rates/daily" className="text-forest underline">
               Use the Daily screen
             </Link>
-            , which wins over whatever the month says.
+            .
           </p>
         </div>
       </div>

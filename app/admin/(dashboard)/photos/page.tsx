@@ -84,8 +84,7 @@ export default async function PhotosPage() {
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Photos</p>
         <p className="mt-1 max-w-3xl text-sm text-ink/60">
-          Every photo position on the site, page by page. Replacing one converts the upload to WebP
-          at the size that position is served at, and the photo it replaced is kept for 30 days.
+          Every photo position on the site, page by page.
         </p>
         <p className="mt-2 text-xs text-ink/50">
           {slotCount} positions · {unused.length} unused files ·{' '}

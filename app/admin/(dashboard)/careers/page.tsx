@@ -44,10 +44,7 @@ export default async function CareersAdminPage() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Careers</p>
-        <p className="mt-1 text-sm text-ink/60">
-          Positions and the people who applied to them. Only open positions appear on the site;
-          closing one takes it down without touching its applications.
-        </p>
+        <p className="mt-1 text-sm text-ink/60">Positions, and the people who applied to them.</p>
       </div>
 
       <div className="mt-5 min-h-0 flex-1 space-y-8 overflow-y-auto pb-6 pr-1">

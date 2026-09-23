@@ -156,8 +156,8 @@ export function UserForm({
         </div>
         <p className="mt-1.5 text-xs text-ink/50">
           {role === 'ADMIN'
-            ? 'Everything, including Users, Tax and adding accounts. Sections and properties below do not apply.'
-            : 'Only the sections ticked below. Users, Tax and adding accounts are always Admin-only.'}
+            ? 'Everything, including Users, Tax and adding accounts.'
+            : 'Only the sections ticked below.'}
         </p>
       </fieldset>
 
@@ -198,9 +198,7 @@ export function UserForm({
                 </div>
               ))}
             </div>
-            <p className="mt-1.5 text-xs text-ink/50">
-              Each section is one item in the sidebar. No access hides it entirely.
-            </p>
+            <p className="mt-1.5 text-xs text-ink/50">No access hides the section entirely.</p>
           </fieldset>
 
           <fieldset>
@@ -229,9 +227,7 @@ export function UserForm({
             </div>
 
             {allProperties ? (
-              <p className="mt-1.5 text-xs text-ink/50">
-                Including properties added later — no need to come back here when one opens.
-              </p>
+              <p className="mt-1.5 text-xs text-ink/50">Includes properties added later.</p>
             ) : (
               <div className="mt-3 flex flex-wrap gap-2">
                 {properties.map((property) => (

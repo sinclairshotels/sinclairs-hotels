@@ -47,7 +47,7 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
                 scope="col"
                 className="sticky left-0 z-30 border-b border-ink/10 bg-white px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink/50"
               >
-                Room · Plan
+                Room
               </th>
               {calendar.dates.map((iso) => {
                 const label = dayLabel(iso);
@@ -61,7 +61,7 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
                     // sticky, and a translucent cell lets the rows scrolling
                     // underneath print straight through it. Same colours the
                     // alphas resolved to over white.
-                    className={`min-w-[5.5rem] border-b border-ink/10 px-2 py-3 text-center text-xs font-medium ${
+                    className={`min-w-[6rem] border-b border-ink/10 px-2 py-3 text-center text-xs font-medium ${
                       holiday
                         ? 'bg-[#f2eadd] text-gold-dark'
                         : label.isWeekend
@@ -81,13 +81,15 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
           </thead>
           <tbody>
             {calendar.rows.map((row) => (
-              <tr key={`${row.roomTypeId}:${row.ratePlanId}`} className="border-b border-ink/5">
+              <tr key={row.roomTypeId} className="border-b border-ink/5">
                 <th
                   scope="row"
                   className="sticky left-0 z-10 max-w-[13rem] border-r border-ink/10 bg-white px-4 py-2 text-left font-medium text-ink"
                 >
                   {row.roomName}
-                  <span className="block text-xs font-normal text-ink/50">{row.ratePlanName}</span>
+                  <span className="block text-xs font-normal text-ink/50">
+                    Sleeps {row.baseOccupancy}
+                  </span>
                 </th>
                 {row.cells.map((cell) => (
                   <td key={cell.date} className="p-0.5 align-top">
@@ -100,9 +102,15 @@ export function RateCalendarGrid({ calendar }: { calendar: RateCalendar }) {
         </table>
       </div>
 
+      {calendar.breakfastSupplement === 0 && (
+        <p className="mt-2 text-xs text-gold-dark">
+          With Breakfast is not on sale here until a breakfast supplement is set on Set-up.
+        </p>
+      )}
+
       <p className="mt-2 text-xs leading-relaxed text-ink/50">
-        Each cell shows the nightly rate, then rooms on sale, sold and left. Colour is how much of
-        the allotment is still sellable. A{' '}
+        Each cell shows Room Only and With Breakfast, then rooms on sale, sold and left. Both plans
+        share the one allotment. Colour is how much of the allotment is still sellable. A{' '}
         <span className="text-ink/60 line-through">struck-through rate</span> is a stop sell — the
         night keeps its price but is not offered. A{' '}
         <span className="rounded-sm bg-forest px-1 py-0.5 font-medium text-cream">•</span> marks a
@@ -123,9 +131,13 @@ function Cell({ cell, row }: { cell: CalendarCell; row: CalendarRow }) {
   const marks = restrictionMarks(cell);
 
   const description = unloaded
-    ? `${row.roomName}, ${row.ratePlanName}, ${cell.date}: nothing loaded`
-    : `${row.roomName}, ${row.ratePlanName}, ${cell.date}: ${
-        cell.rate === null ? 'no rate' : `${cell.rate} rupees`
+    ? `${row.roomName}, ${cell.date}: nothing loaded`
+    : `${row.roomName}, ${cell.date}: ${
+        cell.rate === null
+          ? 'no rate'
+          : `room only ${cell.rate} rupees${
+              cell.breakfastRate === null ? '' : `, with breakfast ${cell.breakfastRate} rupees`
+            }`
       }, ${cell.onSale} on sale, ${cell.sold} sold, ${cell.remaining} left${
         cell.closed ? ', stop sell' : ''
       }${cell.overridden ? ', set daily' : ''}`;
@@ -150,9 +162,19 @@ function Cell({ cell, row }: { cell: CalendarCell; row: CalendarRow }) {
         </span>
       ) : (
         <div aria-hidden="true">
+          {/* Stacked rather than "RO ₹5,100 · BB ₹6,000" on one line: two
+              rates and a separator need about 8.5rem, and fourteen columns of
+              that scroll sideways on a laptop. Two short lines in a narrow
+              column show the whole fortnight at once, which is what the grid
+              is for. */}
           <span className={`block text-xs font-medium ${cell.closed ? 'line-through' : ''}`}>
-            {cell.rate === null ? '—' : `₹${cell.rate.toLocaleString('en-IN')}`}
+            {cell.rate === null ? '—' : <>RO ₹{cell.rate.toLocaleString('en-IN')}</>}
           </span>
+          {cell.breakfastRate !== null && (
+            <span className={`block text-xs font-medium ${cell.closed ? 'line-through' : ''}`}>
+              BB ₹{cell.breakfastRate.toLocaleString('en-IN')}
+            </span>
+          )}
           <span className="block text-[10px] opacity-70">{cell.onSale} on sale</span>
           <span className="block text-[10px] opacity-70">
             {cell.sold} sold · {cell.remaining} left

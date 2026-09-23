@@ -78,8 +78,7 @@ export default async function RatesPage({
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Inventory &amp; Rates</p>
         <p className="mt-1 text-sm text-ink/60">
-          What this website may sell direct. Rooms on sale is the allotment this site holds for a
-          night; availability counts the bookings against it rather than decrementing a counter.
+          What this website may sell direct, night by night.
         </p>
         <RatesTabs active="/admin/rates" />
       </div>
@@ -103,7 +102,7 @@ export default async function RatesPage({
               )}
             </p>
             <p className="mt-1 text-xs text-ink/60">
-              A calendar running out has no symptom — the room simply stops being offered.
+              When a calendar runs out, the room stops being offered.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {warnings.slice(0, 10).map((warning) => (
