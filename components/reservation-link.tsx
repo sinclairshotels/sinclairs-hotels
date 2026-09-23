@@ -12,7 +12,9 @@ import type { ReactNode } from 'react';
 // comparable against purchase as well as view_item.
 // `params.hotel` doubles as the destination: a CTA that knows its property
 // goes straight to that property's search, and one that does not (the global
-// nav) lands on /book to choose. `item` is optional for the same reason; the
+// nav) lands on /book to choose. `params.room` comes along in the query, so
+// Book Now on a room arrives with that room chosen rather than dropping the
+// guest at the top of a list they have already read. `item` is optional for the same reason; the
 // hotel content is never imported here so it stays out of the client bundle
 // on every page that renders the nav.
 export function ReservationLink({
@@ -29,10 +31,14 @@ export function ReservationLink({
   children: ReactNode;
 }) {
   const hotelSlug = params?.hotel;
+  const room = params?.room;
+  const href = hotelSlug
+    ? `/book/${hotelSlug}${room ? `?room=${encodeURIComponent(room)}` : ''}`
+    : '/book';
 
   return (
     <Link
-      href={hotelSlug ? `/book/${hotelSlug}` : '/book'}
+      href={href}
       className={className}
       onClick={() =>
         pushEcommerceEvent(

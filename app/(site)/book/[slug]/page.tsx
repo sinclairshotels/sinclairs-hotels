@@ -22,7 +22,7 @@ import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { formatRoomSize } from '@/lib/room-size';
-import { buildRoomTable } from '@/lib/room-table';
+import { BLOCK_REASON, buildRoomTable } from '@/lib/room-table';
 import { pageMetadata } from '@/lib/seo';
 import { stayWindowLine } from '@/lib/stay-window';
 import { staySchema } from '@/lib/validation';
@@ -55,6 +55,8 @@ type SearchParams = {
   rooms?: string;
   adults?: string;
   children?: string;
+  // A room name, from the Book Now button on that room's tile.
+  room?: string;
 };
 
 export default async function BookHotelPage({
@@ -96,6 +98,13 @@ export default async function BookHotelPage({
   // it can be tested without rendering a table.
   const table = buildRoomTable(bookable, result?.blocked ?? [], rooms);
 
+  // Which rooms the property has nothing loaded for. Named rather than
+  // counted: "no rates for the Premier Room and the Valentine Room" is a
+  // sentence the reservations team can act on, where "not bookable" is a wall.
+  const unpriced = table.unavailable
+    .filter((room) => room.reason === BLOCK_REASON.unpriced)
+    .map((room) => room.name);
+
   // "Nothing free on these dates" and "we don't sell this property online yet"
   // look identical from an empty result but need completely different copy.
   const ratesLoaded =
@@ -127,6 +136,7 @@ export default async function BookHotelPage({
             defaultRooms={rooms}
             defaultAdults={adults}
             defaultChildren={children}
+            room={query.room}
             compact
           />
         </div>
@@ -146,14 +156,17 @@ export default async function BookHotelPage({
           {stayError && <Notice title="Check your dates">{stayError}</Notice>}
 
           {!stayError && !ratesLoaded && (
-            <Notice title="Not yet bookable online">
+            <Notice title="Not yet bookable online" slug={slug}>
               Direct booking isn&rsquo;t open for {hotel.name} yet. Send us your dates and our
               reservations team will confirm by return.
+              {unpriced.length > 0 && (
+                <> No rates are loaded for {formatList(unpriced)} on these dates.</>
+              )}
             </Notice>
           )}
 
           {!stayError && ratesLoaded && bookable.length === 0 && (
-            <Notice title="No rooms available">
+            <Notice title="No rooms available" slug={slug}>
               We have nothing free for {rooms} {rooms === 1 ? 'room' : 'rooms'} across those nights.
               Try shorter dates or fewer rooms &mdash; or send us an enquiry and we will look for
               you.
@@ -168,20 +181,23 @@ export default async function BookHotelPage({
             </p>
           )}
 
-          <BookingRoomTable
-            rooms={table.rooms}
-            unavailable={table.unavailable}
-            planCodes={table.planCodes}
-            stay={{
-              slug,
-              checkIn: dateKey(checkIn as Date),
-              checkOut: dateKey(checkOut as Date),
-              rooms,
-              adults,
-              children,
-            }}
-            stayWindow={stayWindowLine(slug)}
-          />
+          {ratesLoaded && (
+            <BookingRoomTable
+              rooms={table.rooms}
+              unavailable={table.unavailable}
+              planCodes={table.planCodes}
+              stay={{
+                slug,
+                checkIn: dateKey(checkIn as Date),
+                checkOut: dateKey(checkOut as Date),
+                rooms,
+                adults,
+                children,
+              }}
+              stayWindow={stayWindowLine(slug)}
+              preselectRoom={query.room}
+            />
+          )}
 
           <RoomReviews hotelName={hotel.name} />
 
@@ -218,11 +234,31 @@ function validateStay(checkIn: Date | null, checkOut: Date | null, today: Date):
   return null;
 }
 
-function Notice({ title, children }: { title: string; children: React.ReactNode }) {
+// Never a dead end: whatever the reason a search came back empty, the enquiry
+// form is the way through, and it arrives with the property already answered.
+function Notice({
+  title,
+  slug,
+  children,
+}: { title: string; slug?: string; children: React.ReactNode }) {
   return (
     <div className="mt-6 rounded-lg border border-forest/20 bg-forest/5 p-8 text-center">
       <p className="font-display text-xl text-forest">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink/70">{children}</p>
+      {slug && (
+        <Link
+          href={`/contact?property=${slug}&type=HOTEL`}
+          className="mt-5 inline-block rounded bg-gold px-8 py-2.5 text-sm uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
+        >
+          Enquire
+        </Link>
+      )}
     </div>
   );
+}
+
+// "the Premier Room", "the Premier Room and the Villa", "A, B and C".
+function formatList(names: string[]): string {
+  if (names.length === 1) return names[0] as string;
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }

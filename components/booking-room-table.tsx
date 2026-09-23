@@ -34,18 +34,25 @@ export function BookingRoomTable({
   planCodes,
   stay,
   stayWindow,
+  preselectRoom,
 }: {
   rooms: RoomRow[];
   unavailable: UnavailableRow[];
   planCodes: RatePlanCode[];
   stay: StayQuery;
   stayWindow?: string | null;
+  // The room the guest pressed Book Now on, back on the hotel page. Chosen for
+  // them on arrival — they have already picked it once, and a results page
+  // that makes them pick again reads as having lost the click.
+  preselectRoom?: string | null;
 }) {
   const [plan, setPlan] = useState<RatePlanCode>(planCodes[0] ?? 'EP');
   // One selection, not a basket: a booking holds one room type, so choosing a
   // different room replaces the choice rather than adding to it. Said on the
   // summary, because silently dropping the first pick would be worse.
-  const [selection, setSelection] = useState<Selection | null>(null);
+  const [selection, setSelection] = useState<Selection | null>(() =>
+    initialSelection(rooms, planCodes[0] ?? 'EP', preselectRoom),
+  );
 
   const selected = selection
     ? rooms.find((room) => room.roomTypeId === selection.roomTypeId)
@@ -260,6 +267,27 @@ export function BookingRoomTable({
       </aside>
     </div>
   );
+}
+
+// The cheapest rate of the default plan on the named room. Non-refundable
+// comes first in RATE_ORDER, so that is what the summary opens on — the same
+// row a guest reading down the table would land on first.
+function initialSelection(
+  rooms: RoomRow[],
+  plan: RatePlanCode,
+  preselectRoom?: string | null,
+): Selection | null {
+  if (!preselectRoom) return null;
+  const wanted = preselectRoom.trim().toLowerCase();
+  const room = rooms.find((entry) => entry.name.trim().toLowerCase() === wanted);
+  const rate = room?.plans.find((entry) => entry.code === plan)?.rates[0];
+  if (!room || !rate) return null;
+  return {
+    roomTypeId: room.roomTypeId,
+    ratePlanId: rate.ratePlanId,
+    rateType: rate.rateType,
+    quantity: 1,
+  };
 }
 
 function RoomCell({ room, stayWindow }: { room: RoomRow; stayWindow?: string | null }) {

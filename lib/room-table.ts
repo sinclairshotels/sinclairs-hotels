@@ -51,7 +51,7 @@ export interface UnavailableRow {
 // Why a room is not on sale, in words a guest can act on. Deliberately vague
 // about our own mistakes — an unpriced night is a calendar nobody loaded, and
 // telling a guest that helps them not at all.
-const BLOCK_REASON: Record<BlockedOffer['reason'], string> = {
+export const BLOCK_REASON: Record<BlockedOffer['reason'], string> = {
   unpriced: 'Not available for these dates',
   'stop-sell': 'Not available for these dates',
   'sold-out': 'Sold out for these dates',
