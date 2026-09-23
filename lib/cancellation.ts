@@ -39,6 +39,35 @@ export function refundableIsSellable(
   return deadlineFor(checkIn, policy.freeCancellationDays) >= todayUtc(now);
 }
 
+// A date range a property sells on non-refundable terms only.
+export interface NonRefundableRange {
+  startDate: Date;
+  endDate: Date;
+  label?: string | null;
+}
+
+// Any night of the stay falling inside a window takes the refundable rate off
+// the whole stay, rather than off that night: a booking is cancelled or it is
+// not, so a stay cannot be half refundable. Inclusive at both ends — a window
+// named "15 Dec to 15 Jan" covers the 15th of January, which is what anyone
+// writing it down means.
+//
+// Compared on the nights the guest pays for, so a checkout on the first
+// morning of a window is not caught by it: they are gone before it starts.
+export function refundableBlocked(
+  windows: NonRefundableRange[],
+  checkIn: Date,
+  checkOut: Date,
+): NonRefundableRange | null {
+  const lastNight = dateKey(addDays(checkOut, -1));
+  const firstNight = dateKey(checkIn);
+  return (
+    windows.find(
+      (window) => firstNight <= dateKey(window.endDate) && lastNight >= dateKey(window.startDate),
+    ) ?? null
+  );
+}
+
 export function upliftRate(rate: number, upliftPct: number): number {
   return Math.round(rate * (1 + upliftPct / 100));
 }

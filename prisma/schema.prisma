@@ -518,6 +518,25 @@ model HotelSettings {
   updatedAt           DateTime @updatedAt
 }
 
+// Dates a property sells on non-refundable terms only — the peak weeks where a
+// free cancellation the night before is a room nobody else could have had.
+// Explicit dates rather than a recurring month and day, for two reasons: the
+// seasons that matter are not all on fixed dates (Durga Puja moves), and a
+// range that wraps the new year is a wrapping comparison waiting to be got
+// wrong. The Set-up screen warns when the loaded windows run out, the same way
+// the rates screen warns when the rates do.
+model NonRefundableWindow {
+  id        String   @id @default(cuid())
+  hotelSlug String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  // What staff called it, so the list reads as seasons rather than dates.
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([hotelSlug, startDate])
+}
+
 // GST on accommodation, per room per night against that night's rate. A
 // booking stores the tax it was priced with, so changing these never alters
 // what a guest has already agreed to pay.
