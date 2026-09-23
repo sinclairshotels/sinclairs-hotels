@@ -259,6 +259,16 @@ export const roomTypeSchema = z.object({
   extraChildCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
 });
 
+// Dates come in as strings and are parsed with parseDateOnly in the action, so
+// a real-looking but non-existent date ("2026-02-30") is rejected rather than
+// rolled forward into a window nobody asked for.
+export const nonRefundableWindowSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  startDate: z.string().trim().min(10).max(10),
+  endDate: z.string().trim().min(10).max(10),
+  label: z.string().trim().max(60).optional().or(z.literal('')),
+});
+
 export const addRoomTypeSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
   name: z.string().trim().min(2, 'A room needs a name').max(80),

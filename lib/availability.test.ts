@@ -86,6 +86,7 @@ async function cleanup() {
     where: { hotelSlug: HOTEL, code: 'CP' },
     data: { active: true },
   });
+  await prisma.nonRefundableWindow.deleteMany({ where: { hotelSlug: HOTEL } });
 }
 
 beforeEach(async () => {
@@ -243,6 +244,62 @@ describe('roomOffers', () => {
     );
     expect(offers).toHaveLength(1);
     expect(offers[0]?.rateType).toBe('NON_REFUNDABLE');
+  });
+
+  it('offers no refundable rate on dates sold as non-refundable only', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 0, refundableUpliftPct: 15, freeCancellationDays: 2 },
+      create: {
+        hotelSlug: HOTEL,
+        breakfastSupplement: 0,
+        refundableUpliftPct: 15,
+        freeCancellationDays: 2,
+      },
+    });
+    // Covers the stay's middle night only — one night is enough, because a
+    // booking cannot be half refundable.
+    await prisma.nonRefundableWindow.create({
+      data: {
+        hotelSlug: HOTEL,
+        startDate: new Date(query.checkIn.getTime() + 86_400_000),
+        endDate: new Date(query.checkIn.getTime() + 86_400_000),
+        label: 'Peak season',
+      },
+    });
+
+    const result = await availability(prisma, query);
+    const offers = result.offers.filter((o) => o.roomTypeName === ROOM);
+    expect(offers).toHaveLength(1);
+    expect(offers[0]?.rateType).toBe('NON_REFUNDABLE');
+    // The room list needs to say *why* there is one price, or the property
+    // looks like one that never sells a refundable rate.
+    expect(result.nonRefundableOnly?.label).toBe('Peak season');
+  });
+
+  it('still offers the refundable rate when the window only touches the checkout day', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 0, refundableUpliftPct: 15, freeCancellationDays: 2 },
+      create: {
+        hotelSlug: HOTEL,
+        breakfastSupplement: 0,
+        refundableUpliftPct: 15,
+        freeCancellationDays: 2,
+      },
+    });
+    // Starts on the checkout date, which is never a night the guest pays for.
+    await prisma.nonRefundableWindow.create({
+      data: { hotelSlug: HOTEL, startDate: query.checkOut, endDate: query.checkOut },
+    });
+
+    const result = await availability(prisma, query);
+    expect(result.nonRefundableOnly).toBeNull();
+    expect(
+      result.offers.filter((o) => o.roomTypeName === ROOM && o.rateType === 'REFUNDABLE'),
+    ).toHaveLength(1);
   });
 
   it('drops the room when Room Only has an unpriced night, since every plan rests on it', async () => {
