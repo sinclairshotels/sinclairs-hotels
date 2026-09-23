@@ -17,6 +17,7 @@ import { diningPhotos } from '@/lib/dining';
 import { fromPricePerHotel } from '@/lib/from-price';
 import { awardSlots, experienceSlots, hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, photoUrl, withPhotos } from '@/lib/photos';
+import { plural } from '@/lib/plural';
 import { totalEventSpaces } from '@/lib/venues';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -50,7 +51,7 @@ export default async function HomePage() {
     { value: String(hotels.length), label: 'Destinations' },
     { value: String(states), label: 'States Across India' },
     { value: String(totalDining), label: 'Restaurants & Bars' },
-    { value: String(eventSpaces), label: 'Event Spaces' },
+    { value: String(eventSpaces), label: plural(eventSpaces, 'Event Space') },
   ];
 
   return (

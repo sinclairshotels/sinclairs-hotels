@@ -5,6 +5,7 @@ import {
   deactivateRoomType,
   saveRoomType,
 } from '@/app/admin/(dashboard)/rates/room-actions';
+import type { RoomFacility } from '@/lib/room-facilities';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
 const initial: SetupState = { status: 'idle' };
@@ -19,6 +20,10 @@ export interface SetupRoom {
   extraChildCharge: number;
   sizeSqFt: number | null;
   hasPhoto: boolean;
+  // Every facility this room could claim, and the ones it shows today —
+  // staff's list where they have made one, the room's own copy otherwise.
+  facilityOptions: RoomFacility[];
+  facilities: string[];
 }
 
 export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: SetupRoom }) {
@@ -95,6 +100,8 @@ export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: Set
             />
           </label>
         </FieldGroup>
+
+        <FacilityChecklist room={room} />
 
         <FieldGroup label="Included in the rate">
           <div className="grid grid-cols-3 gap-1">
@@ -187,6 +194,40 @@ export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: Set
         <p className="text-[10px] text-gold-dark">Renamed — press Save room.</p>
       )}
     </div>
+  );
+}
+
+// Closed by default: it is a long list and most visits here are about money.
+// `facilitiesEdited` is what keeps an untouched room reading its description —
+// without it, pressing Save room would freeze today's derived list into the
+// database and a later content edit would stop reaching the site.
+function FacilityChecklist({ room }: { room: SetupRoom }) {
+  const [edited, setEdited] = useState(false);
+  const shown = new Set(room.facilities);
+
+  return (
+    <details className="mt-2 rounded border border-ink/10 px-2 py-1">
+      <summary className="cursor-pointer text-[9px] uppercase tracking-wider text-ink/35">
+        In your room ({room.facilities.length})
+      </summary>
+      {edited && <input type="hidden" name="facilitiesEdited" value="1" />}
+      <p className="mt-1 text-[10px] text-ink/50">Shown on the website under each room.</p>
+      <div className="mt-1 max-h-48 overflow-y-auto pr-1">
+        {room.facilityOptions.map((facility) => (
+          <label key={facility.key} className="flex items-center gap-1.5 py-0.5 text-[11px]">
+            <input
+              type="checkbox"
+              name="facilities"
+              value={facility.key}
+              defaultChecked={shown.has(facility.key)}
+              onChange={() => setEdited(true)}
+              className="h-3 w-3"
+            />
+            {facility.label}
+          </label>
+        ))}
+      </div>
+    </details>
   );
 }
 

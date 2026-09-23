@@ -9,6 +9,7 @@ import { dateKey, formatStayDate, todayInIndia } from '@/lib/booking';
 import { upliftIsCapped } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { MONTHS_AHEAD, monthKey, monthsAhead } from '@/lib/rate-plan';
+import { roomFacilities, roomFacilityOptions } from '@/lib/room-facilities';
 import { currentTaxSlab } from '@/lib/tax';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -154,6 +155,9 @@ export default async function MonthlyRatesPage({
   // A room added in the back office has no entry in content/hotels, so the
   // website has no photograph for it until one is added there.
   const photographed = new Set(getHotelBySlug(selected)?.rooms.map((room) => room.name) ?? []);
+  const contentRooms = new Map(
+    (getHotelBySlug(selected)?.rooms ?? []).map((room) => [room.name, room]),
+  );
 
   // Named rather than counted: "3 rooms have no size" sends staff hunting down
   // the column for which three.
@@ -246,6 +250,10 @@ export default async function MonthlyRatesPage({
                 extraChildCharge: room.extraChildCharge.toNumber(),
                 sizeSqFt: room.sizeSqFt,
                 hasPhoto: photographed.has(room.contentKey),
+                facilityOptions: roomFacilityOptions(contentRooms.get(room.contentKey)),
+                facilities: roomFacilities(contentRooms.get(room.contentKey), room.facilities).map(
+                  (facility) => facility.key,
+                ),
               }))}
               months={months}
               baseline={baseline}

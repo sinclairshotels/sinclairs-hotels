@@ -1,6 +1,6 @@
 'use client';
 
-import { getAmenityIcon } from '@/components/amenity-icon';
+import { getRoomFacilityIcon } from '@/components/room-facility-icon';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { formatInr, formatStayDate } from '@/lib/booking';
 import { formatRoomSize } from '@/lib/room-size';
@@ -33,11 +33,13 @@ export function BookingRoomTable({
   unavailable,
   planCodes,
   stay,
+  stayWindow,
 }: {
   rooms: RoomRow[];
   unavailable: UnavailableRow[];
   planCodes: RatePlanCode[];
   stay: StayQuery;
+  stayWindow?: string | null;
 }) {
   const [plan, setPlan] = useState<RatePlanCode>(planCodes[0] ?? 'EP');
   // One selection, not a basket: a booking holds one room type, so choosing a
@@ -119,7 +121,7 @@ export function BookingRoomTable({
                   >
                     {index === 0 && (
                       <td rowSpan={rates.length} className="border-r border-ink/10 px-4 py-4">
-                        <RoomCell room={room} />
+                        <RoomCell room={room} stayWindow={stayWindow} />
                       </td>
                     )}
                     {index === 0 && (
@@ -166,7 +168,7 @@ export function BookingRoomTable({
                 className="overflow-hidden rounded-xl border border-ink/10 bg-white"
               >
                 <div className="p-4">
-                  <RoomCell room={room} />
+                  <RoomCell room={room} stayWindow={stayWindow} />
                   <div className="mt-3">
                     <Sleeps room={room} />
                   </div>
@@ -260,9 +262,9 @@ export function BookingRoomTable({
   );
 }
 
-function RoomCell({ room }: { room: RoomRow }) {
+function RoomCell({ room, stayWindow }: { room: RoomRow; stayWindow?: string | null }) {
   const size = formatRoomSize(room.sizeSqFt);
-  const facilities = room.amenities.slice(0, MAX_FACILITIES);
+  const facilities = room.facilities.slice(0, MAX_FACILITIES);
 
   return (
     <div>
@@ -270,18 +272,19 @@ function RoomCell({ room }: { room: RoomRow }) {
       <p className="mt-0.5 text-xs text-ink/55">
         {[room.bedType, size, room.view].filter(Boolean).join(' · ')}
       </p>
+      {stayWindow && <p className="mt-0.5 text-xs text-ink/50">{stayWindow}</p>}
 
       {facilities.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
           {facilities.map((facility) => {
-            const Icon = getAmenityIcon(facility);
+            const Icon = getRoomFacilityIcon(facility.key, facility.label);
             return (
-              <li key={facility} className="flex items-center gap-1 text-xs text-ink/65">
+              <li key={facility.key} className="flex items-center gap-1 text-xs text-ink/65">
                 {/* The stroke classes have to come along: className replaces
                     the icon's own default rather than adding to it, and
                     without them the SVG falls back to a solid black fill. */}
                 <Icon className="h-3.5 w-3.5 shrink-0 fill-none stroke-current stroke-[1.6] text-gold-dark" />
-                {facility}
+                {facility.label}
               </li>
             );
           })}

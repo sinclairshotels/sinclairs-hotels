@@ -11,6 +11,7 @@ import { JsonLd } from '@/components/json-ld';
 import { LocationMap } from '@/components/location-map';
 import { MeetingsSection } from '@/components/meetings-section';
 import { ReservationLink } from '@/components/reservation-link';
+import { RoomFacilityList } from '@/components/room-facility-list';
 import { RoomImageCarousel } from '@/components/room-image-carousel';
 import { SectionHeading } from '@/components/section-heading';
 import { WeddingSection } from '@/components/wedding-section';
@@ -22,9 +23,12 @@ import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { mapsEmbedEnabled } from '@/lib/maps';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, withPhotos } from '@/lib/photos';
+import { plural } from '@/lib/plural';
 import { roomDisplayNames } from '@/lib/room-display';
+import { roomFacilities } from '@/lib/room-facilities';
 import { formatRoomSize } from '@/lib/room-size';
 import { pageMetadata } from '@/lib/seo';
+import { stayWindowLine } from '@/lib/stay-window';
 import { eventSpaceCount } from '@/lib/venues';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -91,10 +95,14 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
         // Staff's figure wins where they have entered one; the content file is
         // the fallback, since that is where the seeded values came from.
         sizeSqFt: staff?.sizeSqFt ?? room.sizeSqFt ?? null,
+        // Staff's list where they have made one, the room's own copy otherwise.
+        facilities: roomFacilities(room, staff?.facilities),
       };
     })
     .filter((room) => room.active)
     .map((room) => ({ ...room, displayName: room.name }));
+
+  const stayWindow = stayWindowLine(hotel.slug);
 
   const award = awards.find((a) => a.propertySlug === hotel.slug);
   const sections = subNav.filter((item) => {
@@ -188,7 +196,10 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
             </span>
           </div>
         )}
-        <div className="relative mx-auto w-full max-w-7xl px-6 pb-10 text-cream">
+        {/* pb-20 rather than pb-10: the booking bar below pulls itself up
+            over the hero by -mt-10, which put its top edge level with the
+            tagline. The extra padding is the clearance, not decoration. */}
+        <div className="relative mx-auto w-full max-w-7xl px-6 pb-20 text-cream sm:pb-24">
           <p className="text-xs uppercase tracking-[0.15em] text-cream drop-shadow-md sm:text-sm sm:tracking-[0.3em]">
             {hotel.location}, {hotel.state}
           </p>
@@ -208,12 +219,24 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       <div className="relative z-10 mx-auto mt-6 w-full max-w-6xl px-6">
         <div className="flex flex-wrap items-center justify-between gap-6 rounded-xl bg-white px-6 py-5 shadow-xl sm:gap-10">
           <div className="flex flex-wrap gap-x-10 gap-y-3">
-            <Stat value={String(visibleRooms.length)} label="Room Types" />
-            <Stat value={String(hotel.dining.length)} label="Dining Venues" />
+            <Stat
+              value={String(visibleRooms.length)}
+              label={plural(visibleRooms.length, 'Room Type')}
+            />
+            <Stat
+              value={String(hotel.dining.length)}
+              label={plural(hotel.dining.length, 'Dining Venue')}
+            />
             {hotel.eventSpaces && (
-              <Stat value={String(eventSpaceCount(hotel))} label="Event Spaces" />
+              <Stat
+                value={String(eventSpaceCount(hotel))}
+                label={plural(eventSpaceCount(hotel), 'Event Space')}
+              />
             )}
-            <Stat value={String(hotel.amenities.length)} label="Amenities" />
+            <Stat
+              value={String(hotel.amenities.length)}
+              label={plural(hotel.amenities.length, 'Amenity', 'Amenities')}
+            />
             {fromPrice !== null && (
               <Stat value={`From ${formatInr(fromPrice)}`} label="Per Night" />
             )}
@@ -302,9 +325,11 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                         {formatRoomSize(room.sizeSqFt)}
                       </p>
                     ) : null}
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/70">
-                      {room.description}
-                    </p>
+                    {stayWindow ? (
+                      <p className="mt-1 text-xs tracking-wide text-ink/50">{stayWindow}</p>
+                    ) : null}
+                    <p className="mt-2 text-sm leading-relaxed text-ink/70">{room.description}</p>
+                    <RoomFacilityList facilities={room.facilities} className="mt-4 flex-1" />
                     <ReservationLink
                       ctaSource="hotel_room_card"
                       params={{ hotel: hotel.slug, room: room.displayName }}
@@ -372,22 +397,21 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-      )}
 
-      {hotel.foodGallery && hotel.foodGallery.length > 0 && (
-        <section className="border-b border-forest/10 bg-forest-dark py-10 sm:py-16">
-          <div className="mx-auto max-w-7xl px-6">
-            <SectionHeading
-              tone="dark"
-              eyebrow="Culinary Journey"
-              title={`Food & Dining at ${hotel.name}`}
-              lede="A daily table of fresh, chef-plated Indian, Continental and Oriental fare — from sunrise breakfasts to candlelit evenings."
-            />
-            <div className="mt-10">
-              <GalleryLightbox images={hotel.foodGallery} />
-            </div>
+            {/* Part of Dining, not a second section under its own heading.
+                "Dining" and "Food & Dining" one after the other read as two
+                different things a property has, when they are the venues and
+                the photographs of what those venues serve. */}
+            {hotel.foodGallery && hotel.foodGallery.length > 0 && (
+              <div className="mt-12">
+                <p className="text-xs uppercase tracking-[0.3em] text-gold-light/80">
+                  From the kitchen
+                </p>
+                <div className="mt-5">
+                  <GalleryLightbox images={hotel.foodGallery} />
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}

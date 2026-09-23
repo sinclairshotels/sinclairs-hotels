@@ -1,4 +1,5 @@
 import type { BlockedOffer, RoomOffer } from '@/lib/availability';
+import type { RoomFacility } from '@/lib/room-facilities';
 import type { BookingRateType, RatePlanCode } from '@prisma/client';
 
 // Reshapes what availability() returns into what the room table renders:
@@ -34,7 +35,7 @@ export interface RoomRow {
   sizeSqFt: number | null;
   baseOccupancy: number;
   extraAdultCharge: number;
-  amenities: string[];
+  facilities: RoomFacility[];
   images: string[];
   description?: string;
   roomsLeft: number;
@@ -82,7 +83,7 @@ export function buildRoomTable(
         sizeSqFt: offer.sizeSqFt,
         baseOccupancy: offer.baseOccupancy,
         extraAdultCharge: offer.extraAdultCharge,
-        amenities: offer.content?.amenities ? [...offer.content.amenities] : [],
+        facilities: offer.facilities,
         images: offer.content?.images ? [...offer.content.images] : [],
         description: offer.content?.description,
         roomsLeft: offer.roomsLeft,

@@ -96,11 +96,31 @@ export const siliguriHotel: Hotel = {
       alt: 'Sinclairs Siliguri exterior with outdoor swimming pool',
     },
   ],
+  coords: { lat: 26.7271, lng: 88.4183 },
+  drive: { roadFactor: 1.35, averageSpeedKph: 30 },
   sightseeing: [
-    { name: 'The Kanchenjunga Stadium', image: '/images/hotels/siliguri/explore/stadium.webp' },
-    { name: 'Kalchakra Monastery' },
-    { name: 'Salugara Monastery', image: '/images/hotels/siliguri/explore/Monastery.webp' },
-    { name: 'ISKCON Temple' },
+    {
+      name: 'The Kanchenjunga Stadium',
+      blurb: 'North Bengal’s main cricket and football ground, in the middle of town.',
+      coords: { lat: 26.708, lng: 88.428 },
+      image: '/images/hotels/siliguri/explore/stadium.webp',
+    },
+    {
+      name: 'Kalchakra Monastery',
+      blurb: 'A Tibetan gompa in Salugara, quiet outside prayer hours.',
+      coords: { lat: 26.74, lng: 88.465 },
+    },
+    {
+      name: 'Salugara Monastery',
+      blurb: 'The 100-ft stupa built by Tibetan monks on the Sevoke road.',
+      coords: { lat: 26.743, lng: 88.468 },
+      image: '/images/hotels/siliguri/explore/Monastery.webp',
+    },
+    {
+      name: 'ISKCON Temple',
+      blurb: 'The Krishna temple on Gurung Basti road, with its evening aarti.',
+      coords: { lat: 26.728, lng: 88.423 },
+    },
   ],
   weddings: {
     intro:

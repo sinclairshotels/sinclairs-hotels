@@ -24,6 +24,7 @@ import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photo
 import { formatRoomSize } from '@/lib/room-size';
 import { buildRoomTable } from '@/lib/room-table';
 import { pageMetadata } from '@/lib/seo';
+import { stayWindowLine } from '@/lib/stay-window';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -179,6 +180,7 @@ export default async function BookHotelPage({
               adults,
               children,
             }}
+            stayWindow={stayWindowLine(slug)}
           />
 
           <RoomReviews hotelName={hotel.name} />
