@@ -291,3 +291,31 @@ export const taxSettingSchema = z.object({
 export type HotelSetupInput = z.infer<typeof hotelSetupSchema>;
 export type RoomTypeInput = z.infer<typeof roomTypeSchema>;
 export type TaxSettingInput = z.infer<typeof taxSettingSchema>;
+
+// A job application. The CV itself is checked in lib/careers-storage.ts, not
+// here: zod sees a File, and what makes a file safe is its type, size and the
+// fact its name never becomes a path.
+export const jobApplicationSchema = z.object({
+  name: z.string().trim().min(2, 'Please enter your full name').max(120),
+  email: z.string().trim().email('Please enter a valid email address').max(200),
+  phone: phoneField(),
+  city: optionalTrimmed(80),
+  message: optionalTrimmed(2000),
+  // Absent on a general application, which is the whole point of the page when
+  // nothing is open.
+  positionId: optionalTrimmed(40),
+  company: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
+});
+
+export type JobApplicationInput = z.infer<typeof jobApplicationSchema>;
+
+export const jobPositionSchema = z.object({
+  id: optionalTrimmed(40),
+  title: z.string().trim().min(2, 'A position needs a title').max(120),
+  hotelSlug: optionalTrimmed(60),
+  department: z.string().trim().min(2, 'Please enter a department').max(80),
+  descriptionText: optionalTrimmed(8000),
+  open: z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean()),
+});
+
+export type JobPositionInput = z.infer<typeof jobPositionSchema>;

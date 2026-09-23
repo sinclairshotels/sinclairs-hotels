@@ -41,8 +41,19 @@ export async function notificationRecipients(hotelSlug?: string | null): Promise
 // recipient for money news is worse than sending none. The guest and the
 // property are told either way.
 export async function cancellationRecipients(): Promise<string[]> {
+  return kindRecipients('CANCELLATION');
+}
+
+// HR, for job applications. Same rule as cancellations: no fallback, because
+// an unset list means nobody has asked for these and guessing an inbox for
+// somebody's CV would be worse than not sending it.
+export async function careersRecipients(): Promise<string[]> {
+  return kindRecipients('CAREERS');
+}
+
+async function kindRecipients(kind: 'CANCELLATION' | 'CAREERS'): Promise<string[]> {
   const rows = await prisma.notificationEmail.findMany({
-    where: { kind: 'CANCELLATION' },
+    where: { kind },
     select: { address: true },
   });
   return [...new Set(rows.map((row) => row.address))];

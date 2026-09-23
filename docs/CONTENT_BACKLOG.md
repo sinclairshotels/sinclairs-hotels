@@ -55,7 +55,15 @@ because nobody re-raises what looks done.
 
 Recorded so nobody re-raises them:
 
-- Careers page
+- ~~Careers page~~ — **reversed 23 Sep 2026, and built.** `/careers`, linked
+  from the footer only, lists open positions grouped by property and takes an
+  application with a CV against any of them or none. Staff add and open or
+  close positions at `/admin/careers`, which is its own section in the User
+  checklist, and every change writes an `AuditEvent`. Applications are listed
+  per position with the CV to download. HR is told through a new **Careers**
+  row on the Notification emails panel — with no fallback, so an unset list
+  means nobody is emailed rather than somebody's CV landing in a guessed inbox.
+  The application is saved and visible in the admin either way.
 - Newsletter
 - Offers page
 - Destination guides
