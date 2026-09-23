@@ -49,7 +49,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
-        'Each of these cozy and well appointed rooms have ensuite washrooms, and are equipped with modern facilities, including an attached bath with hot and cold shower.',
+        'A cosy base for exploring Darjeeling, the Deluxe Room offers a comfortable place to return to after a day in town. An en suite bathroom with a hot shower completes the room.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double1.webp',
@@ -64,7 +64,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
-        'Enjoy beautiful mountain views with a spectacular sunrise from these rooms overlooking the Himalayas, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'Make the mountain outlook part of your stay. The Premier Room looks towards Kanchenjunga, with views of the peaks on clear mornings and an en suite bathroom for freshening up after your day out.',
       images: [
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-1.webp',
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-2.webp',
@@ -77,7 +77,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 271,
       description:
-        'This room has a stunning view of the mountains and is ideal for newly-weds, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'With more space than the Premier Room and an outlook towards Kanchenjunga, this room invites you to linger over the view. A welcoming choice for a couple’s getaway, with an en suite bathroom and shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 1.webp',
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 2.webp',
@@ -91,7 +91,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Separate living room'],
       sizeSqFt: 446,
       description:
-        'This spacious suite has a bedroom and a living room with wooden floors and rich furnishings which reflect the typical hill style of the hotel, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'Wooden floors and traditional furnishings bring warmth to this mountain-facing suite. A separate bedroom and living room give you space to read, relax and spend time together, with Kanchenjunga in view when the skies are clear.',
       images: [
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite-Bathroom-View1.webp',
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite1.webp',
@@ -102,10 +102,10 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
-      amenities: ['Writing desk'],
+      amenities: ['Writing desk', 'Two adjoining rooms', 'Shared bathroom'],
       sizeSqFt: 446,
       description:
-        'For guests with greater space requirements, this room is the ideal solution to ensure your privacy and have your family next to you in complete comfort and style. It consists of two adjoining double rooms, with the possibility of adding an extra bed in both rooms, sharing a common bathroom with separate areas for relaxing and a writing desk.',
+        'Keep the family close while enjoying separate sleeping spaces. Two adjoining double rooms share one bathroom, with areas to relax and a writing desk. Extra beds can be arranged in each room, subject to availability and charges.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room2.webp',
@@ -114,6 +114,7 @@ export const darjeelingHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'Kanchenjunga Restaurant',

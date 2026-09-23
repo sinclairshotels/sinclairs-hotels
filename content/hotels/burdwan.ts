@@ -44,6 +44,7 @@ export const burdwanHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      sizeSqFt: 338,
       bedType: 'Twin beds',
       amenities: [
         'Ensuite bathroom',
@@ -52,9 +53,10 @@ export const burdwanHotel: Hotel = {
         'Television',
         'Mini fridge',
         'Direct dial phone',
+        'In-room dining',
       ],
       description:
-        'A twin bedroom with an ensuite bathroom and shower. The twin beds are of a larger than normal size for greater comfort, and the room comes with direct dial telephones, mini bar, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'Generous twin beds and an en suite shower make the Premier Room an easy choice for a shared stay. Make yourself a cup of tea, settle in after a day out, or order a relaxed meal in your room.',
       images: [
         '/images/hotels/burdwan/accommodations/premier-room/Premier room (1).webp',
         '/images/hotels/burdwan/accommodations/premier-room/Premier room (2).webp',
@@ -64,9 +66,17 @@ export const burdwanHotel: Hotel = {
     },
     {
       name: 'Junior Suite',
-      amenities: ['Tea and coffee', 'Electronic safe', 'Television', 'Direct dial phone'],
+      bedType: 'Double bed',
+      amenities: [
+        'Tea and coffee',
+        'Electronic safe',
+        'Television',
+        'Direct dial phone',
+        'Ensuite bathroom',
+        'Mini fridge',
+      ],
       description:
-        'A spacious air-conditioned bedroom with a large bed and an attached toilet, along with a spacious seating lounge with TV. Rooms feature direct dial telephones, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'A spacious bedroom and seating lounge give you room to settle into a longer stay. Unwind in the air-conditioned interiors, catch up over tea or enjoy an evening in, with in-room dining available.',
       images: [
         '/images/hotels/burdwan/accommodations/junior-suite/Junior suite (1).webp',
         '/images/hotels/burdwan/accommodations/junior-suite/Junior suite (2).webp',
@@ -83,9 +93,11 @@ export const burdwanHotel: Hotel = {
         'Television',
         'Mini fridge',
         'Separate living room',
+        'Direct dial phone',
+        'In-room dining',
       ],
       description:
-        'The suite has a bedroom and a living room, each with an ensuite bathroom and shower. The decor recreates the ornate lifestyle of the erstwhile maharajas, complemented by direct dial telephones, mini bar, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'Ornate interiors give the Maharaja Suite its distinctive character. A separate bedroom and living room, each with a bathroom and shower, offer added privacy and space for a leisurely stay or a special occasion.',
       images: [
         '/images/hotels/burdwan/accommodations/maharaja-suite/Maharaja suite_bedroom (1).webp',
         '/images/hotels/burdwan/accommodations/maharaja-suite/Maharaja suite_living room (1).webp',

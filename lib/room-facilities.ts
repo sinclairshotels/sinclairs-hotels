@@ -55,9 +55,12 @@ const RULES: Rule[] = [
   {
     key: 'hot-water',
     label: 'Hot & cold shower',
-    match: /hot and cold shower|hot water|walk-in shower|shower/,
+    match: /hot and cold shower|hot shower|hot water/,
     group: 'shower',
   },
+  // A bare "shower" is a shower. It used to fall through to the rule above and
+  // print "Hot & cold shower", which claims something the copy never said.
+  { key: 'shower', label: 'Shower', match: /walk-in shower|shower/, group: 'shower' },
   { key: 'bathtub', label: 'Bathtub', match: /bath ?tub/ },
   { key: 'air-conditioning', label: 'Air conditioning', match: /air[- ]condition|split ac\b/ },
   { key: 'heater', label: 'Room heater', match: /room heater|\bheater\b/, group: 'warmth' },

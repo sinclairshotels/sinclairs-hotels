@@ -46,7 +46,7 @@ export const gangtokHotel: Hotel = {
       view: 'Forest view',
       sizeSqFt: 335,
       description:
-        'The well-appointed rooms in wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the hotel. Rooms overlook the forest or road side and feature a king-size bed or two twin beds.',
+        'Warm wood finishes and a choice of king or twin beds create a comfortable base in Gangtok. These rooms face the forest or road, offering a place to rest between outings and evenings in town.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double1.webp',
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double2.webp',
@@ -58,7 +58,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Two adjoining rooms', 'Two bathrooms'],
       sizeSqFt: 554,
       description:
-        'The ideal solution for privacy while keeping family members close in complete comfort and style, the Family Room consists of two adjoining double rooms with two toilets.',
+        'Two adjoining double rooms give families space to stay together while keeping separate sleeping areas. The layout includes two toilets, making shared mornings easier and providing more privacy during your holiday.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Sinclairs-Gangtok-Deluxe-Family-Room.webp',
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
@@ -73,7 +73,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Private balcony'],
       sizeSqFt: 340,
       description:
-        'These well-appointed rooms face the mountain range and Gangtok town, offering a relaxed stay for couples, with a private standing balcony affording a panoramic view of the town against the mountains. Some rooms have a triple bed, ideal for an extra adult.',
+        'Step onto your private standing balcony for views across Gangtok towards the mountains. The Premier Room brings the town’s changing skyline into your stay, with selected rooms offering a bed arrangement for an additional adult.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room2.webp',
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room4.webp',
@@ -86,7 +86,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Private balcony', 'Separate living room', 'Sofa seating'],
       sizeSqFt: 535,
       description:
-        'This spacious suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',
+        'A valley-facing balcony and separate living room make this suite a welcoming place to spend time between excursions. Wooden floors and sofa seating add warmth, while the separate bedroom lets you retreat when you are ready to rest.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite1.webp',
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite Living Room.webp',
@@ -99,7 +99,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Mood lighting', 'Complimentary platter'],
       sizeSqFt: 340,
       description:
-        'Specially designed for honeymooners and couples celebrating an anniversary, the alluring view, mood lighting and special accessories all add up to a romantic setting, complete with a complimentary platter of goodies.',
+        'Designed for time together, the Valentine Room pairs a scenic outlook with mood lighting and a complimentary platter of treats. A comfortable setting for a honeymoon, an anniversary or a few days away as a couple.',
       images: [
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom1.webp',
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom2.webp',
@@ -107,6 +107,7 @@ export const gangtokHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'Magnolia',

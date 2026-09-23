@@ -46,8 +46,10 @@ export const portBlairHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      view: 'Sea view',
+      sizeSqFt: 315,
       description:
-        'The all new Premier room affords a stunning view of the sea. Tastefully furnished, the rooms have all that makes luxury accommodation.',
+        'Start the day with a sea view from your Premier Room. A king-size bed, writing desk and tea and coffee facilities create a comfortable base for exploring the Andamans, with an en suite shower for your return.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-room/PremierRoom1.webp',
         '/images/hotels/port-blair/accommodations/premier-room/PremierRoom2.webp',
@@ -57,8 +59,10 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'The Valentine Room',
+      view: 'Sea view',
+      sizeSqFt: 340,
       description:
-        'The Andaman Islands are a paradise for honeymooners. These corner rooms offer privacy and an unbelievable view of the sea from two sides, furnished to ensure that the newly wed spend time in a romantic setting.',
+        'Sea views through windows on two sides give this corner room its distinctive setting. Enjoy time together in a private, welcoming space, whether you are celebrating a honeymoon, an anniversary or a holiday by the water.',
       images: [
         '/images/hotels/port-blair/accommodations/the-valentine-room/ValentineRoom1.webp',
         '/images/hotels/port-blair/accommodations/the-valentine-room/ValentineRoom2.webp',
@@ -68,10 +72,11 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Room',
+      sizeSqFt: 500,
       bedType: 'King and queen beds',
       amenities: ['Ensuite bathroom'],
       description:
-        'A spacious room where a family of four can spend their vacation together in great comfort, equipped with one king and one queen size bed. En-suite bath.',
+        'A king-size bed and a queen-size bed give a family of four space to stay together. A writing desk, refrigerator and tea and coffee facilities make settling in easy, with an attached bathroom and shower.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-room/PremierFamilyRoom1.webp',
         '/images/hotels/port-blair/accommodations/premier-family-room/PremierFamilyRoom2.webp',
@@ -81,9 +86,11 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Suite',
+      view: 'Sea view',
+      sizeSqFt: 540,
       amenities: ['Ensuite bathroom', 'Family suite'],
       description:
-        'The family suite combines the luxury of space and fine décor. With an arresting view of the sea, the spacious suite enables the family to stay together in comfort and style, with an en-suite bath.',
+        'Sea views and space to gather make this suite a welcoming family base. A king-size bed and dining table for four offer room to rest and share a meal, with a refrigerator and tea and coffee facilities close at hand.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-suite/PremierFamilyRoom12.webp',
         '/images/hotels/port-blair/accommodations/premier-family-suite/PremierFamilyRoom13.webp',
@@ -93,10 +100,11 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Attic Room',
+      sizeSqFt: 500,
       bedType: 'Two queen beds',
-      amenities: ['Ensuite bathroom'],
+      amenities: ['Ensuite bathroom', 'Attic'],
       description:
-        'A family room with an attic where children can have good fun. With two queen size beds, the room is ideal for a family of four to stay together comfortably, with an en-suite bath.',
+        'An upper-level attic creates a separate sleeping space within this family room. Stay together while enjoying a little separation between levels, with an attached bathroom, refrigerator and tea and coffee facilities for everyday comfort.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-attic-room/PremierAtticRoom1.webp',
         '/images/hotels/port-blair/accommodations/premier-family-attic-room/PremierAtticRoom2.webp',
@@ -106,9 +114,11 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Suite with Attic',
-      amenities: ['Attic', 'Family suite'],
+      view: 'Sea view',
+      sizeSqFt: 540,
+      amenities: ['Attic', 'Family suite', 'Ensuite bathroom'],
       description:
-        'A spacious, elegant and functional suite where you can relax to the sound of the waves below. The wooden attic is perfect for children travelling with the family, giving them their own private space.',
+        'This sea-view suite combines family space with an upper-level attic sleeping area. Gather around the dining table for four, then settle into the separate sleeping spaces at the end of a day exploring the islands.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-suite-with-attic/Sea facing Premier Family Suite with Attic (2).webp',
         '/images/hotels/port-blair/accommodations/premier-family-suite-with-attic/Sea facing Premier Family Suite with Attic (4).webp',

@@ -39,7 +39,7 @@ export const siliguriHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Rain shower', 'Television', 'Wi-Fi', 'Air conditioning'],
       sizeSqFt: 192,
       description:
-        'Recently refurbished with modern comforts, the room is equipped with an ensuite bathroom, herbal bathroom amenities, a rain shower, twin lighting options, an LCD TV with satellite channels, split AC system and free Wi-Fi.',
+        'A comfortable base for business visits or a city break, the Premier Room has air conditioning, complimentary Wi-Fi and an en suite bathroom with a rain shower. Settle in and recharge between meetings, outings or onward travel.',
       images: [
         '/images/hotels/siliguri/accommodations/premier-room/Sinclairs-Siliguri-Premier-Room.webp',
       ],
@@ -54,10 +54,11 @@ export const siliguriHotel: Hotel = {
         'Television',
         'Wi-Fi',
         'Writing desk',
+        'Shower',
       ],
       sizeSqFt: 290,
       description:
-        'A bedroom with ensuite bathroom and shower, attached with a small seating area and a private terrace. It has a king size bed, a writing desk, attached terrace garden with sit out, LCD TV with satellite channels, tea/coffee set, safe and free Wi-Fi.',
+        'Your own terrace garden and sit-out bring an outdoor pause to a city stay. Inside, a king-size bedroom, small seating area and writing desk offer space to relax or catch up on work, with an en suite bathroom.',
       images: [
         '/images/hotels/siliguri/accommodations/garden-suite/Sinclairs-Siliguri-Garden-Suite.webp',
       ],
@@ -72,10 +73,11 @@ export const siliguriHotel: Hotel = {
         'Television',
         'Wi-Fi',
         'Writing desk',
+        'Shower',
       ],
       sizeSqFt: 450,
       description:
-        'The rooms are luxurious and contemporary with a spacious bedroom, living room and two ensuite bathrooms and showers. There is a king size bed, a separate living room, a writing desk, two 32-inch LCD televisions, tea/coffee set, safe and free Wi-Fi.',
+        'A king-size bedroom and separate living room give you space to rest, work and spend time together. Two bathrooms add convenience, while a writing desk, tea and coffee facilities and complimentary Wi-Fi support a comfortable longer stay.',
       images: [
         '/images/hotels/siliguri/accommodations/premier-suite/Sinclairs-Siliguri-Premier-Suite.webp',
       ],

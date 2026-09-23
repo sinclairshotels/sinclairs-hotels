@@ -52,7 +52,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Day bed'],
       sizeSqFt: 420,
       description:
-        'The richly appointed premier rooms in dark wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the resort. Each room features one king size bed or two twin beds plus a day bed, and a private balcony overlooking the mountains.',
+        'A private mountain-facing balcony and daybed give you two inviting places to unwind. Warm wood finishes complement the spacious room, with a king-size bed or twin beds to suit your stay.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom2.webp',
@@ -65,7 +65,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Television', 'Wi-Fi', 'Fireplace', 'Day bed'],
       sizeSqFt: 460,
       description:
-        'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on.',
+        'Enjoy a little more room to slow down, with a private balcony and a daybed for reading or lounging. The Premier Plus Room offers an easy setting for quiet mornings and relaxed evenings in Kalimpong.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom2.webp',
@@ -79,7 +79,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Attic', 'Separate wardrobe'],
       sizeSqFt: 524,
       description:
-        'Similar to the premier rooms but with a spacious attic reached via a wooden staircase, ideal for families — the attic has its own king size bed and a separate wardrobe for children.',
+        'An attic sleeping area gives families extra space while staying together. Reached by a wooden staircase, the upper level has its own king-size bed and wardrobe, adding a separate place to settle in at the end of the day.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom2.webp',
@@ -94,7 +94,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Separate living room', 'Dining table', 'Sofa seating'],
       sizeSqFt: 900,
       description:
-        'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table.',
+        'With views of the pool and mountains, this suite has space for unhurried days indoors. A king bedroom opens onto a mountain-facing balcony, while the separate living room offers sofa seating and a dining table for four.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuite1.webp',
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuiteLivingRoom.webp',
@@ -106,10 +106,10 @@ export const kalimpongHotel: Hotel = {
       name: 'Wooden Cottage Room',
       bedType: 'King bed',
       view: 'Mountain view',
-      amenities: ['Ensuite bathroom', 'Private sit-out'],
+      amenities: ['Ensuite bathroom', 'Private sit-out', 'Hot and cold shower'],
       sizeSqFt: 284,
       description:
-        'Made entirely out of steam-treated recyclable wood, this secluded cottage has two rooms with attached baths — even the toilets, barring the shower area, are built from wood. The king size bed has a large upholstered headboard, and the room opens onto a private sit-out area overlooking the mountains, ideal for honeymooners.',
+        'Warm wooden interiors and a king-size bed make this cottage room an inviting hideaway. Step onto the private sit-out to enjoy the mountain outlook, or settle inside after a day exploring Kalimpong. An attached bathroom completes the room.',
       images: [
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage1.webp',
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage2.webp',
@@ -118,6 +118,7 @@ export const kalimpongHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'The Golden Oak',

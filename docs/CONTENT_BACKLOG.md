@@ -183,9 +183,17 @@ shows nothing rather than a guess until they arrive.
       "the supplied paragraph", but none came with it; the current copy is a
       rewrite of the old one with the three phrases removed).
 - [ ] **Burdwan** — opening hours for The Palm Terrace and O3 Lounge Bar.
-- [ ] **Bayview** — room sizes for all six room types, and dining opening
-      hours. No figures exist for either; the tiles show no size and the venues
-      no hours.
+- [x] **Bayview** — room sizes for all six room types. Supplied 23 Sep 2026
+      with the room copy and applied: 315, 340, 500, 540, 500, 540 sq ft.
+- [ ] **Bayview** — dining opening hours. Still no figures; the venues show no
+      hours rather than guessed ones.
+- [ ] **Room sizes still open** — Burdwan's Junior Suite and Maharaja Suite
+      (marked "[Confirm size]" in the copy, so the tiles show no size), and
+      three marked provisional or needing an area basis: Burdwan Premier Room
+      338 sq ft, Dooars Wooden Cottage 282 sq ft, and Bayview's two attic
+      categories, whose 500 and 540 sq ft are listed with the attic (100 and
+      120 sq ft) noted separately — confirm whether the headline figure
+      includes it.
 - [ ] **Explore photos** — Burdwan (Pir Baharam, Meghnad Saha Planetarium, Deer
       Park), Darjeeling (Lloyd Botanical Garden), Siliguri (Kalchakra
       Monastery, ISKCON Temple), and the others listed as photo-less. A place
@@ -203,7 +211,15 @@ shows nothing rather than a guess until they arrive.
 
 ### D. Decision — room descriptions across every hotel
 
-Room descriptions shorten to two sentences and their fittings move into "In
-your room", at every property rather than only Dooars, so every room reads the
-same way. Recorded in `PLAN.md`. The rewrite itself is guest-facing copy for
-all thirty-nine rooms and is **not** in the A–C pull request.
+Room descriptions shorten and their fittings move into "In your room", at every
+property rather than only Dooars, so every room reads the same way. Recorded in
+`PLAN.md`.
+
+- [x] All thirty-nine rewritten from the copy supplied 23 Sep 2026. Where the
+      new copy drops a fitting the old prose named and the property has, it
+      moved into that room's `amenities` so the list still shows it: Burdwan's
+      in-room dining, phone and the Junior Suite's bed and bathroom;
+      Kalimpong's cottage shower; Siliguri's two suite showers. Bayview gained
+      its sea views as a `view`, and the three hill properties carry the
+      supplied line, "Mountain views are subject to weather and visibility.",
+      under their room lists.

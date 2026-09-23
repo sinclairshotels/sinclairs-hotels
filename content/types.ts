@@ -127,6 +127,10 @@ export interface Hotel {
   sceneryImage: string;
   amenities: string[];
   rooms: RoomType[];
+  // A qualification printed under the room list, where the rooms promise
+  // something the weather can withhold. Only the hill properties carry one:
+  // a Kanchenjunga view is a view of cloud for half of July.
+  roomsNote?: string;
   dining: DiningVenue[];
   foodGallery?: GalleryImage[];
   gallery: GalleryImage[];

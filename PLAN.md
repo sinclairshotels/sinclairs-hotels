@@ -438,9 +438,10 @@ descriptions shorten to two sentences and their fittings move into the "In your
 room" list, at all nine properties rather than only Dooars. The list is derived
 from each room's own copy (`lib/room-facilities.ts`) and overridable per room on
 Set-up, so moving a fitting out of the prose does not lose it: it appears as an
-icon instead. Dooars' two rooms are done; the remaining thirty-seven are
-guest-facing copy and are tracked in `docs/CONTENT_BACKLOG.md` rather than done
-in the same pull request as the mechanism.
+icon instead. All thirty-nine were rewritten from the copy supplied on 23 Sep
+2026; where that copy drops a fitting the property has, the fitting moves into
+the room's `amenities` so the list keeps it rather than the site quietly losing
+it with the sentence.
 
 ## Working agreement
 

@@ -51,7 +51,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
-        'Overlooks pine forests interspersed with eucalyptus trees. These forest-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Pine and eucalyptus trees frame the outlook from this forest-facing room. A writing desk and en suite bathroom with a hot shower provide a comfortable base for days exploring Ooty and evenings back at the hotel.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (1).webp',
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (2).webp',
@@ -67,7 +67,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
-        'Offers a breathtaking view of the Blue Mountains and Ooty valley. These garden-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Looking towards the gardens, Ooty valley and the Blue Mountains, the Premier Room makes the scenery part of your stay. A writing desk and en suite shower complete a comfortable space to return to after sightseeing.',
       images: [
         '/images/hotels/ooty/accommodations/premier-room/ADS_4926.webp',
         '/images/hotels/ooty/accommodations/premier-room/ADS_4928.webp',
@@ -83,7 +83,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 273,
       description:
-        'Cozy and quiet, the superior rooms overlook the pine forests. They come with a queen-sized bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Enjoy extra space and an outlook over the pine forest. With a queen-size bed, writing desk and en suite bathroom, the Superior Room is a welcoming choice for guests who prefer a little more room to settle in.',
       images: [
         '/images/hotels/ooty/accommodations/superior-room/ADS_4285.webp',
         '/images/hotels/ooty/accommodations/superior-room/ADS_4287.webp',
@@ -99,7 +99,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Dining table', 'Sofa seating'],
       sizeSqFt: 397,
       description:
-        'Spacious and luxurious, the deluxe suites overlook the Blue Mountains and the Ooty valley. They come with a queen-sized bed, sofa seating and a dining table, and an attached four-fixture bath with hot and cold shower.',
+        'Views towards the Blue Mountains and Ooty valley accompany a room with space to relax over a meal or a conversation. The Deluxe Suite includes a queen-size bed, sofa seating, a dining table and an attached bathroom.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-suite/Deluxe suite.webp',
         '/images/hotels/ooty/accommodations/deluxe-suite/ADS_4981.webp',
@@ -120,7 +120,7 @@ export const ootyHotel: Hotel = {
       ],
       sizeSqFt: 890,
       description:
-        'Popular with honeymooners, this suite provides elite comfort with spectacular views of pine forests from a private viewing veranda. It comes with a queen-sized bed, sofa seating, a dining table, a private deck facing the forest, and an attached four-fixture bath with hot and cold running water.',
+        'A private forest-facing deck is the highlight of the Nilgiri Suite. Inside, a queen-size bed, sofa seating and dining table give you plenty of space to spend time together, making it a welcoming choice for a longer escape.',
       images: [
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (1).webp',
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (2).webp',

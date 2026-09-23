@@ -343,6 +343,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
                 </div>
               ))}
             </div>
+            {hotel.roomsNote && <p className="mt-6 text-xs text-ink/50">{hotel.roomsNote}</p>}
           </div>
         </section>
       )}

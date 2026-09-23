@@ -51,7 +51,7 @@ export const dooarsHotel: Hotel = {
       ],
       sizeSqFt: 345,
       description:
-        'Functional and contemporary, these rooms offer the ultimate in luxurious seclusion with a view of the main lawns. Each has an attached bath with hot and cold shower, herbal bathroom amenities, two queen beds, writing desk, private balcony, electronic safe and tea/coffee set.',
+        'Overlooking the resort’s main lawns, the Deluxe Room opens onto a private balcony for time outdoors. Inside, a writing desk, tea and coffee facilities and an en suite shower provide the essentials for an easy stay in the Dooars.',
       images: [
         '/images/hotels/dooars/accommodations/deluxe-room/DSC_1114.webp',
         '/images/hotels/dooars/accommodations/deluxe-room/DSC_1005.webp',
@@ -76,7 +76,7 @@ export const dooarsHotel: Hotel = {
       ],
       sizeSqFt: 690,
       description:
-        'A bedroom, living room, dining area and second washroom under a coffered, wood-beamed ceiling, furnished in black lacquer in the colonial manner — guests know it fondly as the Burra Sahib Suite. A private garden with a sit-out opens off it.',
+        'A separate bedroom, living room and dining area give the Premier Suite room for a slower stay. Enjoy the private garden sit-out, a king-size bed and two bathrooms, with a bathtub and rain shower among the bathing facilities.',
       images: [
         '/images/hotels/dooars/accommodations/premier-suite/Burra Sahib Suite.webp',
         '/images/hotels/dooars/accommodations/premier-suite/Living room of Burra Sahib suite.webp',
@@ -86,6 +86,7 @@ export const dooarsHotel: Hotel = {
     },
     {
       name: 'Wooden Cottage',
+      sizeSqFt: 282,
       amenities: [
         'Ensuite bathroom',
         'Private sit-out',
@@ -94,7 +95,7 @@ export const dooarsHotel: Hotel = {
         'Sofa seating',
       ],
       description:
-        'One of just two free-standing cottages on the property, panelled entirely in warm pinewood beneath a vaulted, beamed ceiling. A private sit-out looks straight into the forest.',
+        'Pinewood panelling and a vaulted ceiling give this freestanding cottage a warm, intimate feel. Settle into the sofa or step out to the private sit-out facing the forest. An en suite bathroom includes a walk-in shower.',
       images: [
         '/images/hotels/dooars/accommodations/wooden-cottage/Wooden Cottage Room.webp',
         '/images/hotels/dooars/accommodations/wooden-cottage/DSC_1218.webp',

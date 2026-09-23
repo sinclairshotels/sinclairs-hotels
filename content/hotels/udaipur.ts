@@ -34,7 +34,7 @@ export const udaipurHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 334,
       description:
-        'Step into comfort and elegance in our Premier Room, designed to blend traditional Rajasthani charm with modern amenities. Enjoy spacious interiors, plush bedding, and thoughtful touches that create a relaxing retreat after a day exploring Haldighati.',
+        'Rajasthani-inspired details bring character to a comfortable room with a king-size bed. Return from exploring Haldighati to your own space to unwind, with an en suite shower, mini fridge and the option of in-room dining.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-room/Premier room (1).webp',
         '/images/hotels/udaipur/accommodations/premier-room/Premier room (2).webp',
@@ -48,7 +48,7 @@ export const udaipurHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 363,
       description:
-        'The Premier Plus Room offers an enhanced experience with added space and premium furnishings. Bask in tasteful decor inspired by local heritage, complemented by upgraded amenities for a truly memorable stay.',
+        'Enjoy more space to settle in, with a king-size bed and interiors inspired by Rajasthan. An en suite shower, mini fridge and in-room dining make the Premier Plus Room a comfortable choice for a leisurely stay.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-plus-room/Premier Plus (1).webp',
         '/images/hotels/udaipur/accommodations/premier-plus-room/Premier Plus (2).webp',
@@ -62,7 +62,7 @@ export const udaipurHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 457,
       description:
-        "Our Premier Suite elevates luxury with separate living and sleeping areas, perfect for families or guests seeking extra comfort. Revel in exquisite interiors, rich textures, and panoramic views that capture the spirit of Udaipur's royal legacy.",
+        'Separate living and sleeping areas give this suite an easy sense of space. Relax between outings or celebrations, then retreat to the king-size bedroom. An attached bathroom, mini fridge and in-room dining add everyday convenience.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-suite/Premier suite (1).webp',
         '/images/hotels/udaipur/accommodations/premier-suite/Premier suite seating.webp',
@@ -82,7 +82,7 @@ export const udaipurHotel: Hotel = {
       ],
       sizeSqFt: 400,
       description:
-        'Experience the pinnacle of opulence in our Villa, a private haven featuring expansive living spaces, elegant decor, and exclusive amenities. Ideal for discerning guests, the villa offers unparalleled privacy along with the warmth of traditional Rajasthani hospitality.',
+        'The Villa offers a welcoming setting for a relaxed stay, with a queen-size bed and Rajasthani-inspired décor. A large wardrobe and luggage rack make it easy to unpack, while an en suite shower and mini fridge complete the space.',
       images: [
         '/images/hotels/udaipur/accommodations/villa/Villa (1).webp',
         '/images/hotels/udaipur/accommodations/villa/Villa (2).webp',
