@@ -114,19 +114,35 @@ model EnquiryNote {
 // be filled in property by property rather than all at once.
 // Which list an address is on. Cancellations go to finance, who do not want
 // every enquiry, so it is a kind rather than another property.
+// One per admin page that sends mail. GENERAL is the value the first four
+// pages shared before they were split apart; it is kept because a value cannot
+// be removed from a Postgres enum, and nothing writes it any more.
 enum NotificationKind {
   GENERAL
   CANCELLATION
   CAREERS
+  BOOKING
+  VOUCHER
+  PAYMENT
+  ENQUIRY
+}
+
+enum NotificationField {
+  TO
+  CC
+  BCC
 }
 
 model NotificationEmail {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   // Null means the central list for that kind, rather than one property's.
   hotelSlug String?
-  kind      NotificationKind @default(GENERAL)
+  kind      NotificationKind  @default(GENERAL)
+  // Which header the address goes in. A separate column rather than three
+  // tables, because they are the same fact about the same message.
+  field     NotificationField @default(TO)
   address   String
-  createdAt DateTime         @default(now())
+  createdAt DateTime          @default(now())
 
   @@index([hotelSlug])
   @@index([kind])

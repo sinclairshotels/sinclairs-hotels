@@ -11,7 +11,7 @@ import { prisma } from '@/lib/db';
 import { jobApplicationHtml } from '@/lib/email-templates/job-application';
 import { log } from '@/lib/log';
 import { sendMail } from '@/lib/mail';
-import { careersRecipients } from '@/lib/notification-emails';
+import { recipientsFor } from '@/lib/notification-emails';
 import { clientIp, isRateLimited } from '@/lib/rate-limit';
 import { jobApplicationSchema } from '@/lib/validation';
 import { headers } from 'next/headers';
@@ -120,10 +120,10 @@ export async function submitApplication(
     has_cv: cv !== null,
   });
 
-  const to = await careersRecipients();
-  if (to.length > 0) {
+  const hr = await recipientsFor('CAREERS');
+  if (hr.to.length > 0) {
     await sendMail({
-      to,
+      ...hr,
       kind: 'job-application',
       replyTo: email,
       subject: `Application: ${positionLabel}`,

@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db';
 import { bookingCancelledHtml } from '@/lib/email-templates/booking-cancelled';
 import { log } from '@/lib/log';
 import { sendMail } from '@/lib/mail';
-import { cancellationRecipients, notificationRecipients } from '@/lib/notification-emails';
+import { guaranteedRecipients, recipientsFor } from '@/lib/notification-emails';
 import { clientIp, isRateLimited } from '@/lib/rate-limit';
 import { publicSiteUrl } from '@/lib/site-url';
 import { revalidatePath } from 'next/cache';
@@ -75,11 +75,16 @@ export async function cancelOwnBooking(
   });
 
   // Finance is copied only where money is owed — a cancellation that refunds
-  // nothing is not their work.
+  // nothing is not their work. Their own To, CC and BCC are merged into this
+  // message's rather than flattened into To, so a finance address configured
+  // as a copy stays a copy.
+  const property = await guaranteedRecipients('BOOKING', updated.hotelSlug);
+  const finance = refundable ? await recipientsFor('CANCELLATION') : { to: [], cc: [], bcc: [] };
+
   await sendMail({
-    to: refundable
-      ? [...(await notificationRecipients(updated.hotelSlug)), ...(await cancellationRecipients())]
-      : await notificationRecipients(updated.hotelSlug),
+    to: [...new Set([...property.to, ...finance.to])],
+    cc: [...new Set([...property.cc, ...finance.cc])],
+    bcc: [...new Set([...property.bcc, ...finance.bcc])],
     kind: 'booking-cancelled-staff',
     subject: refundable
       ? `REFUND DUE: ${formatReference(updated.reference)} cancelled by guest — ${formatInr(updated.total.toNumber())}`

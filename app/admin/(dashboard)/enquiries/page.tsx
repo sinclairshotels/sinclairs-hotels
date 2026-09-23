@@ -1,16 +1,13 @@
+import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AssigneeSelect, StatusControls } from '@/components/admin/enquiry-controls';
 import { EnquiryRowLink } from '@/components/admin/enquiry-row-link';
-import {
-  type NotificationAddress,
-  NotificationEmailsPanel,
-} from '@/components/admin/notification-emails-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { StatTiles } from '@/components/admin/stat-tiles';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { STAFF_NOTIFY_EMAIL } from '@/lib/mail';
+import { recipientPanel } from '@/lib/notification-emails';
 import { EnquiryStatus, EnquiryType, type Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -130,7 +127,7 @@ export default async function EnquiriesPage({
 
   const isAdmin = viewer.role === 'ADMIN';
 
-  const [enquiries, total, statusCounts, typeCounts, propertyCounts, staff, addresses] =
+  const [enquiries, total, statusCounts, typeCounts, propertyCounts, staff, recipients] =
     await Promise.all([
       prisma.enquiry.findMany({
         where,
@@ -149,8 +146,11 @@ export default async function EnquiriesPage({
         orderBy: { name: 'asc' },
       }),
       isAdmin
-        ? prisma.notificationEmail.findMany({ orderBy: [{ kind: 'asc' }, { address: 'asc' }] })
-        : Promise.resolve([] as NotificationAddress[]),
+        ? recipientPanel(
+            'ENQUIRY',
+            hotels.map((hotel) => ({ slug: hotel.slug, name: hotel.name })),
+          )
+        : Promise.resolve(null),
     ]);
 
   const now = Date.now();
@@ -281,22 +281,9 @@ export default async function EnquiriesPage({
           </Link>
         </form>
 
-        {isAdmin && (
-          <div className="mt-3">
-            <NotificationEmailsPanel
-              properties={hotels.map((hotel) => ({ slug: hotel.slug, name: hotel.name }))}
-              addresses={addresses}
-              fallbacks={{
-                central: STAFF_NOTIFY_EMAIL,
-                perHotel: Object.fromEntries(
-                  hotels.flatMap((hotel) =>
-                    hotel.contact?.notificationEmail
-                      ? [[hotel.slug, hotel.contact.notificationEmail]]
-                      : [],
-                  ),
-                ),
-              }}
-            />
+        {recipients && (
+          <div className="mt-3 max-w-sm sm:ml-auto">
+            <EmailRecipientsPanel {...recipients} />
           </div>
         )}
       </div>

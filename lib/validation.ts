@@ -276,6 +276,13 @@ export const nonRefundableWindowSchema = z.object({
   label: z.string().trim().max(60).optional().or(z.literal('')),
 });
 
+export const recipientSchema = z.object({
+  kind: z.enum(['BOOKING', 'VOUCHER', 'PAYMENT', 'ENQUIRY', 'CANCELLATION', 'CAREERS']),
+  field: z.enum(['TO', 'CC', 'BCC']),
+  hotelSlug: z.string().trim().max(60).optional().or(z.literal('')),
+  address: z.string().trim().email('Please enter a valid email address').max(200),
+});
+
 export const addRoomTypeSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
   name: z.string().trim().min(2, 'A room needs a name').max(80),

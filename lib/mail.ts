@@ -44,6 +44,7 @@ function withOwnerBcc(bcc?: string | string[]): string | string[] | undefined {
 
 export async function sendMail({
   to,
+  cc,
   bcc,
   replyTo,
   subject,
@@ -51,6 +52,10 @@ export async function sendMail({
   kind,
 }: {
   to: string | string[];
+  // Copied openly, as staff configure on the admin page that sends this mail.
+  // Suppressed with the recipient override for the same reason `to` is: a test
+  // environment must not reach a real inbox by way of a CC.
+  cc?: string | string[];
   bcc?: string | string[];
   replyTo?: string;
   subject: string;
@@ -60,6 +65,7 @@ export async function sendMail({
   kind?: string;
 }): Promise<void> {
   const finalTo = RECIPIENT_OVERRIDE ?? to;
+  const finalCc = RECIPIENT_OVERRIDE ? undefined : cc;
   const finalBcc = RECIPIENT_OVERRIDE ? undefined : withOwnerBcc(bcc);
   const finalSubject = RECIPIENT_OVERRIDE
     ? `[TEST → ${Array.isArray(to) ? to.join(', ') : to}] ${subject}`
@@ -80,6 +86,7 @@ export async function sendMail({
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: finalTo,
+    cc: finalCc,
     bcc: finalBcc,
     replyTo,
     subject: finalSubject,
