@@ -3,6 +3,8 @@
 import { type BookingFormState, createBooking } from '@/app/(site)/book/actions';
 import { directBookingPerk } from '@/content/site';
 import { pushDataLayerEvent } from '@/lib/analytics';
+import { cancellationSentence } from '@/lib/cancellation';
+import type { BookingRateType } from '@prisma/client';
 import { useActionState, useRef } from 'react';
 
 const initialState: BookingFormState = { status: 'idle' };
@@ -11,6 +13,8 @@ export interface StayFields {
   hotelSlug: string;
   roomTypeId: string;
   ratePlanId: string;
+  rateType: BookingRateType;
+  cancellationDeadline: Date | null;
   checkIn: string;
   checkOut: string;
   rooms: number;
@@ -45,6 +49,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
       <input type="hidden" name="hotelSlug" value={stay.hotelSlug} />
       <input type="hidden" name="roomTypeId" value={stay.roomTypeId} />
       <input type="hidden" name="ratePlanId" value={stay.ratePlanId} />
+      <input type="hidden" name="rateType" value={stay.rateType} />
       <input type="hidden" name="checkIn" value={stay.checkIn} />
       <input type="hidden" name="checkOut" value={stay.checkOut} />
       <input type="hidden" name="rooms" value={stay.rooms} />
@@ -143,8 +148,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
         pay and confirmed the moment the payment clears.
       </p>
       <p className="text-center text-xs font-medium leading-relaxed text-ink/70">
-        {directBookingPerk.long} This booking is non-refundable — once payment clears it cannot be
-        cancelled or refunded.
+        {directBookingPerk.long} {cancellationSentence(stay.rateType, stay.cancellationDeadline)}
       </p>
     </form>
   );

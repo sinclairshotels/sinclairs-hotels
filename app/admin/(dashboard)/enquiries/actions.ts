@@ -70,14 +70,25 @@ export async function addNotificationEmail(
   }
 
   const raw = String(formData.get('hotelSlug') ?? '');
-  const hotelSlug = raw && hotels.some((h) => h.slug === raw) ? raw : null;
+  // The Cancellations list is a kind, not a property, so it arrives as its own
+  // value rather than a slug nothing would match.
+  const kind = formData.get('kind') === 'CANCELLATION' ? 'CANCELLATION' : 'GENERAL';
+  const hotelSlug =
+    kind === 'CANCELLATION' ? null : raw && hotels.some((h) => h.slug === raw) ? raw : null;
   const address = parsed.data;
 
-  const existing = await prisma.notificationEmail.findFirst({ where: { hotelSlug, address } });
+  const existing = await prisma.notificationEmail.findFirst({
+    where: { hotelSlug, kind, address },
+  });
   if (existing) return { status: 'error', message: 'That address is already on this list.' };
 
-  const row = await prisma.notificationEmail.create({ data: { hotelSlug, address } });
-  const where = hotelSlug ? (getHotelBySlug(hotelSlug)?.name ?? hotelSlug) : 'the central list';
+  const row = await prisma.notificationEmail.create({ data: { hotelSlug, kind, address } });
+  const where =
+    kind === 'CANCELLATION'
+      ? 'the cancellations list'
+      : hotelSlug
+        ? (getHotelBySlug(hotelSlug)?.name ?? hotelSlug)
+        : 'the central list';
 
   await recordAudit({
     user: auth.user,
@@ -107,9 +118,12 @@ export async function removeNotificationEmail(
   if (!row) return { status: 'error', message: 'That address is already gone.' };
 
   await prisma.notificationEmail.delete({ where: { id } });
-  const where = row.hotelSlug
-    ? (getHotelBySlug(row.hotelSlug)?.name ?? row.hotelSlug)
-    : 'the central list';
+  const where =
+    row.kind === 'CANCELLATION'
+      ? 'the cancellations list'
+      : row.hotelSlug
+        ? (getHotelBySlug(row.hotelSlug)?.name ?? row.hotelSlug)
+        : 'the central list';
 
   await recordAudit({
     user: auth.user,

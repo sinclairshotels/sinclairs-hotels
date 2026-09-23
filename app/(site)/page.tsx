@@ -86,7 +86,8 @@ export default async function HomePage() {
               Awaits
             </h1>
             <p className="mt-5 max-w-xl text-sm text-cream/80 sm:text-base">
-              Book direct for free early check-in from 12 noon — every room, every property.
+              Book direct for late check-out until 1 pm and the best rate guaranteed — every room,
+              every property.
             </p>
             <div className="mt-8 w-full max-w-5xl">
               <BookingWidget hotels={hotels} />

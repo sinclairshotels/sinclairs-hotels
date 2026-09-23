@@ -1,4 +1,6 @@
 import { stayTimes } from '@/content/site';
+import { CANCELLATION_TERM, cancellationSentence } from '@/lib/cancellation';
+import type { BookingRateType } from '@prisma/client';
 
 // The terms a guest agreed to, in one place because four surfaces state them:
 // the confirmation page, the confirmation email, the voucher and the hotel's
@@ -12,17 +14,25 @@ import { stayTimes } from '@/content/site';
 
 export const FULL_TERMS_PATH = '/terms';
 
-export function bookingTerms(hotelSlug: string): string[] {
+export function bookingTerms(
+  hotelSlug: string,
+  rateType: BookingRateType = 'NON_REFUNDABLE',
+  cancellationDeadline: Date | null = null,
+): string[] {
   // A property with no row would be a slug the content files do not have, so
   // there is nothing honest to print. Falling back to the commonest pair would
   // state a time nobody published.
   const times = stayTimes[hotelSlug];
   const timing = times
-    ? `Check-in from 12 noon on the arrival date — early check-in is included because you booked direct. Check-out by ${times.checkOut}. Late check-out is subject to availability and may be charged.`
-    : 'Check-in from 12 noon on the arrival date — early check-in is included because you booked direct. Check-out time is confirmed by the property. Late check-out is subject to availability and may be charged.';
+    ? `Check-in from ${times.checkIn} on the arrival date; check-out by ${times.checkOut}. As a direct booking this stay includes late check-out until 1 pm, subject to availability on the day.`
+    : 'Check-in and check-out times are confirmed by the property. As a direct booking this stay includes late check-out until 1 pm, subject to availability on the day.';
 
   return [
-    'This booking is non-refundable and non-transferable. No refund is made for cancellation, no-show or early departure.',
+    // The published policy first, stating both rates, then this booking's own
+    // terms with its actual date. One without the other leaves a guest either
+    // reading a rule that is not theirs or a date with no rule behind it.
+    CANCELLATION_TERM,
+    cancellationSentence(rateType, cancellationDeadline),
     timing,
     'A government-issued photo ID is required for every adult guest at check-in. Foreign nationals must present a passport and valid visa.',
     'GST is charged at the rate in force on the booking date and shown separately on your receipt. Extra guests beyond the booked occupancy are charged at the hotel’s published rate.',

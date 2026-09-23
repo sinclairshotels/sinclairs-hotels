@@ -112,13 +112,23 @@ model EnquiryNote {
 // These override the addresses in content/hotels/*.ts, which stay as the
 // fallback: an empty table behaves exactly as the site did before, so this can
 // be filled in property by property rather than all at once.
+// Which list an address is on. Cancellations go to finance, who do not want
+// every enquiry, so it is a kind rather than another property.
+enum NotificationKind {
+  GENERAL
+  CANCELLATION
+}
+
 model NotificationEmail {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
+  // Null means the central list for that kind, rather than one property's.
   hotelSlug String?
+  kind      NotificationKind @default(GENERAL)
   address   String
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([hotelSlug])
+  @@index([kind])
 }
 
 model Voucher {
@@ -333,6 +343,15 @@ model Booking {
   taxTotal  Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
 
+  // What the guest bought, and the date it stops being cancellable. Stored on
+  // the booking rather than read back from HotelSettings, for the same reason
+  // the tax slab is: staff changing the policy must not change what somebody
+  // already agreed to. Null deadline on a non-refundable booking, because
+  // there is no date at which anything changes.
+  rateType             BookingRateType @default(NON_REFUNDABLE)
+  cancellationDeadline DateTime?       @db.Date
+  cancelledAt          DateTime?
+
   status BookingStatus @default(PENDING_PAYMENT)
 
   paymentId String?  @unique
@@ -424,6 +443,13 @@ model RatePlan {
 // Which screen wrote a night. A monthly save lays down a baseline across a
 // whole month; a daily save overrides one date and must survive the next
 // monthly save unless staff explicitly ask to replace their overrides.
+// What a guest bought: the cheaper rate that keeps the money whatever happens,
+// or the dearer one that gives it back up to a stated date.
+enum BookingRateType {
+  NON_REFUNDABLE
+  REFUNDABLE
+}
+
 enum RateSource {
   MONTHLY
   DAILY
@@ -478,7 +504,37 @@ model HotelSettings {
   // room's base guests — there is no separate calendar of breakfast prices to
   // keep in step, which is the whole point of storing one number.
   breakfastSupplement Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Both null means this property does not sell a refundable rate at all, which
+  // is different from selling one at no uplift. Set together or not at all.
+  //
+  // The uplift is a percentage of the Room Only rate; breakfast and extra
+  // guests are added afterwards, so flexibility is priced on the room rather
+  // than on the meal plan somebody happened to pick.
+  refundableUpliftPct  Decimal? @db.Decimal(5, 2)
+  // Free cancellation until this many days before check-in.
+  freeCancellationDays Int?
+
   updatedAt           DateTime @updatedAt
+}
+
+// Dates a property sells on non-refundable terms only — the peak weeks where a
+// free cancellation the night before is a room nobody else could have had.
+// Explicit dates rather than a recurring month and day, for two reasons: the
+// seasons that matter are not all on fixed dates (Durga Puja moves), and a
+// range that wraps the new year is a wrapping comparison waiting to be got
+// wrong. The Set-up screen warns when the loaded windows run out, the same way
+// the rates screen warns when the rates do.
+model NonRefundableWindow {
+  id        String   @id @default(cuid())
+  hotelSlug String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  // What staff called it, so the list reads as seasons rather than dates.
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([hotelSlug, startDate])
 }
 
 // GST on accommodation, per room per night against that night's rate. A

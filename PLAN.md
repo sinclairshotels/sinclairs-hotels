@@ -297,6 +297,109 @@ room type and night and STAAH sold the rest, with staff mirroring website
 bookings into STAAH by hand. Kept here because the allotment-held-back wording
 explains why the schema is shaped the way it is.*
 
+**Four decisions taken 23 Sep 2026**, recorded together because they were
+answered in one go.
+
+**1. Transfer GST is 18%, pending finance.** The confirmation mockup's ₹1,125
+turned out not to be illustrative: it is 5% on ₹13,500 of accommodation (under
+the ₹7,500-a-night threshold) plus 18% on a ₹2,500 transfer, which is this
+codebase's own slab exactly. Transfer therefore gets its own rate on the Tax
+page, defaulting to 18% rather than to the room slab — a cab is a different
+supply from a room, and defaulting it to 5% would have under-collected quietly.
+**Finance has not confirmed this**; the field exists so the answer can be
+entered rather than deployed.
+
+**2. The published tiers are gone.** `content/legal.ts`'s graduated policy
+(10% at 21–30 days, 50% at 8–20, 100% inside 7) has been replaced by the
+refundable / non-refundable model, so the voucher, `/terms`, the confirmation
+page and both emails now say the same thing. Also removed, because they
+contradicted the refundable rate rather than qualifying it: the peak-season
+exception, the force-majeure clause covering cancelled flights, trains and
+ferries, and Port Blair's 15 Dec–15 Jan blackout. Port Blair's clause about
+already-purchased boat tickets stays — that is a third party's money, not ours.
+
+Terms line 1 is now fixed wording, `CANCELLATION_TERM` in `lib/cancellation.ts`:
+*"Non-refundable bookings cannot be cancelled or refunded. Refundable bookings
+can be cancelled free of charge until the deadline shown on your confirmation;
+after that, no refund is made."* It states both rates because it is the
+published policy; the booking's own terms and its actual date follow on the
+next line.
+
+**2a. The peak-season exception and Port Blair's blackout come back as data**
+(23 Sep 2026). Removing them left nothing stopping the engine selling a
+refundable rate over Christmas at Port Blair, which was the one place the old
+prose was doing real work. They are replaced by `NonRefundableWindow`: date
+ranges per property, added on Set-up, during which the refundable rate is not
+offered at all. A stay with any night inside one drops the refundable offer for
+the whole stay — a booking is cancelled or it is not, so it cannot be half
+refundable. `/terms` gains one line, *"Some dates are sold on non-refundable
+terms only."*, and the room list says so on the dates themselves.
+
+Explicit dates, not a recurring month and day. The seasons that matter are not
+all on fixed dates (Durga Puja moves), and a range wrapping the new year is a
+wrapping comparison waiting to be got wrong. The cost is that the windows run
+out, so the Set-up panel says when they have — the same warning the rates
+screen already gives for rates. Port Blair is seeded with 15 Dec–15 Jan for two
+seasons.
+
+The force-majeure clause stays removed: cancelled flights, trains and ferries
+are what the refundable rate is for, and a clause promising a refund the engine
+would not give is worse than no clause.
+
+**3. Check-in and check-out stay per property.** Four different pairs across
+nine hotels, from 10 am to 12 noon for check-out. A single stated time would be
+wrong on a document guests print and show at the desk.
+
+**4. The direct-booking promise changes.** "Free early check-in from 12 noon"
+is replaced by **late check-out until 1 pm, subject to availability** and
+**best rate guaranteed**. The old perk was not one: seven of the nine properties
+already check in at 12 noon as standard, so it only moved anything at Udaipur
+and Gangtok. `directBookingPerk` now carries both promises, and gained an
+`items` array because they are different in kind — one is a favour the property
+may not be able to grant on a full day, the other is unconditional.
+
+**Cancellation policy — superseded 23 Sep 2026: refundable rates are back.**
+Every rate was non-refundable, stated in five places and enforced nowhere,
+because there was nothing to enforce. Each room is now offered on both terms:
+the non-refundable rate as before, and a refundable one priced at the
+property's own **uplift %** on the Room Only rate, cancellable in full until
+**N days before check-in**. Both numbers are per property, set together on
+`/admin/rates/monthly`, and both null means that property sells the
+non-refundable rate only.
+
+Three things this had to get right, and did:
+
+- **A booking stores the terms it was sold under.** `Booking.rateType` and
+  `Booking.cancellationDeadline` are written at booking time and read
+  everywhere afterwards, for the same reason the tax slab is stored: staff
+  moving the policy must not change what somebody already agreed to, in either
+  direction. Existing rows default to `NON_REFUNDABLE` with no deadline, which
+  is exactly what they were sold as.
+- **The uplift is priced server-side.** The form posts a `rateType` and no
+  money, and the serializable transaction re-prices from the property's own
+  settings — so asking for refundable terms pays the uplift or the booking
+  fails, and cannot come back at the cheaper price.
+- **A window that has already closed is not sold.** Booking five days out
+  against a seven-day policy would otherwise charge an uplift for a deadline
+  in the past. Availability drops the refundable offer instead.
+
+A guest cancels from their own booking link. Inside the window the booking
+becomes `REFUND_DUE` — the status that already means money is owed — and
+outside it, `CANCELLED`. Both release the rooms. **The refund itself is still
+a person on `/admin/payments`**: nothing here moves money on its own, which is
+the rule the oversold path already followed. Finance is copied on a
+cancellation only when one owes money, through a new Cancellations row on the
+Notification emails panel.
+
+*Previously (10–22 Sep 2026): all rates non-refundable, no cancellation by the
+guest at all. Kept here because the confirmation email, the voucher and
+`content/legal.ts` all carried that wording, and `content/legal.ts` still
+carries a graduated cancellation policy that contradicts it — see the open
+question below.*
+
+*The voucher's own policy disagreed with this for one commit; decision 2 above
+closed that, and `content/legal.ts` now carries the same two rates.*
+
 **Production data.** There are no live bookings and no rate rows in
 production (confirmed 17 Sep 2026), so **no backfill is needed** and the A0
 migration's data-preservation path never fires in practice. It stays in the

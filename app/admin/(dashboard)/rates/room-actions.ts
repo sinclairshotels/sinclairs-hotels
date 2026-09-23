@@ -3,6 +3,7 @@
 import { getHotelBySlug } from '@/content/hotels';
 import { recordAudit } from '@/lib/audit';
 import { authorizeHotel } from '@/lib/auth';
+import { dateKey, formatStayDate, parseDateOnly } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
@@ -10,6 +11,7 @@ import {
   addRoomTypeSchema,
   deactivateRoomTypeSchema,
   hotelSetupSchema,
+  nonRefundableWindowSchema,
   roomTypeSchema,
 } from '@/lib/validation';
 import { revalidatePath } from 'next/cache';
@@ -43,38 +45,68 @@ export async function saveHotelSetup(_prev: SetupState, formData: FormData): Pro
     return { status: 'error', message: 'Please check the breakfast supplement.' };
   }
 
-  const { hotelSlug, breakfastSupplement } = parsed.data;
+  const { hotelSlug, breakfastSupplement, refundableUpliftPct, freeCancellationDays } = parsed.data;
   const auth = await guard(hotelSlug);
   if (!auth.ok) return { status: 'error', message: auth.message };
 
   const before = await prisma.hotelSettings.findUnique({ where: { hotelSlug } });
-  if (before && before.breakfastSupplement.toNumber() === breakfastSupplement) {
-    return { status: 'success', message: 'Breakfast supplement unchanged.' };
+  const previous = {
+    breakfastSupplement: before?.breakfastSupplement.toNumber() ?? 0,
+    refundableUpliftPct: before?.refundableUpliftPct?.toNumber() ?? null,
+    freeCancellationDays: before?.freeCancellationDays ?? null,
+  };
+  const next = {
+    breakfastSupplement,
+    refundableUpliftPct: refundableUpliftPct ?? null,
+    freeCancellationDays: freeCancellationDays ?? null,
+  };
+
+  if (
+    previous.breakfastSupplement === next.breakfastSupplement &&
+    previous.refundableUpliftPct === next.refundableUpliftPct &&
+    previous.freeCancellationDays === next.freeCancellationDays
+  ) {
+    return { status: 'success', message: 'Nothing changed.' };
   }
 
   await prisma.hotelSettings.upsert({
     where: { hotelSlug },
-    update: { breakfastSupplement },
-    create: { hotelSlug, breakfastSupplement },
+    update: next,
+    create: { hotelSlug, ...next },
   });
+
+  // Turning the refundable rate on or off changes what the property sells, so
+  // it is worth its own line in the log rather than hiding inside a diff.
+  const policyLine =
+    next.refundableUpliftPct === null
+      ? 'no refundable rate'
+      : `refundable at +${next.refundableUpliftPct}% free until ${next.freeCancellationDays} days before check-in`;
 
   await recordAudit({
     user: auth.user,
-    action: 'setup.breakfast_changed',
+    action: 'setup.changed',
     entity: 'HotelSettings',
     entityId: hotelSlug,
     hotelSlug,
-    summary: `Breakfast supplement set to ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night`,
-    before: before ? { breakfastSupplement: before.breakfastSupplement.toNumber() } : null,
-    after: { breakfastSupplement },
+    summary: `Breakfast ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night; ${policyLine}`,
+    before: previous,
+    after: next,
     ip: auth.ip,
   });
-  log.info('setup.breakfast_changed', { hotel: hotelSlug, amount: breakfastSupplement });
+  log.info('setup.changed', {
+    hotel: hotelSlug,
+    amount: breakfastSupplement,
+    refundable_uplift_pct: next.refundableUpliftPct,
+    free_cancellation_days: next.freeCancellationDays,
+  });
 
   refresh();
   return {
     status: 'success',
-    message: `With Breakfast is now Room Only plus ₹${breakfastSupplement.toLocaleString('en-IN')} a head.`,
+    message:
+      next.refundableUpliftPct === null
+        ? 'Saved. This property sells the non-refundable rate only.'
+        : `Saved. Refundable rate is +${next.refundableUpliftPct}%, free to cancel until ${next.freeCancellationDays} days before check-in.`,
   };
 }
 
@@ -275,4 +307,95 @@ export async function deactivateRoomType(
         ? `${room.name} is off sale. ${upcoming} booking${upcoming === 1 ? '' : 's'} already taken still stand.`
         : `${room.name} is off sale. Its history is kept.`,
   };
+}
+
+// Dates a property sells on non-refundable terms only. Added and removed rather
+// than edited: a window is two dates, and "change the end" is the same keystroke
+// count as removing it and adding the right one, with one fewer way to end up
+// with a start after its end.
+export async function addNonRefundableWindow(
+  _prev: SetupState,
+  formData: FormData,
+): Promise<SetupState> {
+  const parsed = nonRefundableWindowSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) {
+    return {
+      status: 'error',
+      message: parsed.error.issues[0]?.message ?? 'Please check the dates.',
+    };
+  }
+
+  const { hotelSlug, label } = parsed.data;
+  const auth = await guard(hotelSlug);
+  if (!auth.ok) return { status: 'error', message: auth.message };
+
+  const startDate = parseDateOnly(parsed.data.startDate);
+  const endDate = parseDateOnly(parsed.data.endDate);
+  if (!startDate || !endDate) return { status: 'error', message: 'Please check the dates.' };
+  if (endDate < startDate) {
+    return { status: 'error', message: 'The last date cannot be before the first.' };
+  }
+
+  const window = await prisma.nonRefundableWindow.create({
+    data: { hotelSlug, startDate, endDate, label: label || null },
+  });
+
+  const span = `${formatStayDate(startDate)} to ${formatStayDate(endDate)}`;
+  await recordAudit({
+    user: auth.user,
+    action: 'setup.non_refundable_window_added',
+    entity: 'NonRefundableWindow',
+    entityId: window.id,
+    hotelSlug,
+    summary: `${label || 'Non-refundable only'}: ${span} — no refundable rate offered`,
+    before: null,
+    after: { startDate: dateKey(startDate), endDate: dateKey(endDate), label: label || null },
+    ip: auth.ip,
+  });
+  log.info('setup.non_refundable_window_added', {
+    hotel: hotelSlug,
+    start: dateKey(startDate),
+    end: dateKey(endDate),
+  });
+
+  refresh();
+  return { status: 'success', message: `${span} is non-refundable only.` };
+}
+
+export async function removeNonRefundableWindow(
+  _prev: SetupState,
+  formData: FormData,
+): Promise<SetupState> {
+  const id = String(formData.get('id') ?? '');
+  const hotelSlug = String(formData.get('hotelSlug') ?? '');
+  const auth = await guard(hotelSlug);
+  if (!auth.ok) return { status: 'error', message: auth.message };
+
+  // Matched on the property too, so a window id from another property cannot be
+  // deleted by someone scoped away from it.
+  const before = await prisma.nonRefundableWindow.findFirst({ where: { id, hotelSlug } });
+  if (!before) return { status: 'error', message: 'That period no longer exists.' };
+
+  await prisma.nonRefundableWindow.delete({ where: { id: before.id } });
+
+  const span = `${formatStayDate(before.startDate)} to ${formatStayDate(before.endDate)}`;
+  await recordAudit({
+    user: auth.user,
+    action: 'setup.non_refundable_window_removed',
+    entity: 'NonRefundableWindow',
+    entityId: before.id,
+    hotelSlug,
+    summary: `${before.label || 'Non-refundable only'}: ${span} — refundable rate offered again`,
+    before: {
+      startDate: dateKey(before.startDate),
+      endDate: dateKey(before.endDate),
+      label: before.label,
+    },
+    after: null,
+    ip: auth.ip,
+  });
+  log.info('setup.non_refundable_window_removed', { hotel: hotelSlug, window_id: before.id });
+
+  refresh();
+  return { status: 'success', message: `${span} sells the refundable rate again.` };
 }

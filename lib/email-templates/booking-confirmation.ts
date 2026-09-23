@@ -7,6 +7,7 @@ import {
   formatStayDate,
   nightsBetween,
 } from '@/lib/booking';
+import { cancellationSentence, rateTypeLabel } from '@/lib/cancellation';
 import type { Booking } from '@prisma/client';
 import { buttonHtml, emailLayout, escapeHtml, fieldRowsHtml } from './layout';
 
@@ -37,6 +38,12 @@ export function bookingFields(booking: Booking, hotel?: Hotel): Array<[string, s
       : []),
     ...(booking.breakfastGuests > 0
       ? [['Includes', breakfastLine(booking.breakfastGuests)] as [string, string]]
+      : []),
+    ['Rate Type', rateTypeLabel(booking.rateType)],
+    ...(booking.rateType === 'REFUNDABLE' && booking.cancellationDeadline
+      ? ([['Free Cancellation Until', formatStayDate(booking.cancellationDeadline)]] as Array<
+          [string, string]
+        >)
       : []),
     ['Room Charges', formatInr(booking.roomTotal.toNumber())],
     ['Taxes (GST)', formatInr(booking.taxTotal.toNumber())],
@@ -71,7 +78,11 @@ export function bookingConfirmationHtml({
     : `<p style="font-size:14px; margin:0 0 16px;">Dear ${escapeHtml(booking.guestName)},</p>
        <p style="font-size:14px; margin:0 0 20px;">Thank you for booking with us &mdash; your payment has cleared and your room is confirmed. Please quote your reference on arrival.</p>
        <p style="font-size:13px; margin:0 0 12px; color:#16352a;"><strong>${escapeHtml(directBookingPerk.short)}</strong> — show this confirmation on arrival.</p>
-       <p style="font-size:13px; margin:0 0 20px; color:#404040;"><strong>This booking is non-refundable.</strong> It cannot be cancelled or refunded.</p>`;
+       <p style="font-size:13px; margin:0 0 20px; color:#404040;"><strong>${escapeHtml(
+         rateTypeLabel(booking.rateType),
+       )} rate.</strong> ${escapeHtml(
+         cancellationSentence(booking.rateType, booking.cancellationDeadline),
+       )}</p>`;
 
   const bodyHtml = `
     ${intro}

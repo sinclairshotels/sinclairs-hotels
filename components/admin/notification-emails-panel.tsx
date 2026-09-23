@@ -12,6 +12,7 @@ const initial: EnquiryActionState = { status: 'idle' };
 export interface NotificationAddress {
   id: string;
   hotelSlug: string | null;
+  kind: 'GENERAL' | 'CANCELLATION';
   address: string;
 }
 
@@ -32,14 +33,31 @@ export function NotificationEmailsPanel({
   const [addState, addAction, addPending] = useActionState(addNotificationEmail, initial);
   const [removeState, removeAction] = useActionState(removeNotificationEmail, initial);
 
-  const forSlug = (slug: string | null) => addresses.filter((a) => a.hotelSlug === slug);
-  const lists: Array<{ slug: string | null; name: string; fallback: string }> = [
-    { slug: null, name: 'Central', fallback: fallbacks.central },
+  const forList = (slug: string | null, kind: 'GENERAL' | 'CANCELLATION') =>
+    addresses.filter((a) => a.hotelSlug === slug && a.kind === kind);
+
+  const lists: Array<{
+    slug: string | null;
+    kind: 'GENERAL' | 'CANCELLATION';
+    name: string;
+    fallback: string | null;
+  }> = [
+    { slug: null, kind: 'GENERAL', name: 'Central', fallback: fallbacks.central },
     ...properties.map((p) => ({
       slug: p.slug,
+      kind: 'GENERAL' as const,
       name: p.name,
       fallback: fallbacks.perHotel[p.slug] ?? fallbacks.central,
     })),
+    // Deliberately last and deliberately without a fallback: an empty
+    // cancellations list means nobody asked for the copy, and inventing a
+    // recipient for money news would be worse than sending none.
+    {
+      slug: null,
+      kind: 'CANCELLATION' as const,
+      name: 'Cancellations (finance)',
+      fallback: null,
+    },
   ];
 
   return (
@@ -72,19 +90,26 @@ export function NotificationEmailsPanel({
           <p className="mb-4 text-xs leading-relaxed text-ink/60">
             Enquiry and booking emails go to the central list <em>and</em> the property&rsquo;s own
             list. A list with nothing in it falls back to the address in the content files, shown in
-            grey, so these can be filled in one property at a time.
+            grey, so these can be filled in one property at a time. Cancellations are different:
+            finance is copied only when a cancellation actually owes money, and an empty list means
+            nobody is copied.
           </p>
 
           <div className="space-y-4">
             {lists.map((list) => {
-              const rows = forSlug(list.slug);
+              const rows = forList(list.slug, list.kind);
               return (
-                <div key={list.slug ?? 'central'} className="rounded border border-ink/10 p-3">
+                <div
+                  key={`${list.kind}:${list.slug ?? 'central'}`}
+                  className="rounded border border-ink/10 p-3"
+                >
                   <p className="text-xs uppercase tracking-wider text-ink/60">{list.name}</p>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {rows.length === 0 ? (
-                      <span className="text-sm text-ink/40">{list.fallback} (from content)</span>
+                      <span className="text-sm text-ink/40">
+                        {list.fallback ? `${list.fallback} (from content)` : 'Nobody is copied'}
+                      </span>
                     ) : (
                       rows.map((row) => (
                         <form key={row.id} action={removeAction} className="inline-flex">
@@ -106,6 +131,7 @@ export function NotificationEmailsPanel({
 
                   <form action={addAction} className="mt-2 flex flex-wrap gap-2">
                     <input type="hidden" name="hotelSlug" value={list.slug ?? ''} />
+                    <input type="hidden" name="kind" value={list.kind} />
                     <input
                       name="address"
                       type="email"

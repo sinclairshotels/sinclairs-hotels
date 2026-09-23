@@ -1,4 +1,5 @@
 import { BookingPurchaseTracking } from '@/components/booking-purchase-tracking';
+import { CancelBookingForm } from '@/components/cancel-booking-form';
 import { getHotelBySlug } from '@/content/hotels';
 import { contactNumbers, directBookingPerk, stayTimes } from '@/content/site';
 import {
@@ -9,6 +10,7 @@ import {
   nightsBetween,
 } from '@/lib/booking';
 import { FULL_TERMS_PATH, bookingTerms } from '@/lib/booking-terms';
+import { withinFreeCancellation } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -37,15 +39,19 @@ export default async function BookingPage({
 
   const hotel = getHotelBySlug(booking.hotelSlug);
   const nights = nightsBetween(booking.checkIn, booking.checkOut);
+  const checkInTime = stayTimes[booking.hotelSlug]?.checkIn;
   const checkOutTime = stayTimes[booking.hotelSlug]?.checkOut;
-  const terms = bookingTerms(booking.hotelSlug);
+  const terms = bookingTerms(booking.hotelSlug, booking.rateType, booking.cancellationDeadline);
+  const refundableNow = withinFreeCancellation(booking.rateType, booking.cancellationDeadline);
 
   const heading = {
     CONFIRMED: 'Your stay is confirmed',
     PENDING_PAYMENT: 'Waiting for your payment',
     PAYMENT_FAILED: 'Payment did not go through',
     CANCELLED: 'This booking was cancelled',
-    REFUND_DUE: 'We could not confirm this booking',
+    REFUND_DUE: booking.cancelledAt
+      ? 'This booking was cancelled'
+      : 'We could not confirm this booking',
   }[booking.status];
 
   const blurb = {
@@ -55,8 +61,9 @@ export default async function BookingPage({
     PAYMENT_FAILED:
       'Nothing has been charged and no room is held. You are welcome to try again — please search for your dates afresh.',
     CANCELLED: 'No room is held against this reference.',
-    REFUND_DUE:
-      'Your payment went through, but the last room was taken before it reached us, so we could not hold your stay. We are refunding you in full and our reservations team will be in touch to find you another room.',
+    REFUND_DUE: booking.cancelledAt
+      ? 'No room is held against this reference. Your refund is being processed and reaches your original payment method within 5–7 working days.'
+      : 'Your payment went through, but the last room was taken before it reached us, so we could not hold your stay. We are refunding you in full and our reservations team will be in touch to find you another room.',
   }[booking.status];
 
   const totalLabel = {
@@ -105,7 +112,7 @@ export default async function BookingPage({
               here. */}
           {booking.status === 'CONFIRMED' && (
             <p className="mt-6 rounded border border-gold/50 bg-gold/10 px-4 py-3 text-sm font-medium text-forest">
-              {directBookingPerk.short} — show this booking on arrival.
+              {directBookingPerk.short}
             </p>
           )}
 
@@ -124,7 +131,10 @@ export default async function BookingPage({
               }`}
             />
             <Row label="Rooms" value={String(booking.rooms)} />
-            <Row label="Check in" value={`${formatStayDate(booking.checkIn)} from 12 noon`} />
+            <Row
+              label="Check in"
+              value={`${formatStayDate(booking.checkIn)}${checkInTime ? ` from ${checkInTime}` : ''}`}
+            />
             <Row
               label="Check out"
               value={`${formatStayDate(booking.checkOut)}${
@@ -158,6 +168,14 @@ export default async function BookingPage({
               </Link>
               , quoting {formatReference(booking.reference)}.
             </p>
+          )}
+
+          {booking.status === 'CONFIRMED' && (
+            <CancelBookingForm
+              token={token}
+              refundable={refundableNow}
+              amount={formatInr(booking.total.toNumber())}
+            />
           )}
 
           {booking.status !== 'CONFIRMED' && (

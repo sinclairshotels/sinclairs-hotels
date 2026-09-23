@@ -130,6 +130,10 @@ export async function createBooking(
           hotelSlug: d.hotelSlug,
           roomTypeId: d.roomTypeId,
           ratePlanId: d.ratePlanId,
+          // The terms are re-priced from the property's own settings here, so
+          // a posted rateType chooses which price to charge but cannot invent
+          // one — asking for refundable pays the uplift or the booking fails.
+          rateType: d.rateType,
           checkIn,
           checkOut,
           rooms: d.rooms,
@@ -167,6 +171,8 @@ export async function createBooking(
             roomName: offer.roomTypeName,
             planName: offer.ratePlanName,
             breakfastGuests: offer.breakfastGuests,
+            rateType: offer.rateType,
+            cancellationDeadline: offer.cancellationDeadline,
             checkIn,
             checkOut,
             rooms: d.rooms,

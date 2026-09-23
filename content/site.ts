@@ -17,8 +17,12 @@ export const siteConfig = {
 // booking page, the confirmation email and the printed voucher. One constant so
 // those five can never drift into five slightly different promises.
 export const directBookingPerk = {
-  short: 'Free early check-in from 12 noon',
-  long: 'Free early check-in from 12 noon, on every direct booking.',
+  short: 'Late check-out until 1 pm, subject to availability · Best rate guaranteed',
+  long: 'Late check-out until 1 pm, subject to availability, and the best rate guaranteed — on every direct booking.',
+  // Listed separately where there is room to set them out, because they are two
+  // different promises: one is a favour the property may not be able to grant
+  // on a full day, the other is unconditional.
+  items: ['Late check-out until 1 pm, subject to availability', 'Best rate guaranteed'],
 } as const;
 
 // Check-in and check-out are not the same across the estate, so a booking
@@ -26,9 +30,9 @@ export const directBookingPerk = {
 // the Terms and Conditions in content/legal.ts — that prose is the source, this
 // is the same thing in a shape a page can render. Change both together.
 //
-// checkIn here is the standard time. Direct bookings get in from 12 noon
-// (directBookingPerk), which only actually moves anything at Udaipur and
-// Gangtok; everywhere else 12 noon is already the standard.
+// Both are the property's standard times. The direct-booking promise is now a
+// late check-out until 1 pm rather than an early check-in, so check-in here is
+// simply what it is and check-out is the time a stay ends without one.
 export const stayTimes: Record<string, { checkIn: string; checkOut: string }> = {
   siliguri: { checkIn: '12 noon', checkOut: '11 am' },
   burdwan: { checkIn: '12 noon', checkOut: '11 am' },

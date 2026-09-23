@@ -8,9 +8,17 @@ import {
   eachNight,
   quoteStay,
 } from '@/lib/booking';
+import {
+  deadlineFor,
+  refundPolicy,
+  refundableBlocked,
+  refundableIsSellable,
+  upliftRate,
+} from '@/lib/cancellation';
+import type { NonRefundableRange } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { currentTaxSlab } from '@/lib/tax';
-import type { Prisma, PrismaClient, RatePlanCode } from '@prisma/client';
+import type { BookingRateType, Prisma, PrismaClient, RatePlanCode } from '@prisma/client';
 
 // Accepts either the shared client or an interactive transaction client, so
 // the same availability read backs both the public search page and the
@@ -30,6 +38,11 @@ export interface RoomOffer {
   nightlyRates: number[];
   // Guests this plan feeds. Zero on Room Only.
   breakfastGuests: number;
+  // Which of the two cancellation terms this price buys, and the date the
+  // refundable one stops being refundable. Null deadline on non-refundable,
+  // because no date changes anything.
+  rateType: BookingRateType;
+  cancellationDeadline: Date | null;
   quote: StayQuote;
 }
 
@@ -84,6 +97,11 @@ export interface BlockedOffer {
 export interface AvailabilityResult {
   offers: RoomOffer[];
   blocked: BlockedOffer[];
+  // Set when the stay falls in a period the property sells on non-refundable
+  // terms only. The room list needs it to say why there is one price where
+  // there are usually two — without it, a property that has a refundable rate
+  // looks like one that does not.
+  nonRefundableOnly: NonRefundableRange | null;
 }
 
 export async function availability(
@@ -100,13 +118,13 @@ export async function availability(
   }: AvailabilityQuery,
 ): Promise<AvailabilityResult> {
   const nights = eachNight(checkIn, checkOut);
-  if (nights.length === 0) return { offers: [], blocked: [] };
+  if (nights.length === 0) return { offers: [], blocked: [], nonRefundableOnly: null };
 
   const contentRooms = new Map(
     (getHotelBySlug(hotelSlug)?.rooms ?? []).map((room) => [room.name, room]),
   );
 
-  const [roomTypes, inventory, prices, heldBookings, settings, slab] = await Promise.all([
+  const [roomTypes, inventory, prices, heldBookings, settings, slab, windows] = await Promise.all([
     db.roomType.findMany({
       where: { hotelSlug, active: true },
       include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
@@ -131,9 +149,19 @@ export async function availability(
     }),
     db.hotelSettings.findUnique({ where: { hotelSlug } }),
     currentTaxSlab(now),
+    // Only the windows this stay could touch. The last night is checkOut - 1,
+    // so a window starting on the checkout morning is correctly not one of them.
+    db.nonRefundableWindow.findMany({
+      where: { hotelSlug, startDate: { lt: checkOut }, endDate: { gte: checkIn } },
+      orderBy: { startDate: 'asc' },
+    }),
   ]);
 
   const breakfast = settings?.breakfastSupplement.toNumber() ?? 0;
+  const policy = settings ? refundPolicy(settings) : null;
+  // Dates the property sells on non-refundable terms only. Checked once for the
+  // stay rather than per room: it is a property-wide rule about when, not what.
+  const blockedBy = refundableBlocked(windows, checkIn, checkOut);
 
   const inventoryByRoom = new Map<string, Map<string, (typeof inventory)[number]>>();
   for (const row of inventory) {
@@ -247,52 +275,72 @@ export async function availability(
     // means breakfast for them too; an extra guest then pays their extra-guest
     // charge plus one more breakfast, which is the only difference between the
     // two plans once a room is over-occupied.
-    const sellable: Array<{
-      plan: (typeof roomType.ratePlans)[number];
-      rates: number[];
-      breakfastPerExtraGuest: number;
-    }> = [{ plan: roomOnly, rates: baseRates, breakfastPerExtraGuest: 0 }];
+    // The uplift is a percentage of the Room Only rate, applied before
+    // breakfast: flexibility is priced on the room, not on the meal plan the
+    // guest happened to pick. Offered only while the window is still open —
+    // an uplift bought for a deadline already past is a charge for nothing.
+    const terms: Array<{ rateType: BookingRateType; base: number[]; deadline: Date | null }> = [
+      { rateType: 'NON_REFUNDABLE', base: baseRates, deadline: null },
+    ];
 
-    if (withBreakfast && breakfast > 0) {
-      const perNight = breakfast * roomType.baseOccupancy;
-      sellable.push({
-        plan: withBreakfast,
-        rates: baseRates.map((rate) => rate + perNight),
-        breakfastPerExtraGuest: breakfast,
+    if (policy && !blockedBy && refundableIsSellable(checkIn, policy, now)) {
+      terms.push({
+        rateType: 'REFUNDABLE',
+        base: baseRates.map((rate) => upliftRate(rate, policy.upliftPct)),
+        deadline: deadlineFor(checkIn, policy.freeCancellationDays),
       });
     }
 
-    for (const { plan, rates: nightlyRates, breakfastPerExtraGuest } of sellable) {
-      offers.push({
-        roomTypeId: roomType.id,
-        roomTypeName: roomType.name,
-        content: contentRooms.get(roomType.contentKey),
-        ratePlanId: plan.id,
-        ratePlanCode: plan.code,
-        ratePlanName: plan.name,
-        roomsLeft,
-        nightlyRates,
-        // Zero on Room Only, so a quote can say "with breakfast for N guests"
-        // without asking which plan it is looking at.
-        breakfastGuests: breakfastPerExtraGuest > 0 ? adults + children : 0,
-        quote: quoteStay({
+    for (const term of terms) {
+      const sellable: Array<{
+        plan: (typeof roomType.ratePlans)[number];
+        rates: number[];
+        breakfastPerExtraGuest: number;
+      }> = [{ plan: roomOnly, rates: term.base, breakfastPerExtraGuest: 0 }];
+
+      if (withBreakfast && breakfast > 0) {
+        const perNight = breakfast * roomType.baseOccupancy;
+        sellable.push({
+          plan: withBreakfast,
+          rates: term.base.map((rate) => rate + perNight),
+          breakfastPerExtraGuest: breakfast,
+        });
+      }
+
+      for (const { plan, rates: nightlyRates, breakfastPerExtraGuest } of sellable) {
+        offers.push({
+          roomTypeId: roomType.id,
+          roomTypeName: roomType.name,
+          content: contentRooms.get(roomType.contentKey),
+          ratePlanId: plan.id,
+          ratePlanCode: plan.code,
+          ratePlanName: plan.name,
+          roomsLeft,
           nightlyRates,
-          rooms,
-          adults,
-          children,
-          baseOccupancy: roomType.baseOccupancy,
-          extraAdultCharge: roomType.extraAdultCharge.toNumber(),
-          extraChildCharge: roomType.extraChildCharge.toNumber(),
-          breakfastPerExtraGuest,
-          slab,
-        }),
-      });
+          // Zero on Room Only, so a quote can say "with breakfast for N guests"
+          // without asking which plan it is looking at.
+          breakfastGuests: breakfastPerExtraGuest > 0 ? adults + children : 0,
+          rateType: term.rateType,
+          cancellationDeadline: term.deadline,
+          quote: quoteStay({
+            nightlyRates,
+            rooms,
+            adults,
+            children,
+            baseOccupancy: roomType.baseOccupancy,
+            extraAdultCharge: roomType.extraAdultCharge.toNumber(),
+            extraChildCharge: roomType.extraChildCharge.toNumber(),
+            breakfastPerExtraGuest,
+            slab,
+          }),
+        });
+      }
     }
 
     if (!offers.some((offer) => offer.roomTypeId === roomType.id)) block('unpriced');
   }
 
-  return { offers, blocked };
+  return { offers, blocked, nonRefundableOnly: blockedBy };
 }
 
 export async function roomOffers(db: Db, query: AvailabilityQuery): Promise<RoomOffer[]> {
@@ -301,13 +349,21 @@ export async function roomOffers(db: Db, query: AvailabilityQuery): Promise<Room
 
 export async function roomOffer(
   db: Db,
-  query: AvailabilityQuery & { roomTypeId: string; ratePlanId?: string },
+  query: AvailabilityQuery & {
+    roomTypeId: string;
+    ratePlanId?: string;
+    rateType?: BookingRateType;
+  },
 ): Promise<RoomOffer | undefined> {
   const { offers } = await availability(db, query);
   return offers.find(
     (offer) =>
       offer.roomTypeId === query.roomTypeId &&
-      (query.ratePlanId === undefined || offer.ratePlanId === query.ratePlanId),
+      (query.ratePlanId === undefined || offer.ratePlanId === query.ratePlanId) &&
+      // Undefined means the caller has no opinion, which is the room list and
+      // the resume link. The booking transaction always names one, so asking
+      // for refundable terms cannot come back priced as non-refundable.
+      (query.rateType === undefined || offer.rateType === query.rateType),
   );
 }
 

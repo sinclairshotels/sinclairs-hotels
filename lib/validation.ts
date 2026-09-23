@@ -163,6 +163,9 @@ export const bookingSchema = staySchema.extend({
   // submitting, and the booking must still land on the room they picked.
   roomTypeId: z.string().trim().min(1, 'Please choose a room').max(40),
   ratePlanId: z.string().trim().min(1, 'Please choose a rate').max(40),
+  // Which terms the guest picked. The price for them is computed server-side
+  // from this, so the form still posts no money of its own.
+  rateType: z.enum(['NON_REFUNDABLE', 'REFUNDABLE']).catch('NON_REFUNDABLE'),
   guestName: z.string().trim().min(2, 'Please enter your full name').max(120),
   guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
   guestPhone: phoneField(),
@@ -216,13 +219,34 @@ export const dailyRateSchema = z.object({
 export type DailyRateInput = z.infer<typeof dailyRateSchema>;
 
 // The Set-up screen: one hotel-wide field, plus a room's name and occupancy.
-export const hotelSetupSchema = z.object({
-  hotelSlug: z.string().trim().min(1).max(60),
-  breakfastSupplement: z.preprocess(
-    emptyToUndefined,
-    z.coerce.number().min(0).max(100_000).default(0),
-  ),
-});
+export const hotelSetupSchema = z
+  .object({
+    hotelSlug: z.string().trim().min(1).max(60),
+    breakfastSupplement: z.preprocess(
+      emptyToUndefined,
+      z.coerce.number().min(0).max(100_000).default(0),
+    ),
+    // Left blank together, these mean the property sells no refundable rate.
+    refundableUpliftPct: z.preprocess(
+      emptyToUndefined,
+      z.coerce.number().min(0).max(100).optional(),
+    ),
+    freeCancellationDays: z.preprocess(
+      emptyToUndefined,
+      z.coerce.number().int().min(0).max(365).optional(),
+    ),
+  })
+  // Half a policy is the dangerous state: an uplift with no deadline charges
+  // for flexibility that never arrives, and a deadline with no uplift gives it
+  // away silently. Refuse the pair rather than guess the missing half.
+  .refine(
+    (data) =>
+      (data.refundableUpliftPct === undefined) === (data.freeCancellationDays === undefined),
+    {
+      message: 'Set both the uplift and the free-cancellation days, or leave both blank.',
+      path: ['refundableUpliftPct'],
+    },
+  );
 
 export const roomTypeSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
@@ -233,6 +257,16 @@ export const roomTypeSchema = z.object({
   maxChildren: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10)),
   extraAdultCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
   extraChildCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+});
+
+// Dates come in as strings and are parsed with parseDateOnly in the action, so
+// a real-looking but non-existent date ("2026-02-30") is rejected rather than
+// rolled forward into a window nobody asked for.
+export const nonRefundableWindowSchema = z.object({
+  hotelSlug: z.string().trim().min(1).max(60),
+  startDate: z.string().trim().min(10).max(10),
+  endDate: z.string().trim().min(10).max(10),
+  label: z.string().trim().max(60).optional().or(z.literal('')),
 });
 
 export const addRoomTypeSchema = z.object({
