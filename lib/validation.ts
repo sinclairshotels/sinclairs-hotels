@@ -288,7 +288,15 @@ export const cancelVoucherSchema = z.object({
 });
 
 export const recipientSchema = z.object({
-  kind: z.enum(['BOOKING', 'VOUCHER', 'PAYMENT', 'ENQUIRY', 'CANCELLATION', 'CAREERS']),
+  kind: z.enum([
+    'BOOKING',
+    'VOUCHER',
+    'VOUCHER_CANCELLATION',
+    'PAYMENT',
+    'CANCELLATION',
+    'ENQUIRY',
+    'CAREERS',
+  ]),
   field: z.enum(['TO', 'CC', 'BCC']),
   hotelSlug: z.string().trim().max(60).optional().or(z.literal('')),
   address: z.string().trim().email('Please enter a valid email address').max(200),

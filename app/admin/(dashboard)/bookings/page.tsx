@@ -1,13 +1,11 @@
 import { BookingsExportForm } from '@/components/admin/bookings-export-form';
 import { CancelBookingButton } from '@/components/admin/cancel-booking-button';
-import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { addDays, dateKey, formatInr, formatReference, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
-import { recipientPanel } from '@/lib/notification-emails';
 import type { BookingStatus, Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -50,18 +48,6 @@ export default async function BookingsPage({
   // never a permission — typing the URL has to hit the same wall.
   const viewer = await getSession();
   if (!viewer || !can(viewer, 'bookings:read')) notFound();
-
-  // Admin-only, like the panel itself: who is emailed about a booking is a
-  // different decision from who may read one.
-  const recipients =
-    viewer.role === 'ADMIN'
-      ? await recipientPanel(
-          'BOOKING',
-          hotels
-            .filter((hotel) => canAccessHotel(viewer, hotel.slug))
-            .map((hotel) => ({ slug: hotel.slug, name: hotel.name })),
-        )
-      : null;
 
   const { q, page: pageParam, pageSize: pageSizeParam, hotel, status } = await searchParams;
   const query = q?.trim() ?? '';
@@ -123,57 +109,55 @@ export default async function BookingsPage({
         <p className="font-display text-xl text-forest">Bookings</p>
         <p className="mt-1 text-sm text-ink/60">Direct bookings taken on the website.</p>
 
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+        {/* Search, filters and export on one row, so the table starts near
+            the top rather than below a block of controls. Two forms, because
+            they submit to different places and a form cannot nest. */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <form method="get" className="flex flex-1 flex-wrap items-center gap-2">
+            <input
+              type="search"
+              name="q"
+              defaultValue={query}
+              placeholder="Search by guest name or reference"
+              className="input min-w-[180px] flex-1 py-1.5 text-sm"
+            />
+            <select
+              name="hotel"
+              defaultValue={hotel ?? ''}
+              className="select w-auto shrink-0 py-1.5 text-sm"
+            >
+              <option value="">All hotels</option>
+              {availableHotels.map((slug) => (
+                <option key={slug} value={slug}>
+                  {getHotelBySlug(slug)?.name ?? slug}
+                </option>
+              ))}
+            </select>
+            <select
+              name="status"
+              defaultValue={statusFilter ?? ''}
+              className="select w-auto shrink-0 py-1.5 text-sm"
+            >
+              <option value="">All statuses</option>
+              {Object.entries(STATUS_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="shrink-0 whitespace-nowrap rounded bg-forest px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-forest-dark"
+            >
+              Filter
+            </button>
+          </form>
+
           <BookingsExportForm
             from={dateKey(addDays(todayInIndia(), -30))}
             to={dateKey(todayInIndia())}
           />
-          {recipients && (
-            <div className="w-full max-w-sm">
-              <EmailRecipientsPanel {...recipients} />
-            </div>
-          )}
         </div>
-
-        <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
-          <input
-            type="search"
-            name="q"
-            defaultValue={query}
-            placeholder="Search by guest name or reference"
-            className="input min-w-[180px] flex-1 py-1.5 text-sm"
-          />
-          <select
-            name="hotel"
-            defaultValue={hotel ?? ''}
-            className="select w-auto shrink-0 py-1.5 text-sm"
-          >
-            <option value="">All hotels</option>
-            {availableHotels.map((slug) => (
-              <option key={slug} value={slug}>
-                {getHotelBySlug(slug)?.name ?? slug}
-              </option>
-            ))}
-          </select>
-          <select
-            name="status"
-            defaultValue={statusFilter ?? ''}
-            className="select w-auto shrink-0 py-1.5 text-sm"
-          >
-            <option value="">All statuses</option>
-            {Object.entries(STATUS_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="shrink-0 whitespace-nowrap rounded bg-forest px-4 py-1.5 text-sm font-medium text-cream transition hover:bg-forest-dark"
-          >
-            Filter
-          </button>
-        </form>
       </div>
 
       <div className="mt-3 min-h-0 flex-1 overflow-auto rounded-lg border border-ink/10 bg-white">

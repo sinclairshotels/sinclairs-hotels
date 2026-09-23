@@ -184,14 +184,15 @@ export async function cancelVoucher(
     html: voucherCancelledHtml({ voucher, hotel }),
   });
 
-  // Whoever staff put on the Vouchers list, in the fields they put them in.
-  // No fallback is invented here: the guest has already been told, and the
-  // audit log is the record that it happened.
-  const staff = await recipientsFor('VOUCHER', voucher.hotelSlug);
+  // Its own list, not the one that is told when a voucher is issued: a
+  // document withdrawn is different news from a document sent. No fallback is
+  // invented — the guest has already been told, and the audit log is the
+  // record that it happened.
+  const staff = await recipientsFor('VOUCHER_CANCELLATION', voucher.hotelSlug);
   if (staff.to.length > 0 || staff.cc.length > 0 || staff.bcc.length > 0) {
     await sendMail({
       ...staff,
-      to: staff.to.length > 0 ? staff.to : (hotel?.contact?.notificationEmail ?? []),
+      to: staff.to,
       kind: 'voucher-cancelled-staff',
       subject: `Voucher #${voucher.voucherNo} cancelled — ${voucher.guestName}`,
       html: voucherCancelledHtml({ voucher, hotel, forStaff: true }),

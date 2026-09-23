@@ -27,17 +27,9 @@ async function guard() {
   return { ok: true as const, user: auth.user, ip };
 }
 
-// Every page that shows a panel, so a change on one is visible on all of them.
+// One page shows them all now, rather than a panel on each page that sends.
 function refresh() {
-  for (const path of [
-    '/admin/bookings',
-    '/admin/vouchers',
-    '/admin/payments',
-    '/admin/enquiries',
-    '/admin/careers',
-  ]) {
-    revalidatePath(path);
-  }
+  revalidatePath('/admin/recipients');
 }
 
 function describe(hotelSlug: string | null, kind: string, field: string) {

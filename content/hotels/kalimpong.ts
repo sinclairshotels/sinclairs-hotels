@@ -62,7 +62,7 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Plus Room',
-      amenities: ['Private balcony', 'Television', 'Wi-Fi', 'Fireplace'],
+      amenities: ['Private balcony', 'Television', 'Wi-Fi', 'Fireplace', 'Day bed'],
       sizeSqFt: 460,
       description:
         'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on.',
@@ -91,7 +91,7 @@ export const kalimpongHotel: Hotel = {
       name: 'Premier Suite',
       bedType: 'King bed',
       view: 'Mountain view',
-      amenities: ['Private balcony', 'Separate living room'],
+      amenities: ['Private balcony', 'Separate living room', 'Dining table', 'Sofa seating'],
       sizeSqFt: 900,
       description:
         'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table.',

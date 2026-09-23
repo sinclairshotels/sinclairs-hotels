@@ -1,11 +1,9 @@
 import { CancelVoucherButton } from '@/components/admin/cancel-voucher-button';
-import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { recipientPanel } from '@/lib/notification-emails';
 import type { Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -26,16 +24,6 @@ export default async function VouchersPage({
   if (!viewer || !can(viewer, 'vouchers:read')) notFound();
 
   const mayCancel = can(viewer, 'vouchers:write');
-
-  const recipients =
-    viewer.role === 'ADMIN'
-      ? await recipientPanel(
-          'VOUCHER',
-          hotels
-            .filter((hotel) => canAccessHotel(viewer, hotel.slug))
-            .map((hotel) => ({ slug: hotel.slug, name: hotel.name })),
-        )
-      : null;
 
   const { q, page: pageParam, pageSize: pageSizeParam, hotel } = await searchParams;
   const query = q?.trim() ?? '';
@@ -113,12 +101,6 @@ export default async function VouchersPage({
             New Voucher
           </Link>
         </div>
-
-        {recipients && (
-          <div className="mt-3 max-w-sm sm:ml-auto">
-            <EmailRecipientsPanel {...recipients} />
-          </div>
-        )}
 
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input

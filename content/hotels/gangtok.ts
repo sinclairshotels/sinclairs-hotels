@@ -83,7 +83,7 @@ export const gangtokHotel: Hotel = {
     {
       name: 'Premier Suite',
       view: 'Valley view',
-      amenities: ['Private balcony', 'Separate living room'],
+      amenities: ['Private balcony', 'Separate living room', 'Sofa seating'],
       sizeSqFt: 535,
       description:
         'This spacious suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',

@@ -1,10 +1,10 @@
-import { BookingRoomCard } from '@/components/booking-room-card';
+import { BookingRoomTable } from '@/components/booking-room-table';
 import { BookingSearchForm } from '@/components/booking-search-form';
 import { FunnelStep } from '@/components/funnel-step';
 import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { directBookingPerk } from '@/content/site';
-import { type RoomOffer, availability } from '@/lib/availability';
+import { availability } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
   MAX_NIGHTS,
@@ -22,6 +22,7 @@ import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { formatRoomSize } from '@/lib/room-size';
+import { buildRoomTable } from '@/lib/room-table';
 import { pageMetadata } from '@/lib/seo';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
@@ -31,10 +32,6 @@ import { notFound } from 'next/navigation';
 
 // Availability changes with every booking taken, so this can never be cached.
 export const dynamic = 'force-dynamic';
-
-// A room with nine left saying so is noise; three or fewer is the number a
-// guest actually weighs against booking now.
-const SCARCITY_THRESHOLD = 3;
 
 export async function generateMetadata({
   params,
@@ -93,25 +90,10 @@ export default async function BookHotelPage({
   const offers = result?.offers ?? [];
   const bookable = offers.filter((offer) => offer.roomsLeft >= rooms);
 
-  // One card per room and meal plan, carrying both sets of cancellation terms.
-  // Availability returns them as separate offers because they are separately
-  // priced and separately bookable; showing them as separate cards would list
-  // the same room twice and make the cheaper one look like a different room.
-  const grouped = Array.from(
-    bookable
-      .reduce((acc, offer) => {
-        const key = `${offer.roomTypeId}:${offer.ratePlanId}`;
-        const existing = acc.get(key);
-        if (existing) existing.alternatives.push(offer);
-        else acc.set(key, { offer, alternatives: [offer] });
-        return acc;
-      }, new Map<string, { offer: RoomOffer; alternatives: RoomOffer[] }>())
-      .values(),
-  ).map((group) => ({
-    ...group,
-    // Cheapest first, so the headline "from" price is the one being shown.
-    alternatives: [...group.alternatives].sort((a, b) => a.quote.total - b.quote.total),
-  }));
+  // Room first, then plan, then rate — the arrangement a guest reads, rather
+  // than the cross product availability returns. lib/room-table.ts owns it so
+  // it can be tested without rendering a table.
+  const table = buildRoomTable(bookable, result?.blocked ?? [], rooms);
 
   // "Nothing free on these dates" and "we don't sell this property online yet"
   // look identical from an empty result but need completely different copy.
@@ -190,7 +172,7 @@ export default async function BookHotelPage({
             </Notice>
           )}
 
-          {result?.nonRefundableOnly && grouped.length > 0 && (
+          {result?.nonRefundableOnly && table.rooms.length > 0 && (
             <p className="mt-6 rounded border border-gold/40 bg-gold/5 px-4 py-3 text-sm text-ink/75">
               These dates are sold on non-refundable terms only
               {result.nonRefundableOnly.label ? ` (${result.nonRefundableOnly.label})` : ''}, so the
@@ -198,67 +180,19 @@ export default async function BookHotelPage({
             </p>
           )}
 
-          {/* Two across on a wide screen, so a property's rooms are a
-              comparison rather than a scroll. */}
-          <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {grouped.map(({ offer, alternatives }) => {
-              const perNight = Math.round(offer.quote.roomTotal / offer.quote.nights / rooms);
-              const hrefFor = (choice: typeof offer) =>
-                `/book/${slug}/confirm?${new URLSearchParams({
-                  roomType: choice.roomTypeId,
-                  ratePlan: choice.ratePlanId,
-                  rateType: choice.rateType,
-                  checkIn: dateKey(checkIn as Date),
-                  checkOut: dateKey(checkOut as Date),
-                  rooms: String(rooms),
-                  adults: String(adults),
-                  children: String(children),
-                })}`;
-
-              const extras =
-                offer.quote.extrasTotal > 0
-                  ? `Includes ${[
-                      offer.quote.extraAdults > 0 &&
-                        `${offer.quote.extraAdults} extra adult${offer.quote.extraAdults === 1 ? '' : 's'}`,
-                      offer.quote.extraChildren > 0 &&
-                        `${offer.quote.extraChildren} extra child${offer.quote.extraChildren === 1 ? '' : 'ren'}`,
-                    ]
-                      .filter(Boolean)
-                      .join(' and ')} at ${formatInr(offer.quote.extrasTotal)}`
-                  : undefined;
-
-              const content = roomContentWithPhotos(offer.content, hotel);
-
-              return (
-                <BookingRoomCard
-                  key={`${offer.roomTypeId}:${offer.ratePlanId}`}
-                  name={offer.roomTypeName}
-                  planName={offer.ratePlanName}
-                  description={offer.content?.description}
-                  image={content?.images?.[0] ?? hotel.thumbnailImage}
-                  alt={offer.roomTypeName}
-                  sizeSqFt={offer.sizeSqFt}
-                  baseOccupancy={offer.baseOccupancy}
-                  view={offer.content?.view}
-                  bedType={offer.content?.bedType}
-                  amenities={offer.content?.amenities ? [...offer.content.amenities] : []}
-                  breakfastLine={
-                    offer.breakfastGuests > 0 ? breakfastLine(offer.breakfastGuests) : undefined
-                  }
-                  extrasLine={extras}
-                  roomsLeft={offer.roomsLeft <= SCARCITY_THRESHOLD ? offer.roomsLeft : undefined}
-                  perNight={perNight}
-                  choices={alternatives.map((choice) => ({
-                    rateType: choice.rateType,
-                    cancellationDeadline: choice.cancellationDeadline,
-                    total: choice.quote.total,
-                    taxTotal: choice.quote.taxTotal,
-                    href: hrefFor(choice),
-                  }))}
-                />
-              );
-            })}
-          </div>
+          <BookingRoomTable
+            rooms={table.rooms}
+            unavailable={table.unavailable}
+            planCodes={table.planCodes}
+            stay={{
+              slug,
+              checkIn: dateKey(checkIn as Date),
+              checkOut: dateKey(checkOut as Date),
+              rooms,
+              adults,
+              children,
+            }}
+          />
 
           <RoomReviews hotelName={hotel.name} />
 
