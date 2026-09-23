@@ -16,6 +16,7 @@ const VALID_DESTINATIONS = new Set([
   '/contact',
   '/enquiry',
   '/media',
+  '/careers',
   ...hotels.map((hotel) => `/hotels/${hotel.slug}`),
 ]);
 

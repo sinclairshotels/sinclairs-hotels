@@ -95,7 +95,9 @@ const FALLBACK_REDIRECTS: Record<string, string> = {
   '/upcoming-hotels': '/hotels',
   '/special-offers': '/hotels',
   '/partner-with-us': '/contact',
-  '/careers': '/contact',
+  // /careers is deliberately absent: this app serves that path itself now, so
+  // redirecting it would send the legacy URL past the page it was asking for.
+  // Its fixture entry is covered by VALID_DESTINATIONS in the test instead.
   // No equivalent page exists yet. Home is the honest destination for a brand
   // page; the three legal paths below are a known gap, not a considered
   // mapping — see GO_LIVE_CHECKLIST.md § Cutover.

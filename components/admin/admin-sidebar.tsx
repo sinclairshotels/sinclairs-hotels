@@ -17,6 +17,7 @@ const NAV_ITEMS: Array<{ label: string; href: string; capability: Capability }> 
   { label: 'Enquiries', href: '/admin/enquiries', capability: 'enquiries:read' },
   { label: 'Newsletter', href: '/admin/newsletter', capability: 'newsletter:read' },
   { label: 'Photos', href: '/admin/photos', capability: 'photos:read' },
+  { label: 'Careers', href: '/admin/careers', capability: 'careers:read' },
   { label: 'Users', href: '/admin/users', capability: 'users:manage' },
   { label: 'Tax', href: '/admin/tax', capability: 'tax:manage' },
   { label: 'Audit', href: '/admin/audit', capability: 'audit:read' },

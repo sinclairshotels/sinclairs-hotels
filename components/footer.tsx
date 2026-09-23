@@ -105,6 +105,16 @@ export function Footer() {
                   Press &amp; Media
                 </Link>
               </li>
+              {/* Footer only, deliberately: someone looking for work will find
+                  it here, and the top bar is what a guest is choosing between. */}
+              <li>
+                <Link
+                  href="/careers"
+                  className="transition hover:text-gold-light hover:underline hover:underline-offset-4"
+                >
+                  Careers
+                </Link>
+              </li>
             </ul>
           </div>
 

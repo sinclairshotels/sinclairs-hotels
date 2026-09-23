@@ -12,7 +12,7 @@ const initial: EnquiryActionState = { status: 'idle' };
 export interface NotificationAddress {
   id: string;
   hotelSlug: string | null;
-  kind: 'GENERAL' | 'CANCELLATION';
+  kind: 'GENERAL' | 'CANCELLATION' | 'CAREERS';
   address: string;
 }
 
@@ -33,12 +33,12 @@ export function NotificationEmailsPanel({
   const [addState, addAction, addPending] = useActionState(addNotificationEmail, initial);
   const [removeState, removeAction] = useActionState(removeNotificationEmail, initial);
 
-  const forList = (slug: string | null, kind: 'GENERAL' | 'CANCELLATION') =>
+  const forList = (slug: string | null, kind: 'GENERAL' | 'CANCELLATION' | 'CAREERS') =>
     addresses.filter((a) => a.hotelSlug === slug && a.kind === kind);
 
   const lists: Array<{
     slug: string | null;
-    kind: 'GENERAL' | 'CANCELLATION';
+    kind: 'GENERAL' | 'CANCELLATION' | 'CAREERS';
     name: string;
     fallback: string | null;
   }> = [
@@ -58,6 +58,7 @@ export function NotificationEmailsPanel({
       name: 'Cancellations (finance)',
       fallback: null,
     },
+    { slug: null, kind: 'CAREERS' as const, name: 'Careers (HR)', fallback: null },
   ];
 
   return (

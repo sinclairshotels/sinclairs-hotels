@@ -17,6 +17,7 @@ export const SECTIONS = [
   'enquiries',
   'newsletter',
   'photos',
+  'careers',
   'audit',
 ] as const;
 
@@ -31,6 +32,7 @@ export const SECTION_LABELS: Record<Section, string> = {
   enquiries: 'Enquiries',
   newsletter: 'Newsletter',
   photos: 'Photos',
+  careers: 'Careers',
   audit: 'Audit',
 };
 
@@ -38,6 +40,7 @@ export const SECTION_LABELS: Record<Section, string> = {
 // Shown on the form so an Admin is not guessing at the consequence of a tick.
 export const SECTION_EDIT_NOTES: Partial<Record<Section, string>> = {
   payments: 'Edit can refund money through ICICI.',
+  careers: 'Edit can publish a job to the public site and read applicants\u2019 CVs.',
   audit: 'The log is a record; Edit adds nothing over View.',
   today: 'A summary screen; Edit adds nothing over View.',
 };
@@ -80,6 +83,8 @@ export type Capability =
   | 'newsletter:read'
   | 'photos:read'
   | 'photos:manage'
+  | 'careers:read'
+  | 'careers:write'
   | 'audit:read'
   // Admin-only, and therefore mapped to no section at all: these cannot be
   // granted to a User by ticking anything.
@@ -100,6 +105,8 @@ const CAPABILITY_SECTION: Record<Capability, { section: Section; level: SectionL
   'newsletter:read': { section: 'newsletter', level: 'VIEW' },
   'photos:read': { section: 'photos', level: 'VIEW' },
   'photos:manage': { section: 'photos', level: 'EDIT' },
+  'careers:read': { section: 'careers', level: 'VIEW' },
+  'careers:write': { section: 'careers', level: 'EDIT' },
   'audit:read': { section: 'audit', level: 'VIEW' },
   'users:manage': null,
   'tax:manage': null,

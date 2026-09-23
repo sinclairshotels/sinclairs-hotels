@@ -54,6 +54,12 @@ async function requireAdmin(): Promise<
   return { ok: true, user };
 }
 
+function listLabel(kind: string, hotelSlug: string | null): string {
+  if (kind === 'CANCELLATION') return 'the cancellations list';
+  if (kind === 'CAREERS') return 'the careers list';
+  return hotelSlug ? (getHotelBySlug(hotelSlug)?.name ?? hotelSlug) : 'the central list';
+}
+
 export async function addNotificationEmail(
   _prev: EnquiryActionState,
   formData: FormData,
@@ -83,12 +89,7 @@ export async function addNotificationEmail(
   if (existing) return { status: 'error', message: 'That address is already on this list.' };
 
   const row = await prisma.notificationEmail.create({ data: { hotelSlug, kind, address } });
-  const where =
-    kind === 'CANCELLATION'
-      ? 'the cancellations list'
-      : hotelSlug
-        ? (getHotelBySlug(hotelSlug)?.name ?? hotelSlug)
-        : 'the central list';
+  const where = listLabel(kind, hotelSlug);
 
   await recordAudit({
     user: auth.user,
@@ -118,12 +119,7 @@ export async function removeNotificationEmail(
   if (!row) return { status: 'error', message: 'That address is already gone.' };
 
   await prisma.notificationEmail.delete({ where: { id } });
-  const where =
-    row.kind === 'CANCELLATION'
-      ? 'the cancellations list'
-      : row.hotelSlug
-        ? (getHotelBySlug(row.hotelSlug)?.name ?? row.hotelSlug)
-        : 'the central list';
+  const where = listLabel(row.kind, row.hotelSlug);
 
   await recordAudit({
     user: auth.user,

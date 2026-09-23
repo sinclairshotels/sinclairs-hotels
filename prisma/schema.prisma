@@ -117,6 +117,7 @@ model EnquiryNote {
 enum NotificationKind {
   GENERAL
   CANCELLATION
+  CAREERS
 }
 
 model NotificationEmail {
@@ -755,4 +756,59 @@ model RetiredPhoto {
   retiredAt    DateTime @default(now())
   retiredLabel String
   bytes        Int
+}
+
+// A job the site is advertising. Only open positions reach /careers; closed
+// ones stay so their applications keep a title to belong to.
+model JobPosition {
+  id         String  @id @default(cuid())
+  title      String
+  // Null means the role is not tied to one property (head office, or a role
+  // being recruited across the estate).
+  hotelSlug  String?
+  department String
+  // Either typed in or uploaded, never both required: a small property sends a
+  // Word file, head office writes three paragraphs into the box.
+  descriptionText String?
+  jdUrl           String?
+  jdFileName      String?
+
+  open      Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@index([open, hotelSlug])
+}
+
+// Someone applying, either to a position or to the talent pool. positionId is
+// null for the latter, which is why it is nullable rather than required — a
+// general application is the point of the page when nothing is open.
+model JobApplication {
+  id         String       @id @default(cuid())
+  positionId String?
+  position   JobPosition? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  // Kept alongside the key so the list still reads correctly after a position
+  // is deleted, the same reason AuditEvent stores actorLabel.
+  positionLabel String
+
+  name    String
+  email   String
+  phone   String
+  city    String?
+  message String?
+
+  // The CV lives in Vercel Blob for the same reasons photos do: a file in
+  // Postgres is in every backup and through the pool on every read.
+  cvUrl      String?
+  cvFileName String?
+  cvSize     Int?
+
+  userIp    String?
+  createdAt DateTime @default(now())
+
+  @@index([positionId, createdAt])
+  @@index([createdAt])
 }
