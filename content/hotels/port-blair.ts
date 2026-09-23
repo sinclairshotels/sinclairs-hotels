@@ -68,6 +68,8 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Room',
+      bedType: 'King and queen beds',
+      amenities: ['Ensuite bathroom'],
       description:
         'A spacious room where a family of four can spend their vacation together in great comfort, equipped with one king and one queen size bed. The attached three-fixture toilet is ideal for the family.',
       images: [
@@ -79,6 +81,7 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Suite',
+      amenities: ['Ensuite bathroom', 'Family suite'],
       description:
         'The family suite combines the luxury of space and fine décor. With an arresting view of the sea, the spacious suite enables the family to stay together in comfort and style, with an attached three-fixture toilet.',
       images: [
@@ -90,6 +93,8 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Attic Room',
+      bedType: 'Two queen beds',
+      amenities: ['Ensuite bathroom'],
       description:
         'A family room with an attic where children can have good fun. With two queen size beds, the room is ideal for a family of four to stay together comfortably, with an attached three-fixture toilet.',
       images: [
@@ -101,6 +106,7 @@ export const portBlairHotel: Hotel = {
     },
     {
       name: 'Premier Family Suite with Attic',
+      amenities: ['Attic', 'Family suite'],
       description:
         'A spacious, elegant and functional suite where you can relax to the sound of the waves below. The wooden attic is perfect for children travelling with the family, giving them their own private space.',
       images: [

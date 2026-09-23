@@ -1,3 +1,4 @@
+import { BookingRoomCard } from '@/components/booking-room-card';
 import { BookingSearchForm } from '@/components/booking-search-form';
 import { FunnelStep } from '@/components/funnel-step';
 import { RoomReviews } from '@/components/room-reviews';
@@ -197,7 +198,9 @@ export default async function BookHotelPage({
             </p>
           )}
 
-          <div className="mt-8 space-y-6">
+          {/* Two across on a wide screen, so a property's rooms are a
+              comparison rather than a scroll. */}
+          <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
             {grouped.map(({ offer, alternatives }) => {
               const perNight = Math.round(offer.quote.roomTotal / offer.quote.nights / rooms);
               const hrefFor = (choice: typeof offer) =>
@@ -212,108 +215,47 @@ export default async function BookHotelPage({
                   children: String(children),
                 })}`;
 
+              const extras =
+                offer.quote.extrasTotal > 0
+                  ? `Includes ${[
+                      offer.quote.extraAdults > 0 &&
+                        `${offer.quote.extraAdults} extra adult${offer.quote.extraAdults === 1 ? '' : 's'}`,
+                      offer.quote.extraChildren > 0 &&
+                        `${offer.quote.extraChildren} extra child${offer.quote.extraChildren === 1 ? '' : 'ren'}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' and ')} at ${formatInr(offer.quote.extrasTotal)}`
+                  : undefined;
+
+              const content = roomContentWithPhotos(offer.content, hotel);
+
               return (
-                <article
+                <BookingRoomCard
                   key={`${offer.roomTypeId}:${offer.ratePlanId}`}
-                  className="grid grid-cols-1 overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-lg sm:grid-cols-[minmax(0,14rem)_1fr]"
-                >
-                  <div className="relative aspect-[4/3] sm:aspect-auto">
-                    <Image
-                      src={
-                        roomContentWithPhotos(offer.content, hotel)?.images?.[0] ??
-                        hotel.thumbnailImage
-                      }
-                      alt={offer.roomTypeName}
-                      fill
-                      sizes="(min-width: 640px) 14rem, 100vw"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
-                    <div className="min-w-0 flex-1">
-                      <h2 className="font-display text-xl text-forest">{offer.roomTypeName}</h2>
-                      <p className="text-xs uppercase tracking-wider text-gold-dark">
-                        {offer.ratePlanName}
-                        {formatRoomSize(offer.sizeSqFt) ? (
-                          <span className="normal-case tracking-wide text-ink/50">
-                            {' · '}
-                            {formatRoomSize(offer.sizeSqFt)}
-                          </span>
-                        ) : null}
-                      </p>
-                      {offer.breakfastGuests > 0 && (
-                        <p className="mt-0.5 text-xs text-ink/60">
-                          {breakfastLine(offer.breakfastGuests)}
-                        </p>
-                      )}
-                      {offer.quote.extrasTotal > 0 && (
-                        <p className="mt-0.5 text-xs text-ink/60">
-                          Includes{' '}
-                          {[
-                            offer.quote.extraAdults > 0 &&
-                              `${offer.quote.extraAdults} extra adult${offer.quote.extraAdults === 1 ? '' : 's'}`,
-                            offer.quote.extraChildren > 0 &&
-                              `${offer.quote.extraChildren} extra child${offer.quote.extraChildren === 1 ? '' : 'ren'}`,
-                          ]
-                            .filter(Boolean)
-                            .join(' and ')}{' '}
-                          at {formatInr(offer.quote.extrasTotal)}
-                        </p>
-                      )}
-                      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">
-                        {offer.content?.description}
-                      </p>
-                      {/* Only worth saying when it is nearly true. A room with
-                          nine left saying so is noise; three or fewer is the
-                          number a guest actually weighs. */}
-                      {offer.roomsLeft <= SCARCITY_THRESHOLD && (
-                        <p className="mt-3 text-xs uppercase tracking-wider text-gold-dark">
-                          {offer.roomsLeft} left at this price
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Both sets of terms, priced, side by side — the choice
-                        is only meaningful when the cost of it is visible next
-                        to the date it buys. Where the dates are sold on
-                        non-refundable terms only there is one card, and the
-                        note above the list says why rather than leaving the
-                        property looking like one that has no refundable rate. */}
-                    <div className="shrink-0 space-y-3 sm:w-64">
-                      <p className="text-xs uppercase tracking-wider text-ink/50">
-                        From {formatInr(perNight)} per room / night
-                      </p>
-                      {alternatives.map((choice) => (
-                        <div
-                          key={choice.rateType}
-                          className="rounded border border-ink/10 p-3 text-right"
-                        >
-                          <p className="text-xs font-medium uppercase tracking-wider text-forest">
-                            {rateTypeLabel(choice.rateType)}
-                          </p>
-                          <p className="mt-0.5 text-[11px] leading-snug text-ink/60">
-                            {choice.rateType === 'REFUNDABLE' && choice.cancellationDeadline
-                              ? `Free cancellation until ${formatStayDate(choice.cancellationDeadline)}`
-                              : 'No refund if cancelled'}
-                          </p>
-                          <p className="mt-2 font-display text-xl text-forest">
-                            {formatInr(choice.quote.total)}
-                          </p>
-                          <p className="text-[11px] text-ink/50">
-                            total, including {formatInr(choice.quote.taxTotal)} GST
-                          </p>
-                          <Link
-                            href={hrefFor(choice)}
-                            className="mt-3 inline-block rounded bg-gold px-5 py-2 text-xs uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
-                          >
-                            Select
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </article>
+                  name={offer.roomTypeName}
+                  planName={offer.ratePlanName}
+                  description={offer.content?.description}
+                  image={content?.images?.[0] ?? hotel.thumbnailImage}
+                  alt={offer.roomTypeName}
+                  sizeSqFt={offer.sizeSqFt}
+                  baseOccupancy={offer.baseOccupancy}
+                  view={offer.content?.view}
+                  bedType={offer.content?.bedType}
+                  amenities={offer.content?.amenities ? [...offer.content.amenities] : []}
+                  breakfastLine={
+                    offer.breakfastGuests > 0 ? breakfastLine(offer.breakfastGuests) : undefined
+                  }
+                  extrasLine={extras}
+                  roomsLeft={offer.roomsLeft <= SCARCITY_THRESHOLD ? offer.roomsLeft : undefined}
+                  perNight={perNight}
+                  choices={alternatives.map((choice) => ({
+                    rateType: choice.rateType,
+                    cancellationDeadline: choice.cancellationDeadline,
+                    total: choice.quote.total,
+                    taxTotal: choice.quote.taxTotal,
+                    href: hrefFor(choice),
+                  }))}
+                />
               );
             })}
           </div>

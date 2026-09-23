@@ -11,6 +11,13 @@ export interface RoomType {
   // Absent where nobody has measured the room — the tile then shows nothing
   // rather than an empty label, and /admin/rates/monthly lists it as missing.
   sizeSqFt?: number;
+  // What the room card states as bullets, drawn from the room's own copy
+  // rather than written fresh: where the description does not say, the bullet
+  // is absent, the same rule the size follows. Four amenities is what fits a
+  // card — the full description is a click away.
+  bedType?: string;
+  view?: string;
+  amenities?: string[];
   images?: string[];
 }
 

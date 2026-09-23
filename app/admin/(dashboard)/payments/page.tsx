@@ -1,10 +1,12 @@
+import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { RefundForm } from '@/components/admin/refund-form';
 import { StatTiles } from '@/components/admin/stat-tiles';
-import { getHotelBySlug } from '@/content/hotels';
+import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime, maskedInstrument, parsePageSize } from '@/lib/admin-format';
-import { can, getSession } from '@/lib/auth';
+import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { recipientPanel } from '@/lib/notification-emails';
 import { PaymentStatus, type Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -42,6 +44,22 @@ export default async function PaymentsPage({
   // never a permission — typing the URL has to hit the same wall.
   const viewer = await getSession();
   if (!viewer || !can(viewer, 'payments:read')) notFound();
+
+  // Two panels here: what Payments itself sends, and the Cancellations list —
+  // finance copied on a refund that is owed. Cancellations has no page of its
+  // own, and this is the screen where a refund is actually approved.
+  const [paymentRecipients, cancellationRecipientsPanel] =
+    viewer.role === 'ADMIN'
+      ? await Promise.all([
+          recipientPanel(
+            'PAYMENT',
+            hotels
+              .filter((hotel) => canAccessHotel(viewer, hotel.slug))
+              .map((hotel) => ({ slug: hotel.slug, name: hotel.name })),
+          ),
+          recipientPanel('CANCELLATION', []),
+        ])
+      : [null, null];
 
   const { q, page: pageParam, pageSize: pageSizeParam, status, hotel } = await searchParams;
   const query = q?.trim() ?? '';
@@ -122,6 +140,17 @@ export default async function PaymentsPage({
             ]}
           />
         </div>
+
+        {paymentRecipients && cancellationRecipientsPanel && (
+          <div className="mt-3 flex flex-wrap justify-end gap-3">
+            <div className="w-full max-w-sm">
+              <EmailRecipientsPanel {...paymentRecipients} />
+            </div>
+            <div className="w-full max-w-sm">
+              <EmailRecipientsPanel {...cancellationRecipientsPanel} />
+            </div>
+          </div>
+        )}
 
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input

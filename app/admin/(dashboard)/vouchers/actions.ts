@@ -3,14 +3,20 @@
 import { randomBytes } from 'node:crypto';
 import { getHotelBySlug } from '@/content/hotels';
 import { bookingOffices } from '@/content/site';
-import { authorize } from '@/lib/auth';
+import { addressFromInput } from '@/lib/address';
+import { recordAudit } from '@/lib/audit';
+import { authorize, canAccessHotel } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { voucherAdminHtml } from '@/lib/email-templates/voucher-admin';
+import { voucherCancelledHtml } from '@/lib/email-templates/voucher-cancelled';
 import { voucherGuestHtml } from '@/lib/email-templates/voucher-guest';
+import { log } from '@/lib/log';
 import { VOUCHER_OFFICE_EMAIL, sendMail } from '@/lib/mail';
-import { clientIp, isRateLimited } from '@/lib/rate-limit';
+import { recipientsFor } from '@/lib/notification-emails';
+import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
 import { publicSiteUrl } from '@/lib/site-url';
-import { voucherSchema } from '@/lib/validation';
+import { cancelVoucherSchema, voucherSchema } from '@/lib/validation';
+import { revalidatePath } from 'next/cache';
 import { cookies, headers } from 'next/headers';
 
 export type VoucherFormState = {
@@ -55,7 +61,7 @@ export async function createVoucher(
       guestName: d.guestName,
       guestPhone: d.guestPhone,
       guestEmail: d.guestEmail,
-      billingAddress: d.billingAddress,
+      billingAddress: addressFromInput(d),
       travelAgentName: d.travelAgentName || null,
       travelAgentPan: d.travelAgentPan || null,
       travelAgentGstin: d.travelAgentGstin || null,
@@ -108,4 +114,91 @@ export async function createVoucher(
     message: `Voucher #${voucher.voucherNo} created and emailed.`,
     voucherNo: voucher.voucherNo,
   };
+}
+
+export type CancelVoucherState = { status: 'idle' | 'success' | 'error'; message?: string };
+
+// Cancelled, not deleted. The voucher was emailed to a guest and quoted to a
+// property; a row that disappears cannot answer what happened to it, and the
+// reason is the thing anyone asks about afterwards.
+export async function cancelVoucher(
+  _prev: CancelVoucherState,
+  formData: FormData,
+): Promise<CancelVoucherState> {
+  const auth = await authorize('vouchers:write');
+  if (!auth.ok) return { status: 'error', message: auth.message };
+
+  const headerList = await headers();
+  const ip = clientIp(headerList);
+  if (isRateLimited(`voucher-cancel:${auth.user.id}`, ADMIN_REQUESTS_PER_WINDOW)) {
+    return { status: 'error', message: 'Too many requests. Please try again in a minute.' };
+  }
+
+  const parsed = cancelVoucherSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) {
+    return {
+      status: 'error',
+      message: parsed.error.issues[0]?.message ?? 'Please give a reason.',
+    };
+  }
+
+  const before = await prisma.voucher.findUnique({ where: { id: parsed.data.id } });
+  if (!before) return { status: 'error', message: 'That voucher no longer exists.' };
+  if (!canAccessHotel(auth.user, before.hotelSlug)) {
+    return { status: 'error', message: 'That voucher belongs to another property.' };
+  }
+  if (before.cancelledAt) {
+    return { status: 'error', message: `Voucher #${before.voucherNo} is already cancelled.` };
+  }
+
+  const voucher = await prisma.voucher.update({
+    where: { id: before.id },
+    data: {
+      cancelledAt: new Date(),
+      cancelledReason: parsed.data.reason,
+      // Stored beside the reason, so the record still reads correctly once
+      // that staff account is deleted.
+      cancelledByLabel: auth.user.name || auth.user.email,
+    },
+  });
+
+  const hotel = getHotelBySlug(voucher.hotelSlug);
+
+  await recordAudit({
+    user: auth.user,
+    action: 'voucher.cancelled',
+    entity: 'Voucher',
+    entityId: voucher.id,
+    hotelSlug: voucher.hotelSlug,
+    summary: `Voucher #${voucher.voucherNo} cancelled — ${parsed.data.reason}`,
+    before: { cancelledAt: null },
+    after: { cancelledAt: voucher.cancelledAt, reason: parsed.data.reason },
+    ip,
+  });
+  log.info('voucher.cancelled', { voucher_no: voucher.voucherNo, hotel: voucher.hotelSlug });
+
+  await sendMail({
+    to: voucher.guestEmail,
+    kind: 'voucher-cancelled-guest',
+    subject: `Your Sinclairs voucher #${voucher.voucherNo} has been cancelled`,
+    html: voucherCancelledHtml({ voucher, hotel }),
+  });
+
+  // Whoever staff put on the Vouchers list, in the fields they put them in.
+  // No fallback is invented here: the guest has already been told, and the
+  // audit log is the record that it happened.
+  const staff = await recipientsFor('VOUCHER', voucher.hotelSlug);
+  if (staff.to.length > 0 || staff.cc.length > 0 || staff.bcc.length > 0) {
+    await sendMail({
+      ...staff,
+      to: staff.to.length > 0 ? staff.to : (hotel?.contact?.notificationEmail ?? []),
+      kind: 'voucher-cancelled-staff',
+      subject: `Voucher #${voucher.voucherNo} cancelled — ${voucher.guestName}`,
+      html: voucherCancelledHtml({ voucher, hotel, forStaff: true }),
+    });
+  }
+
+  revalidatePath('/admin/vouchers');
+  revalidatePath(`/v/${voucher.viewToken}`);
+  return { status: 'success', message: `Voucher #${voucher.voucherNo} cancelled.` };
 }

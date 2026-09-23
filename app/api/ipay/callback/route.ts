@@ -16,7 +16,7 @@ import {
 } from '@/lib/icici';
 import { errorFields, log } from '@/lib/log';
 import { sendMail } from '@/lib/mail';
-import { notificationRecipients } from '@/lib/notification-emails';
+import { guaranteedRecipients } from '@/lib/notification-emails';
 import { publicSiteUrl } from '@/lib/site-url';
 import type { Booking } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -296,7 +296,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       });
 
       await sendMail({
-        to: await notificationRecipients(settled.hotelSlug),
+        ...(await guaranteedRecipients('BOOKING', settled.hotelSlug)),
         kind: 'booking-oversold-staff',
         subject: `REFUND DUE: ${formatReference(settled.reference)} paid but not confirmed — ${hotelName}`,
         html: bookingOversoldHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
@@ -313,11 +313,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
       });
 
-      // The property's addresses and the central one, resolved together —
-      // notificationRecipients already merges them, so the separate bcc that
-      // used to carry the central copy is no longer needed.
+      // The property's addresses and the central ones, resolved together,
+      // with whatever staff set as CC and BCC on /admin/bookings.
       await sendMail({
-        to: await notificationRecipients(settled.hotelSlug),
+        ...(await guaranteedRecipients('BOOKING', settled.hotelSlug)),
         kind: 'booking-hotel',
         subject: `New direct booking ${formatReference(settled.reference)} — ${hotelName}`,
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
@@ -352,7 +351,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   });
 
   await sendMail({
-    to: await notificationRecipients(updated.hotelSlug),
+    ...(await guaranteedRecipients('PAYMENT', updated.hotelSlug)),
     kind: 'ipay-staff',
     subject: `${subject} — ${hotelName}`,
     html: ipayConfirmationHtml(emailData),

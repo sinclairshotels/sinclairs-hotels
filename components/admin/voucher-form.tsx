@@ -1,6 +1,7 @@
 'use client';
 
 import { createVoucher } from '@/app/admin/(dashboard)/vouchers/actions';
+import { AddressFields } from '@/components/address-fields';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import type { BookingOffice, Hotel } from '@/content/types';
@@ -8,6 +9,10 @@ import { useActionState, useState } from 'react';
 
 const initialState = { status: 'idle' as const };
 
+// Four sections, each a two-column table of label and field. The fields used
+// to run one to a line down the page, which made a voucher — twenty-odd
+// fields — a scroll rather than a form somebody fills in while a guest is on
+// the phone.
 export function VoucherForm({
   hotels,
   bookingOffices,
@@ -25,25 +30,52 @@ export function VoucherForm({
         <p className="font-display text-xl text-forest">Voucher Sent</p>
         <p className="mt-2 text-sm text-ink/70">{state.message}</p>
         <a href="/admin/vouchers" className="mt-4 inline-block text-sm text-forest underline">
-          Back to voucher list
+          Back to vouchers
         </a>
       </div>
     );
   }
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
+  const text = (name: string, label: string, props: Record<string, unknown> = {}) => (
+    <Row label={label} name={name} error={fieldError(name)}>
+      <input id={name} name={name} type="text" className="input" {...props} />
+    </Row>
+  );
+  const number = (name: string, label: string, props: Record<string, unknown> = {}) => (
+    <Row label={label} name={name} error={fieldError(name)}>
+      <input id={name} name={name} type="number" min={0} className="input" {...props} />
+    </Row>
+  );
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="space-y-6">
       {state.status === 'error' && state.message && (
         <p className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {state.message}
         </p>
       )}
 
-      <fieldset className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">Booking</legend>
-        <Field label="Hotel" name="hotelSlug" error={fieldError('hotelSlug')}>
+      <Section title="Guest">
+        {text('guestName', 'Name', { required: true })}
+        {text('guestPhone', 'Phone', { type: 'tel', required: true })}
+        {text('guestEmail', 'Email', { type: 'email', required: true })}
+        <AddressFields
+          Field={Row}
+          autoComplete={false}
+          errors={{
+            addressLine1: fieldError('addressLine1'),
+            addressLine2: fieldError('addressLine2'),
+            city: fieldError('city'),
+            state: fieldError('state'),
+            pin: fieldError('pin'),
+            country: fieldError('country'),
+          }}
+        />
+      </Section>
+
+      <Section title="Stay">
+        <Row label="Hotel" name="hotelSlug" error={fieldError('hotelSlug')}>
           <input type="hidden" name="hotelSlug" value={hotelSlug} />
           <Select value={hotelSlug} onValueChange={setHotelSlug}>
             <SelectTrigger id="hotelSlug" placeholder="Select a hotel" />
@@ -55,8 +87,8 @@ export function VoucherForm({
               ))}
             </SelectContent>
           </Select>
-        </Field>
-        <Field label="Booking Office" name="bookingOffice" error={fieldError('bookingOffice')}>
+        </Row>
+        <Row label="Booking office" name="bookingOffice" error={fieldError('bookingOffice')}>
           <input type="hidden" name="bookingOffice" value={bookingOffice} />
           <Select value={bookingOffice} onValueChange={setBookingOffice}>
             <SelectTrigger id="bookingOffice" placeholder="Select a booking office" />
@@ -68,169 +100,69 @@ export function VoucherForm({
               ))}
             </SelectContent>
           </Select>
-        </Field>
-        <Field label="Check-in" name="checkIn" error={fieldError('checkIn')}>
+        </Row>
+        <Row label="Check-in" name="checkIn" error={fieldError('checkIn')}>
           <input type="hidden" name="checkIn" value={checkIn} />
-          <DatePicker value={checkIn} onChange={setCheckIn} placeholder="Select date" />
-        </Field>
-        <Field label="Check-out" name="checkOut" error={fieldError('checkOut')}>
+          <DatePicker value={checkIn} onChange={setCheckIn} label="Check-in date" />
+        </Row>
+        <Row label="Check-out" name="checkOut" error={fieldError('checkOut')}>
           <input type="hidden" name="checkOut" value={checkOut} />
           <DatePicker
             value={checkOut}
             onChange={setCheckOut}
             min={checkIn}
-            placeholder="Select date"
+            label="Check-out date"
           />
-        </Field>
-        <Field label="No. of Rooms" name="rooms" error={fieldError('rooms')}>
-          <input
-            id="rooms"
-            type="number"
-            name="rooms"
-            min={1}
-            max={50}
-            required
-            className="input"
-          />
-        </Field>
-        <Field label="Rate (₹)" name="rate" error={fieldError('rate')}>
-          <input
-            id="rate"
-            type="number"
-            name="rate"
-            min={0}
-            step="0.01"
-            required
-            className="input"
-          />
-        </Field>
-        <Field label="Taxes / GST (₹)" name="taxes" error={fieldError('taxes')}>
-          <input
-            id="taxes"
-            type="number"
-            name="taxes"
-            min={0}
-            step="0.01"
-            required
-            className="input"
-          />
-        </Field>
-      </fieldset>
+        </Row>
+        {number('rooms', 'Rooms', { min: 1, max: 50, required: true })}
+        {text('arrivalDetails', 'Arrival details')}
+      </Section>
 
-      <fieldset className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">Guest</legend>
-        <Field label="Guest Name" name="guestName" error={fieldError('guestName')}>
-          <input id="guestName" type="text" name="guestName" required className="input" />
-        </Field>
-        <Field label="Guest Phone" name="guestPhone" error={fieldError('guestPhone')}>
-          <input id="guestPhone" type="tel" name="guestPhone" required className="input" />
-        </Field>
-        <Field label="Guest Email" name="guestEmail" error={fieldError('guestEmail')}>
-          <input id="guestEmail" type="email" name="guestEmail" required className="input" />
-        </Field>
-        <Field label="Billing Address" name="billingAddress" error={fieldError('billingAddress')}>
-          <textarea id="billingAddress" name="billingAddress" rows={2} required className="input" />
-        </Field>
-      </fieldset>
-
-      <fieldset className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">
-          Travel Agent (optional)
-        </legend>
-        <Field label="Travel Agent Name" name="travelAgentName">
-          <input id="travelAgentName" type="text" name="travelAgentName" className="input" />
-        </Field>
-        <Field label="Agent State" name="travelAgentState">
-          <input id="travelAgentState" type="text" name="travelAgentState" className="input" />
-        </Field>
-        <Field label="Agent PAN" name="travelAgentPan">
-          <input id="travelAgentPan" type="text" name="travelAgentPan" className="input" />
-        </Field>
-        <Field label="Agent GSTIN" name="travelAgentGstin">
-          <input id="travelAgentGstin" type="text" name="travelAgentGstin" className="input" />
-        </Field>
-        <Field label="Commission (%)" name="commissionPct">
-          <input
-            id="commissionPct"
-            type="number"
-            name="commissionPct"
-            min={0}
-            max={100}
-            step="0.01"
-            className="input"
-          />
-        </Field>
-        <Field label="TDS (%)" name="tdsPct">
-          <input
-            id="tdsPct"
-            type="number"
-            name="tdsPct"
-            min={0}
-            max={100}
-            step="0.01"
-            className="input"
-          />
-        </Field>
-      </fieldset>
-
-      <fieldset className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">
-          Deposit &amp; Billing (optional)
-        </legend>
-        <Field label="Deposit Amount (₹)" name="depositAmount">
-          <input
-            id="depositAmount"
-            type="number"
-            name="depositAmount"
-            min={0}
-            step="0.01"
-            className="input"
-          />
-        </Field>
-        <Field label="Deposit Receipt No." name="depositReceiptNo">
-          <input id="depositReceiptNo" type="text" name="depositReceiptNo" className="input" />
-        </Field>
-        <Field label="Receipt Date" name="depositReceiptDate">
+      <Section title="Amounts">
+        {number('rate', 'Rate ₹', { step: '0.01', required: true })}
+        {number('taxes', 'Taxes / GST ₹', { step: '0.01', required: true })}
+        {number('depositAmount', 'Deposit ₹', { step: '0.01' })}
+        {text('depositReceiptNo', 'Receipt no.')}
+        <Row label="Receipt date" name="depositReceiptDate">
           <input type="hidden" name="depositReceiptDate" value={depositReceiptDate} />
           <DatePicker
             value={depositReceiptDate}
             onChange={setDepositReceiptDate}
-            placeholder="Select date"
+            label="Deposit receipt date"
           />
-        </Field>
-        <Field label="Billing Instructions" name="billingInstructions">
+        </Row>
+        {text('travelAgentName', 'Agent name')}
+        {text('travelAgentState', 'Agent state')}
+        {text('travelAgentPan', 'Agent PAN')}
+        {text('travelAgentGstin', 'Agent GSTIN')}
+        {number('commissionPct', 'Commission %', { max: 100, step: '0.01' })}
+        {number('tdsPct', 'TDS %', { max: 100, step: '0.01' })}
+      </Section>
+
+      <Section title="Notes">
+        <Row label="Billing instructions" name="billingInstructions">
           <textarea
             id="billingInstructions"
             name="billingInstructions"
             rows={2}
             className="input"
           />
-        </Field>
-        <Field label="Arrival Details" name="arrivalDetails">
-          <textarea id="arrivalDetails" name="arrivalDetails" rows={2} className="input" />
-        </Field>
-        <Field label="Other Services" name="otherServices">
+        </Row>
+        <Row label="Other services" name="otherServices">
           <textarea id="otherServices" name="otherServices" rows={2} className="input" />
-        </Field>
-        <Field label="Details to Unit (internal only)" name="specialInstructions">
+        </Row>
+        {/* Named as what it is: this one is not printed on the guest's copy. */}
+        <Row label="To the unit (internal)" name="specialInstructions">
           <textarea
             id="specialInstructions"
             name="specialInstructions"
             rows={2}
             className="input"
           />
-        </Field>
-      </fieldset>
-
-      <fieldset className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <legend className="mb-2 text-xs uppercase tracking-widest text-gold-dark">Issued By</legend>
-        <Field label="Your Name" name="issuerName" error={fieldError('issuerName')}>
-          <input id="issuerName" type="text" name="issuerName" required className="input" />
-        </Field>
-        <Field label="Your Phone" name="issuerPhone" error={fieldError('issuerPhone')}>
-          <input id="issuerPhone" type="tel" name="issuerPhone" required className="input" />
-        </Field>
-      </fieldset>
+        </Row>
+        {text('issuerName', 'Issued by', { required: true })}
+        {text('issuerPhone', 'Issuer phone', { type: 'tel', required: true })}
+      </Section>
 
       <button
         type="submit"
@@ -243,7 +175,19 @@ export function VoucherForm({
   );
 }
 
-function Field({
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="rounded-lg border border-ink/10 bg-white p-4">
+      <legend className="px-1 text-xs uppercase tracking-widest text-gold-dark">{title}</legend>
+      <div className="grid grid-cols-1 gap-x-8 gap-y-2 lg:grid-cols-2">{children}</div>
+    </fieldset>
+  );
+}
+
+// Label beside the field rather than above it: it is what halves the height,
+// and a voucher has enough fields for that to be the difference between one
+// screen and three.
+function Row({
   label,
   name,
   error,
@@ -255,12 +199,14 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label htmlFor={name} className="text-xs uppercase tracking-wider text-ink/60">
+    <div className="grid grid-cols-[9rem_1fr] items-baseline gap-3 py-1">
+      <label htmlFor={name} className="text-xs uppercase tracking-wider text-ink/55">
         {label}
       </label>
-      <div className="mt-1">{children}</div>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      <div>
+        {children}
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      </div>
     </div>
   );
 }

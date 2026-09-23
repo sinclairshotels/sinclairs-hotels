@@ -1,6 +1,7 @@
 'use client';
 
 import { type BookingFormState, createBooking } from '@/app/(site)/book/actions';
+import { AddressFields } from '@/components/address-fields';
 import { directBookingPerk } from '@/content/site';
 import { pushDataLayerEvent } from '@/lib/analytics';
 import { cancellationSentence } from '@/lib/cancellation';
@@ -99,17 +100,25 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
           />
         </Field>
 
-        <Field label="Billing Address" name="billingAddress" error={fieldError('billingAddress')}>
-          <input
-            id="billingAddress"
-            name="billingAddress"
-            type="text"
-            required
-            autoComplete="street-address"
-            defaultValue={typed('billingAddress')}
-            className="input"
-          />
-        </Field>
+        <AddressFields
+          Field={Field}
+          values={{
+            addressLine1: typed('addressLine1'),
+            addressLine2: typed('addressLine2'),
+            city: typed('city'),
+            state: typed('state'),
+            pin: typed('pin'),
+            country: typed('country'),
+          }}
+          errors={{
+            addressLine1: fieldError('addressLine1'),
+            addressLine2: fieldError('addressLine2'),
+            city: fieldError('city'),
+            state: fieldError('state'),
+            pin: fieldError('pin'),
+            country: fieldError('country'),
+          }}
+        />
       </div>
 
       <Field

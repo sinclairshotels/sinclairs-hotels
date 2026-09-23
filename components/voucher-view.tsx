@@ -10,6 +10,17 @@ export function VoucherView({ voucher, hotel }: { voucher: Voucher; hotel?: Hote
       <p className="font-display text-2xl text-forest">Booking Voucher</p>
       <p className="mt-1 text-sm text-ink/60">Voucher #{voucher.voucherNo}</p>
 
+      {/* Said before the voucher rather than after it: a guest who reads the
+          dates and stops has read a document that no longer stands. */}
+      {voucher.cancelledAt && (
+        <div className="mt-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-800">This voucher has been cancelled.</p>
+          {voucher.cancelledReason && (
+            <p className="mt-1 text-sm text-red-700">{voucher.cancelledReason}</p>
+          )}
+        </div>
+      )}
+
       <div className="mt-6 overflow-hidden rounded-lg border border-ink/10">
         <table className="w-full text-sm">
           <tbody>

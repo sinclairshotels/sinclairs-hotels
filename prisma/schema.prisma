@@ -114,19 +114,35 @@ model EnquiryNote {
 // be filled in property by property rather than all at once.
 // Which list an address is on. Cancellations go to finance, who do not want
 // every enquiry, so it is a kind rather than another property.
+// One per admin page that sends mail. GENERAL is the value the first four
+// pages shared before they were split apart; it is kept because a value cannot
+// be removed from a Postgres enum, and nothing writes it any more.
 enum NotificationKind {
   GENERAL
   CANCELLATION
   CAREERS
+  BOOKING
+  VOUCHER
+  PAYMENT
+  ENQUIRY
+}
+
+enum NotificationField {
+  TO
+  CC
+  BCC
 }
 
 model NotificationEmail {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   // Null means the central list for that kind, rather than one property's.
   hotelSlug String?
-  kind      NotificationKind @default(GENERAL)
+  kind      NotificationKind  @default(GENERAL)
+  // Which header the address goes in. A separate column rather than three
+  // tables, because they are the same fact about the same message.
+  field     NotificationField @default(TO)
   address   String
-  createdAt DateTime         @default(now())
+  createdAt DateTime          @default(now())
 
   @@index([hotelSlug])
   @@index([kind])
@@ -171,6 +187,14 @@ model Voucher {
   bookingOffice String
 
   legacyId Int? @unique
+
+  // A cancelled voucher is kept and marked, never deleted: it was sent to a
+  // guest and quoted to a property, and a row that vanishes cannot answer
+  // what happened to it. The label is stored beside the reason so the record
+  // still reads correctly after the staff account is gone.
+  cancelledAt      DateTime?
+  cancelledReason  String?
+  cancelledByLabel String?
 
   createdAt DateTime @default(now())
 
@@ -343,6 +367,15 @@ model Booking {
   roomTotal Decimal @db.Decimal(10, 2)
   taxTotal  Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
+
+  // What breakfast cost across the stay, snapshotted like the tax it was
+  // priced with: the supplement is a setting staff change, and a booking taken
+  // at ₹450 a head must still read ₹450 after it becomes ₹500. Already inside
+  // roomTotal — the plan's nightly rate is the room plus breakfast for the
+  // guests it covers — so it is a breakdown of that figure, never an addition
+  // to it. Null on every booking taken before this column existed, where the
+  // guest count and the plan name are all there is; zero on Room Only.
+  breakfastAmount Decimal? @db.Decimal(10, 2)
 
   // What the guest bought, and the date it stops being cancellable. Stored on
   // the booking rather than read back from HotelSettings, for the same reason

@@ -44,9 +44,20 @@ describe('BookingGuestForm', () => {
     expect(screen.getByLabelText('Full Name')).toBeRequired();
     expect(screen.getByLabelText('Email')).toHaveAttribute('type', 'email');
     expect(screen.getByLabelText('Phone')).toHaveAttribute('type', 'tel');
-    expect(screen.getByLabelText('Billing Address')).toBeRequired();
     expect(screen.getByLabelText('Special Requests (optional)')).not.toBeRequired();
     expect(screen.getByRole('button', { name: /pay & confirm booking/i })).toBeInTheDocument();
+  });
+
+  // Six fields rather than one line, shared with the voucher form. The second
+  // line is the only optional one, and the country is filled in already.
+  it('asks for the address in the fields an address actually has', () => {
+    render(<BookingGuestForm stay={stay} />);
+
+    for (const label of ['Address line 1', 'City', 'State', 'PIN code', 'Country']) {
+      expect(screen.getByLabelText(label)).toBeRequired();
+    }
+    expect(screen.getByLabelText('Address line 2 (optional)')).not.toBeRequired();
+    expect(screen.getByLabelText('Country')).toHaveValue('India');
   });
 
   it('carries the whole stay in hidden fields for the server to re-check', () => {

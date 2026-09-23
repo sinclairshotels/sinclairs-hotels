@@ -1,3 +1,4 @@
+import { BackLink } from '@/components/admin/back-link';
 import {
   AssigneeSelect,
   ForwardForm,
@@ -57,12 +58,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
-        <Link
-          href="/admin/enquiries"
-          className="text-xs uppercase tracking-wider text-ink/50 transition hover:text-forest"
-        >
-          ← All enquiries
-        </Link>
+        <BackLink href="/admin/enquiries" label="All enquiries" />
         <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
           <p className="font-display text-xl text-forest">
             {enquiry.name}

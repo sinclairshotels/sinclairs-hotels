@@ -47,6 +47,9 @@ export const kalimpongHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      bedType: 'King or twin beds',
+      view: 'Mountain view',
+      amenities: ['Private balcony', 'Day bed'],
       sizeSqFt: 420,
       description:
         'The richly appointed premier rooms in dark wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the resort. Each room features one king size bed or two twin beds plus a day bed, and a private balcony overlooking the mountains.',
@@ -59,6 +62,7 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Plus Room',
+      amenities: ['Private balcony', 'Television', 'Wi-Fi', 'Fireplace'],
       sizeSqFt: 460,
       description:
         'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on.',
@@ -71,6 +75,8 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Attic Room',
+      bedType: 'King bed',
+      amenities: ['Attic', 'Separate wardrobe'],
       sizeSqFt: 524,
       description:
         'Similar to the premier rooms but with a spacious attic reached via a wooden staircase, ideal for families — the attic has its own king size bed and a separate wardrobe for children.',
@@ -83,6 +89,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Suite',
+      bedType: 'King bed',
+      view: 'Mountain view',
+      amenities: ['Private balcony', 'Separate living room'],
       sizeSqFt: 900,
       description:
         'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table.',
@@ -95,6 +104,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Wooden Cottage Room',
+      bedType: 'King bed',
+      view: 'Mountain view',
+      amenities: ['Ensuite bathroom', 'Private sit-out'],
       sizeSqFt: 284,
       description:
         'Made entirely out of steam-treated recyclable wood, this secluded cottage has two rooms with attached baths — even the toilets, barring the shower area, are built from wood. The king size bed has a large upholstered headboard, and the room opens onto a private sit-out area overlooking the mountains, ideal for honeymooners.',
