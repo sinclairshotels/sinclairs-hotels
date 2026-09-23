@@ -3,7 +3,7 @@ import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
-import { formatInr } from '@/lib/booking';
+import { formatInr, formatReference } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { BookingStatus, Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
@@ -186,7 +186,7 @@ export default async function BookingsPage({
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">
                   <Link href={`/admin/bookings/${booking.id}`} className="text-forest underline">
-                    {booking.reference}
+                    {formatReference(booking.reference)}
                   </Link>
                   <a
                     href={`${protocol}://${publicHost}/booking/${booking.viewToken}`}

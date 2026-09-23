@@ -74,25 +74,33 @@ export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: Set
           <p className="mt-0.5 text-[10px] uppercase tracking-wider text-gold-dark">No photo yet</p>
         )}
 
-        <div className="mt-2 grid grid-cols-3 gap-1">
-          <Small label="Guests" name="baseOccupancy" value={room.baseOccupancy} room={room} />
-          <Small label="Adults" name="maxAdults" value={room.maxAdults} room={room} />
-          <Small label="Children" name="maxChildren" value={room.maxChildren} room={room} />
-          <Small
-            label="+ Adult ₹"
-            name="extraAdultCharge"
-            value={room.extraAdultCharge}
-            room={room}
-            wide
-          />
-          <Small
-            label="+ Child ₹"
-            name="extraChildCharge"
-            value={room.extraChildCharge}
-            room={room}
-            wide
-          />
-        </div>
+        <FieldGroup label="Included in the rate">
+          <div className="grid grid-cols-3 gap-1">
+            <Small label="Guests" name="baseOccupancy" value={room.baseOccupancy} room={room} />
+            <Small label="Adults" name="maxAdults" value={room.maxAdults} room={room} />
+            <Small label="Children" name="maxChildren" value={room.maxChildren} room={room} />
+          </div>
+        </FieldGroup>
+
+        {/* Their own columns rather than two more boxes in the occupancy grid:
+            these are money, and reading them as occupancy numbers is how a
+            charge gets typed into a headcount. */}
+        <FieldGroup label="Extra guest fee, per night">
+          <div className="grid grid-cols-2 gap-2">
+            <Small
+              label="Adult ₹"
+              name="extraAdultCharge"
+              value={room.extraAdultCharge}
+              room={room}
+            />
+            <Small
+              label="Child ₹"
+              name="extraChildCharge"
+              value={room.extraChildCharge}
+              room={room}
+            />
+          </div>
+        </FieldGroup>
 
         <div className="mt-2 flex items-center gap-2">
           <button
@@ -160,21 +168,28 @@ export function RoomSetupRow({ hotelSlug, room }: { hotelSlug: string; room: Set
   );
 }
 
+function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-2">
+      <p className="mb-1 text-[9px] uppercase tracking-wider text-ink/35">{label}</p>
+      {children}
+    </div>
+  );
+}
+
 function Small({
   label,
   name,
   value,
   room,
-  wide = false,
 }: {
   label: string;
   name: string;
   value: number;
   room: SetupRoom;
-  wide?: boolean;
 }) {
   return (
-    <label className={`block ${wide ? 'col-span-1.5' : ''}`}>
+    <label className="block">
       <span className="block text-[9px] uppercase tracking-wider text-ink/40">{label}</span>
       <input
         type="number"

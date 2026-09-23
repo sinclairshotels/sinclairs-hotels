@@ -27,6 +27,15 @@ enum EnquiryType {
   HOTEL
   WEDDING
   MEETINGS
+  GROUP
+}
+
+// How the guest asked to be answered. Stored rather than assumed: a form that
+// offers the choice and then emails everybody anyway is worse than not asking.
+enum EnquiryReplyChannel {
+  WHATSAPP
+  PHONE
+  EMAIL
 }
 
 model Enquiry {
@@ -40,6 +49,18 @@ model Enquiry {
   checkOut     DateTime?
   guests       Int?
   message      String
+
+  // Quoted back on the thank-you screen and in the reply, so a guest chasing an
+  // enquiry has something to name that is not a database id.
+  reference    String?       @unique
+
+  city         String?
+  pinCode      String?
+  replyChannel EnquiryReplyChannel @default(EMAIL)
+  // Weddings and meetings move; "± 1 week" is worth as much to the sales team
+  // as the date itself.
+  flexibility  String?
+  roomsNeeded  Int?
   status       EnquiryStatus @default(NEW)
   userIp       String?
   legacyTicket String?       @unique

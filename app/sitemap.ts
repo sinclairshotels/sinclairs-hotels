@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/meetings-events',
     '/contact',
     '/media',
+    '/terms',
   ];
 
   return [

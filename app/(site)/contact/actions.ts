@@ -1,5 +1,6 @@
 'use server';
 
+import { enquiryReference } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { enquiryNotificationHtml } from '@/lib/email-templates/enquiry-notification';
 import { log } from '@/lib/log';
@@ -16,13 +17,18 @@ export type EnquiryFormState = {
   // Distinguishes a real submission from the honeypot's silent fake-success
   // reply, so the client only fires an analytics conversion on a real lead.
   leadCaptured?: boolean;
+  // Shown on the thank-you screen so the guest has something to quote. Absent
+  // on the honeypot's fake success, which must not mint a reference for a
+  // record that was never written.
+  reference?: string;
 };
 
 const ENQUIRY_TYPE_LABELS: Record<string, string> = {
   GENERAL: 'General',
-  HOTEL: 'Hotel Booking',
+  HOTEL: 'Rooms',
   WEDDING: 'Wedding',
   MEETINGS: 'Meetings & Events',
+  GROUP: 'Group Stay',
 };
 
 export async function submitEnquiry(
@@ -56,7 +62,22 @@ export async function submitEnquiry(
     return { status: 'success' };
   }
 
-  const { name, email, phone, property, type, checkIn, checkOut, guests, message } = parsed.data;
+  const {
+    name,
+    email,
+    phone,
+    property,
+    type,
+    checkIn,
+    checkOut,
+    guests,
+    message,
+    city,
+    pinCode,
+    replyChannel,
+    flexibility,
+    roomsNeeded,
+  } = parsed.data;
   const typeLabel = ENQUIRY_TYPE_LABELS[type] ?? type;
 
   const enquiry = await prisma.enquiry.create({
@@ -67,9 +88,15 @@ export async function submitEnquiry(
       property,
       type,
       message,
+      reference: enquiryReference(),
       guests: guests ?? null,
       checkIn: checkIn ? new Date(checkIn) : null,
       checkOut: checkOut ? new Date(checkOut) : null,
+      city: city || null,
+      pinCode: pinCode || null,
+      replyChannel,
+      flexibility: flexibility || null,
+      roomsNeeded: roomsNeeded ?? null,
       userIp: ip,
     },
   });
@@ -100,5 +127,6 @@ export async function submitEnquiry(
     status: 'success',
     message: 'Thank you — our team will be in touch shortly.',
     leadCaptured: true,
+    reference: enquiry.reference ?? undefined,
   };
 }

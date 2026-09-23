@@ -117,6 +117,17 @@ const basePricing = {
 };
 
 describe('quoteStay', () => {
+  it('charges the base rate when the party is smaller than the room covers', () => {
+    const forTwo = quoteStay({ ...basePricing, nightlyRates: [5000], adults: 2 });
+    const forOne = quoteStay({ ...basePricing, nightlyRates: [5000], adults: 1 });
+    // A single guest in a double does not get a discount, and must not be
+    // credited an extra-adult charge for the seat nobody took.
+    expect(forOne.roomTotal).toBe(forTwo.roomTotal);
+    expect(forOne.total).toBe(forTwo.total);
+    expect(forOne.extrasTotal).toBe(0);
+    expect(forOne.extraAdults).toBe(0);
+  });
+
   it('prices each night at its own rate and multiplies by rooms', () => {
     const quote = quoteStay({ ...basePricing, nightlyRates: [4000, 5000], rooms: 2, adults: 4 });
     expect(quote.nights).toBe(2);

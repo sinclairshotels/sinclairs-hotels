@@ -233,3 +233,25 @@ export function bookingReference(now: Date = new Date()): string {
   ).join('');
   return `SNC-${datePart}-${suffix}`;
 }
+
+// Same shape and same unambiguous alphabet as a booking reference, with an E so
+// nobody chasing one ends up searching the wrong table. Enquiries and bookings
+// are quoted down the same phone line.
+export function enquiryReference(now: Date = new Date()): string {
+  const datePart = dateKey(now).slice(2).replace(/-/g, '');
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  const suffix = Array.from(
+    bytes,
+    (byte) => REFERENCE_ALPHABET[byte % REFERENCE_ALPHABET.length],
+  ).join('');
+  return `SNC-E-${datePart}-${suffix}`;
+}
+
+// How a reference is shown to anyone — guest or staff. The stored value keeps
+// no '#', because it is also the ICICI order reference and a key guests quote
+// over the phone; the hash is presentation, added in one place so the site,
+// the emails and the voucher cannot drift into three house styles. Idempotent,
+// so a caller that formats an already-formatted reference does not double it.
+export function formatReference(reference: string): string {
+  return reference.startsWith('#') ? reference : `#${reference}`;
+}

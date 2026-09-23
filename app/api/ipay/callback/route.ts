@@ -1,6 +1,6 @@
 import { getHotelBySlug } from '@/content/hotels';
 import { roomOffer } from '@/lib/availability';
-import { HOLD_MINUTES } from '@/lib/booking';
+import { HOLD_MINUTES, formatReference } from '@/lib/booking';
 import { SERIALIZABLE, isWriteConflict, prisma } from '@/lib/db';
 import {
   bookingConfirmationHtml,
@@ -291,14 +291,14 @@ export async function POST(request: Request): Promise<NextResponse> {
       await sendMail({
         to: settled.guestEmail,
         kind: 'booking-oversold-guest',
-        subject: `We could not confirm booking ${settled.reference} — refund on its way`,
+        subject: `We could not confirm booking ${formatReference(settled.reference)} — refund on its way`,
         html: bookingOversoldHtml({ booking: settled, hotel, viewUrl }),
       });
 
       await sendMail({
         to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-oversold-staff',
-        subject: `REFUND DUE: ${settled.reference} paid but not confirmed — ${hotelName}`,
+        subject: `REFUND DUE: ${formatReference(settled.reference)} paid but not confirmed — ${hotelName}`,
         html: bookingOversoldHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
       });
     }
@@ -309,7 +309,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       await sendMail({
         to: settled.guestEmail,
         kind: 'booking-guest',
-        subject: `Your Sinclairs booking is confirmed — ${settled.reference}`,
+        subject: `Your Sinclairs booking is confirmed — ${formatReference(settled.reference)}`,
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl }),
       });
 
@@ -319,7 +319,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       await sendMail({
         to: await notificationRecipients(settled.hotelSlug),
         kind: 'booking-hotel',
-        subject: `New direct booking ${settled.reference} — ${hotelName}`,
+        subject: `New direct booking ${formatReference(settled.reference)} — ${hotelName}`,
         html: bookingConfirmationHtml({ booking: settled, hotel, viewUrl, forStaff: true }),
       });
     }
