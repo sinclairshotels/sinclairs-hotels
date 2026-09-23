@@ -41,6 +41,12 @@ export interface RoomOffer {
   nightlyRates: number[];
   // Guests this plan feeds. Zero on Room Only.
   breakfastGuests: number;
+  // What breakfast costs across the whole stay, for the receipt and the export
+  // to state as its own line. Zero on Room Only. Carried separately because it
+  // is already *inside* quote.roomTotal — the plan's nightly rate is the room
+  // plus breakfast for the guests the rate covers — and a receipt that showed
+  // it again as an extra would double it.
+  breakfastTotal: number;
   // Which of the two cancellation terms this price buys, and the date the
   // refundable one stops being refundable. Null deadline on non-refundable,
   // because no date changes anything.
@@ -311,6 +317,27 @@ export async function availability(
       }
 
       for (const { plan, rates: nightlyRates, breakfastPerExtraGuest } of sellable) {
+        const quote = quoteStay({
+          nightlyRates,
+          rooms,
+          adults,
+          children,
+          baseOccupancy: roomType.baseOccupancy,
+          extraAdultCharge: roomType.extraAdultCharge.toNumber(),
+          extraChildCharge: roomType.extraChildCharge.toNumber(),
+          breakfastPerExtraGuest,
+          slab,
+        });
+
+        // Breakfast for the guests the rate covers, in every room, every
+        // night — plus one more for each guest beyond that. Zero on Room Only,
+        // where breakfastPerExtraGuest is zero and the rates carry no meal.
+        const breakfastTotal =
+          breakfastPerExtraGuest > 0
+            ? breakfast * roomType.baseOccupancy * rooms * quote.nights +
+              (quote.extraAdults + quote.extraChildren) * breakfast * quote.nights
+            : 0;
+
         offers.push({
           roomTypeId: roomType.id,
           roomTypeName: roomType.name,
@@ -324,19 +351,10 @@ export async function availability(
           // Zero on Room Only, so a quote can say "with breakfast for N guests"
           // without asking which plan it is looking at.
           breakfastGuests: breakfastPerExtraGuest > 0 ? adults + children : 0,
+          breakfastTotal,
           rateType: term.rateType,
           cancellationDeadline: term.deadline,
-          quote: quoteStay({
-            nightlyRates,
-            rooms,
-            adults,
-            children,
-            baseOccupancy: roomType.baseOccupancy,
-            extraAdultCharge: roomType.extraAdultCharge.toNumber(),
-            extraChildCharge: roomType.extraChildCharge.toNumber(),
-            breakfastPerExtraGuest,
-            slab,
-          }),
+          quote,
         });
       }
     }

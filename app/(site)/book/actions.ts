@@ -186,6 +186,10 @@ export async function createBooking(
             roomTotal: offer.quote.roomTotal,
             taxTotal: offer.quote.taxTotal,
             total: offer.quote.total,
+            // A breakdown of roomTotal rather than an addition to it, and
+            // stored for the same reason the tax is: the supplement is a
+            // setting staff change, and this booking was priced at today's.
+            breakfastAmount: offer.breakfastTotal,
             paymentId: payment.id,
             userIp: ip,
           },

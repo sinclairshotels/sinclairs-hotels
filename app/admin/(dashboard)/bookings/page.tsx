@@ -1,10 +1,11 @@
+import { BookingsExportForm } from '@/components/admin/bookings-export-form';
 import { CancelBookingButton } from '@/components/admin/cancel-booking-button';
 import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
-import { formatInr, formatReference } from '@/lib/booking';
+import { addDays, dateKey, formatInr, formatReference, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { recipientPanel } from '@/lib/notification-emails';
 import type { BookingStatus, Prisma } from '@prisma/client';
@@ -122,11 +123,17 @@ export default async function BookingsPage({
         <p className="font-display text-xl text-forest">Bookings</p>
         <p className="mt-1 text-sm text-ink/60">Direct bookings taken on the website.</p>
 
-        {recipients && (
-          <div className="mt-3 max-w-sm sm:ml-auto">
-            <EmailRecipientsPanel {...recipients} />
-          </div>
-        )}
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+          <BookingsExportForm
+            from={dateKey(addDays(todayInIndia(), -30))}
+            to={dateKey(todayInIndia())}
+          />
+          {recipients && (
+            <div className="w-full max-w-sm">
+              <EmailRecipientsPanel {...recipients} />
+            </div>
+          )}
+        </div>
 
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input

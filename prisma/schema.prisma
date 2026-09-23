@@ -360,6 +360,15 @@ model Booking {
   taxTotal  Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
 
+  // What breakfast cost across the stay, snapshotted like the tax it was
+  // priced with: the supplement is a setting staff change, and a booking taken
+  // at ₹450 a head must still read ₹450 after it becomes ₹500. Already inside
+  // roomTotal — the plan's nightly rate is the room plus breakfast for the
+  // guests it covers — so it is a breakdown of that figure, never an addition
+  // to it. Null on every booking taken before this column existed, where the
+  // guest count and the plan name are all there is; zero on Room Only.
+  breakfastAmount Decimal? @db.Decimal(10, 2)
+
   // What the guest bought, and the date it stops being cancellable. Stored on
   // the booking rather than read back from HotelSettings, for the same reason
   // the tax slab is: staff changing the policy must not change what somebody
