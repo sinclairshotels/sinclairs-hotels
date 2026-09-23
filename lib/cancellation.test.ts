@@ -3,6 +3,7 @@ import {
   cancellationSentence,
   deadlineFor,
   refundPolicy,
+  refundableBlocked,
   refundableIsSellable,
   upliftRate,
   withinFreeCancellation,
@@ -75,6 +76,37 @@ describe('upliftRate', () => {
 
   it('leaves the rate alone at zero percent', () => {
     expect(upliftRate(5400, 0)).toBe(5400);
+  });
+});
+
+describe('refundableBlocked', () => {
+  const peak = { startDate: utc('2026-12-15'), endDate: utc('2027-01-15'), label: 'Peak season' };
+
+  it('blocks a stay wholly inside a window', () => {
+    expect(refundableBlocked([peak], utc('2026-12-24'), utc('2026-12-27'))?.label).toBe(
+      'Peak season',
+    );
+  });
+
+  it('blocks a stay that only overlaps the window at one end', () => {
+    // Arrives before it starts, still there on the 15th.
+    expect(refundableBlocked([peak], utc('2026-12-13'), utc('2026-12-16'))).not.toBeNull();
+    // Arrives on the last day of it.
+    expect(refundableBlocked([peak], utc('2027-01-15'), utc('2027-01-18'))).not.toBeNull();
+  });
+
+  it('leaves a stay that checks out the morning the window opens', () => {
+    // The 15th is not one of the nights paid for, so the guest is gone before
+    // the period begins.
+    expect(refundableBlocked([peak], utc('2026-12-12'), utc('2026-12-15'))).toBeNull();
+  });
+
+  it('leaves a stay that arrives the day after it closes', () => {
+    expect(refundableBlocked([peak], utc('2027-01-16'), utc('2027-01-18'))).toBeNull();
+  });
+
+  it('is null when the property has no windows at all', () => {
+    expect(refundableBlocked([], utc('2026-12-24'), utc('2026-12-27'))).toBeNull();
   });
 });
 

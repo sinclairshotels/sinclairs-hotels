@@ -31,6 +31,7 @@ export const VOUCHER_TERMS_HTML = `
     <li><strong>Non-refundable rate</strong> &mdash; the booking cannot be cancelled or refunded.</li>
     <li><strong>Refundable rate</strong> &mdash; cancel free of charge up to the deadline shown on your confirmation and the full amount is refunded. After that deadline, no refund is made.</li>
     <li>No-shows and early departures are not refunded on either rate.</li>
+    <li>Some dates are sold on non-refundable terms only. Where that applies, the refundable rate is not offered for those dates and the booking cannot be cancelled or refunded.</li>
     <li>Where a refund is due, it is returned to the original payment method and reaches you within 5&ndash;7 working days.</li>
   </ul>
 

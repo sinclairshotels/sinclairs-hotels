@@ -3,7 +3,7 @@ import { FunnelStep } from '@/components/funnel-step';
 import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { directBookingPerk } from '@/content/site';
-import { type RoomOffer, roomOffers } from '@/lib/availability';
+import { type RoomOffer, availability } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
   MAX_NIGHTS,
@@ -85,10 +85,11 @@ export default async function BookHotelPage({
   const children = parsed.success ? parsed.data.children : 0;
 
   const stayError = validateStay(checkIn, checkOut, today);
-  const offers =
+  const result =
     checkIn && checkOut && !stayError
-      ? await roomOffers(prisma, { hotelSlug: slug, checkIn, checkOut, rooms, adults, children })
-      : [];
+      ? await availability(prisma, { hotelSlug: slug, checkIn, checkOut, rooms, adults, children })
+      : null;
+  const offers = result?.offers ?? [];
   const bookable = offers.filter((offer) => offer.roomsLeft >= rooms);
 
   // One card per room and meal plan, carrying both sets of cancellation terms.
@@ -188,6 +189,14 @@ export default async function BookHotelPage({
             </Notice>
           )}
 
+          {result?.nonRefundableOnly && grouped.length > 0 && (
+            <p className="mt-6 rounded border border-gold/40 bg-gold/5 px-4 py-3 text-sm text-ink/75">
+              These dates are sold on non-refundable terms only
+              {result.nonRefundableOnly.label ? ` (${result.nonRefundableOnly.label})` : ''}, so the
+              refundable rate is not offered for this stay.
+            </p>
+          )}
+
           <div className="mt-8 space-y-6">
             {grouped.map(({ offer, alternatives }) => {
               const perNight = Math.round(offer.quote.roomTotal / offer.quote.nights / rooms);
@@ -267,7 +276,10 @@ export default async function BookHotelPage({
 
                     {/* Both sets of terms, priced, side by side — the choice
                         is only meaningful when the cost of it is visible next
-                        to the date it buys. */}
+                        to the date it buys. Where the dates are sold on
+                        non-refundable terms only there is one card, and the
+                        note above the list says why rather than leaving the
+                        property looking like one that has no refundable rate. */}
                     <div className="shrink-0 space-y-3 sm:w-64">
                       <p className="text-xs uppercase tracking-wider text-ink/50">
                         From {formatInr(perNight)} per room / night

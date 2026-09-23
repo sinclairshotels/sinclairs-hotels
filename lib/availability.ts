@@ -8,7 +8,14 @@ import {
   eachNight,
   quoteStay,
 } from '@/lib/booking';
-import { deadlineFor, refundPolicy, refundableIsSellable, upliftRate } from '@/lib/cancellation';
+import {
+  deadlineFor,
+  refundPolicy,
+  refundableBlocked,
+  refundableIsSellable,
+  upliftRate,
+} from '@/lib/cancellation';
+import type { NonRefundableRange } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { currentTaxSlab } from '@/lib/tax';
 import type { BookingRateType, Prisma, PrismaClient, RatePlanCode } from '@prisma/client';
@@ -93,6 +100,11 @@ export interface BlockedOffer {
 export interface AvailabilityResult {
   offers: RoomOffer[];
   blocked: BlockedOffer[];
+  // Set when the stay falls in a period the property sells on non-refundable
+  // terms only. The room list needs it to say why there is one price where
+  // there are usually two — without it, a property that has a refundable rate
+  // looks like one that does not.
+  nonRefundableOnly: NonRefundableRange | null;
 }
 
 export async function availability(
@@ -109,13 +121,13 @@ export async function availability(
   }: AvailabilityQuery,
 ): Promise<AvailabilityResult> {
   const nights = eachNight(checkIn, checkOut);
-  if (nights.length === 0) return { offers: [], blocked: [] };
+  if (nights.length === 0) return { offers: [], blocked: [], nonRefundableOnly: null };
 
   const contentRooms = new Map(
     (getHotelBySlug(hotelSlug)?.rooms ?? []).map((room) => [room.name, room]),
   );
 
-  const [roomTypes, inventory, prices, heldBookings, settings, slab] = await Promise.all([
+  const [roomTypes, inventory, prices, heldBookings, settings, slab, windows] = await Promise.all([
     db.roomType.findMany({
       where: { hotelSlug, active: true },
       include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
@@ -140,10 +152,19 @@ export async function availability(
     }),
     db.hotelSettings.findUnique({ where: { hotelSlug } }),
     currentTaxSlab(now),
+    // Only the windows this stay could touch. The last night is checkOut - 1,
+    // so a window starting on the checkout morning is correctly not one of them.
+    db.nonRefundableWindow.findMany({
+      where: { hotelSlug, startDate: { lt: checkOut }, endDate: { gte: checkIn } },
+      orderBy: { startDate: 'asc' },
+    }),
   ]);
 
   const breakfast = settings?.breakfastSupplement.toNumber() ?? 0;
   const policy = settings ? refundPolicy(settings) : null;
+  // Dates the property sells on non-refundable terms only. Checked once for the
+  // stay rather than per room: it is a property-wide rule about when, not what.
+  const blockedBy = refundableBlocked(windows, checkIn, checkOut);
 
   const inventoryByRoom = new Map<string, Map<string, (typeof inventory)[number]>>();
   for (const row of inventory) {
@@ -265,7 +286,7 @@ export async function availability(
       { rateType: 'NON_REFUNDABLE', base: baseRates, deadline: null },
     ];
 
-    if (policy && refundableIsSellable(checkIn, policy, now)) {
+    if (policy && !blockedBy && refundableIsSellable(checkIn, policy, now)) {
       terms.push({
         rateType: 'REFUNDABLE',
         base: baseRates.map((rate) => upliftRate(rate, policy.upliftPct)),
@@ -323,7 +344,7 @@ export async function availability(
     if (!offers.some((offer) => offer.roomTypeId === roomType.id)) block('unpriced');
   }
 
-  return { offers, blocked };
+  return { offers, blocked, nonRefundableOnly: blockedBy };
 }
 
 export async function roomOffers(db: Db, query: AvailabilityQuery): Promise<RoomOffer[]> {

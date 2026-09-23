@@ -325,6 +325,27 @@ after that, no refund is made."* It states both rates because it is the
 published policy; the booking's own terms and its actual date follow on the
 next line.
 
+**2a. The peak-season exception and Port Blair's blackout come back as data**
+(23 Sep 2026). Removing them left nothing stopping the engine selling a
+refundable rate over Christmas at Port Blair, which was the one place the old
+prose was doing real work. They are replaced by `NonRefundableWindow`: date
+ranges per property, added on Set-up, during which the refundable rate is not
+offered at all. A stay with any night inside one drops the refundable offer for
+the whole stay — a booking is cancelled or it is not, so it cannot be half
+refundable. `/terms` gains one line, *"Some dates are sold on non-refundable
+terms only."*, and the room list says so on the dates themselves.
+
+Explicit dates, not a recurring month and day. The seasons that matter are not
+all on fixed dates (Durga Puja moves), and a range wrapping the new year is a
+wrapping comparison waiting to be got wrong. The cost is that the windows run
+out, so the Set-up panel says when they have — the same warning the rates
+screen already gives for rates. Port Blair is seeded with 15 Dec–15 Jan for two
+seasons.
+
+The force-majeure clause stays removed: cancelled flights, trains and ferries
+are what the refundable rate is for, and a clause promising a refund the engine
+would not give is worse than no clause.
+
 **3. Check-in and check-out stay per property.** Four different pairs across
 nine hotels, from 10 am to 12 noon for check-out. A single stated time would be
 wrong on a document guests print and show at the desk.

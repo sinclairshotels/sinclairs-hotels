@@ -87,6 +87,11 @@ async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await prisma.payment.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await clearNights(HOTEL, RATE_WINDOW);
+  await prisma.nonRefundableWindow.deleteMany({ where: { hotelSlug: HOTEL } });
+  await prisma.hotelSettings.update({
+    where: { hotelSlug: HOTEL },
+    data: { refundableUpliftPct: null, freeCancellationDays: null },
+  });
 }
 
 beforeEach(async () => {
@@ -103,6 +108,36 @@ afterAll(async () => {
 });
 
 describe('createBooking', () => {
+  // The form posts a rateType, and the transaction re-prices from the
+  // property's own settings rather than trusting it. On dates sold as
+  // non-refundable only there is no refundable offer to find, so a submission
+  // asking for one is refused rather than written at the non-refundable price
+  // with refundable terms attached.
+  it('refuses a refundable booking on dates sold as non-refundable only', async () => {
+    await loadRates(3, 4000);
+    await prisma.hotelSettings.update({
+      where: { hotelSlug: HOTEL },
+      data: { refundableUpliftPct: 15, freeCancellationDays: 2 },
+    });
+
+    const refundableFirst = await submit(bookingFormData({ rateType: 'REFUNDABLE' }));
+    expect(refundableFirst.redirectedTo).toBeTruthy();
+    await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
+    await prisma.payment.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
+
+    await prisma.nonRefundableWindow.create({
+      data: { hotelSlug: HOTEL, startDate: CHECK_IN, endDate: CHECK_IN, label: 'Peak season' },
+    });
+
+    const { state } = await submit(bookingFormData({ rateType: 'REFUNDABLE' }));
+    expect(state?.status).toBe('error');
+    expect(await prisma.booking.count({ where: { hotelSlug: HOTEL, checkIn: CHECK_IN } })).toBe(0);
+
+    // The non-refundable rate is still on sale for the same dates.
+    const { redirectedTo } = await submit(bookingFormData({ rateType: 'NON_REFUNDABLE' }));
+    expect(redirectedTo).toBeTruthy();
+  });
+
   it('creates a held booking priced from the rate rows and sends the guest to the gateway', async () => {
     await loadRates(3, 4000);
 

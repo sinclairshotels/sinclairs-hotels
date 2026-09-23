@@ -1,10 +1,11 @@
 import { AddRoomTypeRow } from '@/components/admin/add-room-type-row';
 import { HotelSetupForm } from '@/components/admin/hotel-setup-form';
 import { type MonthlyBaseline, MonthlyRatesTable } from '@/components/admin/monthly-rates-table';
+import { NonRefundableWindows } from '@/components/admin/non-refundable-windows';
 import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
-import { dateKey, todayInIndia } from '@/lib/booking';
+import { dateKey, formatStayDate, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { MONTHS_AHEAD, monthKey, monthsAhead } from '@/lib/rate-plan';
 import type { Metadata } from 'next';
@@ -101,13 +102,28 @@ export default async function MonthlyRatesPage({
     (visibleHotels[0]?.slug as string);
 
   const months = monthsAhead(todayInIndia(), MONTHS_AHEAD);
-  const [roomTypes, settings] = await Promise.all([
+  const [roomTypes, settings, windows] = await Promise.all([
     prisma.roomType.findMany({
       where: { hotelSlug: selected, active: true },
       orderBy: { sortOrder: 'asc' },
     }),
     prisma.hotelSettings.findUnique({ where: { hotelSlug: selected } }),
+    prisma.nonRefundableWindow.findMany({
+      where: { hotelSlug: selected },
+      orderBy: { startDate: 'asc' },
+    }),
   ]);
+
+  const today = todayInIndia();
+  const windowRows = windows.map((window) => ({
+    id: window.id,
+    startDate: dateKey(window.startDate),
+    endDate: dateKey(window.endDate),
+    label: window.label,
+    span: `${formatStayDate(window.startDate)} – ${formatStayDate(window.endDate)}`,
+    past: window.endDate < today,
+  }));
+  const coveredTo = windowRows.filter((window) => !window.past).at(-1)?.endDate ?? null;
   const { baseline, overriddenByMonth } = await monthlyBaseline(selected, months);
 
   // A room added in the back office has no entry in content/hotels, so the
@@ -172,6 +188,16 @@ export default async function MonthlyRatesPage({
             rooms until one is entered.
           </p>
         )}
+
+        <div className="mt-4">
+          <NonRefundableWindows
+            key={selected}
+            hotelSlug={selected}
+            windows={windowRows}
+            today={dateKey(today)}
+            coveredTo={coveredTo}
+          />
+        </div>
 
         <div className="mt-4 pb-6">
           {roomTypes.length === 0 ? (
