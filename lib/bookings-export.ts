@@ -1,3 +1,4 @@
+import { cityOf } from '@/lib/address';
 import { formatStayDate, nightsBetween } from '@/lib/booking';
 import { rateTypeLabel } from '@/lib/cancellation';
 import type { Prisma } from '@prisma/client';
@@ -69,18 +70,6 @@ export const EXPORT_COLUMNS: ExportColumn[] = [
     value: (b) => (b.cancellationDeadline ? formatStayDate(b.cancellationDeadline) : ''),
   },
 ];
-
-// The address is one free-text block on the booking, so the city is read out
-// of it rather than stored apart. The booking form's own layout puts it on the
-// second-to-last line, above the PIN and country.
-export function cityOf(billingAddress: string): string {
-  const lines = billingAddress
-    .split(/[\n,]/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length < 3) return '';
-  return lines[lines.length - 3] ?? '';
-}
 
 export function exportFileName(from: string, to: string, basis: 'booked' | 'stay'): string {
   return `sinclairs-bookings-${basis}-${from}-to-${to}.xlsx`;

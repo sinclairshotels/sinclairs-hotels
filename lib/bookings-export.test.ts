@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import { EXPORT_COLUMNS, type ExportBooking, cityOf, exportFileName } from './bookings-export';
+import { EXPORT_COLUMNS, type ExportBooking, exportFileName } from './bookings-export';
 
 const booking = (overrides: Partial<ExportBooking> = {}): ExportBooking =>
   ({
@@ -23,7 +23,7 @@ const booking = (overrides: Partial<ExportBooking> = {}): ExportBooking =>
     guestName: 'Test Guest',
     guestEmail: 'guest@example.invalid',
     guestPhone: '+91 98300 00000',
-    billingAddress: '12 Camac Street\nFlat 3\nKolkata\n700017\nIndia',
+    billingAddress: '12 Camac Street\nFlat 3\nKolkata\nWest Bengal - 700017\nIndia',
     specialRequests: null,
     roomTotal: new Prisma.Decimal(11800),
     taxTotal: new Prisma.Decimal(590),
@@ -73,58 +73,43 @@ describe('the bookings sheet', () => {
   });
 
   it('counts nights, not calendar days', () => {
-    expect(row(booking())['Nights']).toBe(2);
+    expect(row(booking()).Nights).toBe(2);
   });
 
   it('writes money as numbers, so the sheet can add them up', () => {
     const values = row(booking());
     expect(values['Room total']).toBe(11800);
-    expect(values['GST']).toBe(590);
-    expect(values['Total']).toBe(12390);
+    expect(values.GST).toBe(590);
+    expect(values.Total).toBe(12390);
   });
 
   it('gives breakfast in rupees where the booking stored it', () => {
-    expect(row(booking())['Breakfast']).toBe(1800);
+    expect(row(booking()).Breakfast).toBe(1800);
   });
 
   // Bookings taken before breakfastAmount existed have no figure. Saying "2
   // guests · With Breakfast" is what is actually known; a 0 would claim the
   // guest had no breakfast when the plan name says otherwise.
   it('falls back to the guest count and plan on an older booking', () => {
-    expect(row(booking({ breakfastAmount: null }))['Breakfast']).toBe(
-      '2 guests · With Breakfast',
-    );
+    expect(row(booking({ breakfastAmount: null })).Breakfast).toBe('2 guests · With Breakfast');
   });
 
   it('says nothing about breakfast on a Room Only booking', () => {
-    expect(row(booking({ breakfastAmount: null, breakfastGuests: 0 }))['Breakfast']).toBeNull();
+    expect(row(booking({ breakfastAmount: null, breakfastGuests: 0 })).Breakfast).toBeNull();
   });
 
   it('reads zero for transfer until transfers exist', () => {
-    expect(row(booking())['Transfer']).toBe(0);
+    expect(row(booking()).Transfer).toBe(0);
   });
 
   it('leaves the cancel-by date blank on a non-refundable booking', () => {
-    expect(row(booking({ rateType: 'NON_REFUNDABLE', cancellationDeadline: null }))['Cancel by']).toBe(
-      '',
-    );
-  });
-});
-
-describe('cityOf', () => {
-  it('takes the city out of the address block the booking form writes', () => {
-    expect(cityOf('12 Camac Street\nFlat 3\nKolkata\n700017\nIndia')).toBe('Kolkata');
+    expect(
+      row(booking({ rateType: 'NON_REFUNDABLE', cancellationDeadline: null }))['Cancel by'],
+    ).toBe('');
   });
 
-  it('handles an address written on one line with commas', () => {
-    expect(cityOf('12 Camac Street, Flat 3, Kolkata, 700017, India')).toBe('Kolkata');
-  });
-
-  // A legacy or hand-typed address may not have the shape at all, and a wrong
-  // city in a report is worse than an empty cell.
-  it('says nothing rather than guessing from too few lines', () => {
-    expect(cityOf('Kolkata')).toBe('');
-    expect(cityOf('')).toBe('');
+  it('reads the city out of the address the form wrote', () => {
+    expect(row(booking()).City).toBe('Kolkata');
   });
 });
 

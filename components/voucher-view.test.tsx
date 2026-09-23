@@ -52,6 +52,9 @@ const fixtureVoucher: Voucher = {
   issuerPhone: '+91 9123456789',
   bookingOffice: 'Sinclairs Hotels — Head Office',
   legacyId: null,
+  cancelledAt: null,
+  cancelledReason: null,
+  cancelledByLabel: null,
   createdAt: new Date('2026-01-01'),
 };
 
@@ -72,5 +75,30 @@ describe('VoucherView', () => {
     expect(screen.queryByText('Bill to travel agent, internal note')).not.toBeInTheDocument();
     expect(screen.queryByText('Handle with care, internal note')).not.toBeInTheDocument();
     expect(screen.queryByText('Commission')).not.toBeInTheDocument();
+  });
+
+  // A cancelled voucher must not read as a valid one. The notice comes before
+  // the table, because a guest who reads the dates and stops has read a
+  // document that no longer stands.
+  it('says so, up front, when the voucher has been cancelled', () => {
+    render(
+      <VoucherView
+        voucher={{
+          ...fixtureVoucher,
+          cancelledAt: new Date('2026-09-23T10:00:00.000Z'),
+          cancelledReason: 'Guest rebooked for December',
+          cancelledByLabel: 'Test Staff',
+        }}
+        hotel={fixtureHotel}
+      />,
+    );
+
+    expect(screen.getByText('This voucher has been cancelled.')).toBeInTheDocument();
+    expect(screen.getByText('Guest rebooked for December')).toBeInTheDocument();
+  });
+
+  it('says nothing about cancellation on a live voucher', () => {
+    render(<VoucherView voucher={fixtureVoucher} hotel={fixtureHotel} />);
+    expect(screen.queryByText(/has been cancelled/)).not.toBeInTheDocument();
   });
 });

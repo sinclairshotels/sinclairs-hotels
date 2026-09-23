@@ -28,29 +28,44 @@ const fixtureOffice: BookingOffice = {
 };
 
 describe('VoucherForm', () => {
-  it('renders the required booking, guest, and issuer fields', () => {
+  it('groups the fields under Guest, Stay, Amounts and Notes', () => {
+    render(<VoucherForm hotels={[fixtureHotel]} bookingOffices={[fixtureOffice]} />);
+
+    for (const section of ['Guest', 'Stay', 'Amounts', 'Notes']) {
+      expect(screen.getByRole('group', { name: section })).toBeInTheDocument();
+    }
+  });
+
+  it('asks for everything a voucher cannot be issued without', () => {
     render(<VoucherForm hotels={[fixtureHotel]} bookingOffices={[fixtureOffice]} />);
 
     expect(screen.getByText('Hotel')).toBeInTheDocument();
-    expect(screen.getByText('Booking Office')).toBeInTheDocument();
-    expect(screen.getByLabelText('No. of Rooms')).toBeInTheDocument();
-    expect(screen.getByLabelText('Rate (₹)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Taxes / GST (₹)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Guest Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Guest Phone')).toBeInTheDocument();
-    expect(screen.getByLabelText('Guest Email')).toBeInTheDocument();
-    expect(screen.getByLabelText('Billing Address')).toBeInTheDocument();
-    expect(screen.getByLabelText('Your Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Your Phone')).toBeInTheDocument();
+    expect(screen.getByText('Booking office')).toBeInTheDocument();
+    for (const label of ['Rooms', 'Rate ₹', 'Taxes / GST ₹', 'Name', 'Phone', 'Email']) {
+      expect(screen.getByLabelText(label)).toBeRequired();
+    }
+    expect(screen.getByLabelText('Issued by')).toBeRequired();
+    expect(screen.getByLabelText('Issuer phone')).toBeRequired();
     expect(screen.getByRole('button', { name: /create & send voucher/i })).toBeInTheDocument();
   });
 
-  it('renders the optional travel agent and deposit fields', () => {
+  // The same six fields the booking form asks for, so the two write the same
+  // shape into the one address column they share.
+  it('takes the address in fields rather than as a block of text', () => {
     render(<VoucherForm hotels={[fixtureHotel]} bookingOffices={[fixtureOffice]} />);
 
-    expect(screen.getByLabelText('Travel Agent Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Commission (%)')).toBeInTheDocument();
-    expect(screen.getByLabelText('TDS (%)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Deposit Amount (₹)')).toBeInTheDocument();
+    for (const label of ['Address line 1', 'City', 'State', 'PIN code', 'Country']) {
+      expect(screen.getByLabelText(label)).toBeRequired();
+    }
+    expect(screen.getByLabelText('Address line 2 (optional)')).not.toBeRequired();
+  });
+
+  it('keeps the optional agent and deposit fields', () => {
+    render(<VoucherForm hotels={[fixtureHotel]} bookingOffices={[fixtureOffice]} />);
+
+    expect(screen.getByLabelText('Agent name')).not.toBeRequired();
+    expect(screen.getByLabelText('Commission %')).not.toBeRequired();
+    expect(screen.getByLabelText('TDS %')).not.toBeRequired();
+    expect(screen.getByLabelText('Deposit ₹')).not.toBeRequired();
   });
 });

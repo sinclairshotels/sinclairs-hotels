@@ -1,3 +1,4 @@
+import { addressSchema } from '@/lib/address';
 import { z } from 'zod';
 
 const optionalTrimmedEarly = (max: number) =>
@@ -63,7 +64,7 @@ export const voucherSchema = z.object({
     .max(20)
     .regex(/^[0-9+()\-\s]+$/, 'Please enter a valid phone number'),
   guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
-  billingAddress: z.string().trim().min(5, 'Please enter a billing address').max(500),
+  ...addressSchema.shape,
   travelAgentName: optionalTrimmed(160),
   travelAgentPan: optionalTrimmed(20),
   travelAgentGstin: optionalTrimmed(20),
@@ -169,7 +170,10 @@ export const bookingSchema = staySchema.extend({
   guestName: z.string().trim().min(2, 'Please enter your full name').max(120),
   guestEmail: z.string().trim().email('Please enter a valid email address').max(200),
   guestPhone: phoneField(),
-  billingAddress: z.string().trim().min(5, 'Please enter your address').max(500),
+  // Six fields rather than one line, shared with the voucher form. The stored
+  // column is still one string — lib/address.ts writes it — so every existing
+  // row stays readable.
+  ...addressSchema.shape,
   specialRequests: optionalTrimmed(1000),
   company: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
 });
@@ -274,6 +278,13 @@ export const nonRefundableWindowSchema = z.object({
   startDate: z.string().trim().min(10).max(10),
   endDate: z.string().trim().min(10).max(10),
   label: z.string().trim().max(60).optional().or(z.literal('')),
+});
+
+export const cancelVoucherSchema = z.object({
+  id: z.string().trim().min(1).max(40),
+  // A reason is required: "cancelled" alone loses the only thing anybody asks
+  // afterwards, which is why.
+  reason: z.string().trim().min(3, 'Please say why it is being cancelled').max(300),
 });
 
 export const recipientSchema = z.object({

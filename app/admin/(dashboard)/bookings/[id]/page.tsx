@@ -1,3 +1,4 @@
+import { BackLink } from '@/components/admin/back-link';
 import { CancelBookingButton } from '@/components/admin/cancel-booking-button';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
@@ -74,12 +75,7 @@ export default async function BookingDetailPage({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
-        <Link
-          href="/admin/bookings"
-          className="text-xs uppercase tracking-wider text-ink/50 hover:text-forest"
-        >
-          ← All bookings
-        </Link>
+        <BackLink href="/admin/bookings" label="All bookings" />
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <p className="font-display text-xl text-forest">{formatReference(booking.reference)}</p>
           <span

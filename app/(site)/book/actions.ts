@@ -1,6 +1,7 @@
 'use server';
 
 import { randomBytes } from 'node:crypto';
+import { addressFromInput } from '@/lib/address';
 import { roomOffer } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
@@ -24,7 +25,12 @@ export interface GuestValues {
   guestName: string;
   guestEmail: string;
   guestPhone: string;
-  billingAddress: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  pin: string;
+  country: string;
   specialRequests: string;
 }
 
@@ -48,7 +54,12 @@ function guestValues(formData: FormData): GuestValues {
     guestName: read('guestName'),
     guestEmail: read('guestEmail'),
     guestPhone: read('guestPhone'),
-    billingAddress: read('billingAddress'),
+    addressLine1: read('addressLine1'),
+    addressLine2: read('addressLine2'),
+    city: read('city'),
+    state: read('state'),
+    pin: read('pin'),
+    country: read('country'),
     specialRequests: read('specialRequests'),
   };
 }
@@ -86,6 +97,9 @@ export async function createBooking(
   }
 
   const d = parsed.data;
+  // Six fields in, one column out. lib/address.ts owns the shape so the
+  // export can read the city back out of it.
+  const billingAddress = addressFromInput(d);
   const checkIn = parseDateOnly(d.checkIn);
   const checkOut = parseDateOnly(d.checkOut);
   const today = todayInIndia();
@@ -152,7 +166,7 @@ export async function createBooking(
             guestName: d.guestName,
             guestEmail: d.guestEmail,
             guestPhone: d.guestPhone,
-            billingAddress: d.billingAddress,
+            billingAddress,
             checkIn,
             checkOut,
             userIp: ip,
@@ -181,7 +195,7 @@ export async function createBooking(
             guestName: d.guestName,
             guestEmail: d.guestEmail,
             guestPhone: d.guestPhone,
-            billingAddress: d.billingAddress,
+            billingAddress,
             specialRequests: d.specialRequests || null,
             roomTotal: offer.quote.roomTotal,
             taxTotal: offer.quote.taxTotal,

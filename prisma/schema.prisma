@@ -188,6 +188,14 @@ model Voucher {
 
   legacyId Int? @unique
 
+  // A cancelled voucher is kept and marked, never deleted: it was sent to a
+  // guest and quoted to a property, and a row that vanishes cannot answer
+  // what happened to it. The label is stored beside the reason so the record
+  // still reads correctly after the staff account is gone.
+  cancelledAt      DateTime?
+  cancelledReason  String?
+  cancelledByLabel String?
+
   createdAt DateTime @default(now())
 
   @@index([hotelSlug])

@@ -1,3 +1,4 @@
+import { CancelVoucherButton } from '@/components/admin/cancel-voucher-button';
 import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AdminPagination } from '@/components/admin/pagination';
 import { getHotelBySlug, hotels } from '@/content/hotels';
@@ -23,6 +24,8 @@ export default async function VouchersPage({
   // never a permission — typing the URL has to hit the same wall.
   const viewer = await getSession();
   if (!viewer || !can(viewer, 'vouchers:read')) notFound();
+
+  const mayCancel = can(viewer, 'vouchers:write');
 
   const recipients =
     viewer.role === 'ADMIN'
@@ -157,6 +160,7 @@ export default async function VouchersPage({
               <th className="whitespace-nowrap px-4 py-3">Check-in</th>
               <th className="whitespace-nowrap px-4 py-3">Check-out</th>
               <th className="whitespace-nowrap px-4 py-3">View Link</th>
+              <th className="whitespace-nowrap px-4 py-3">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -185,11 +189,26 @@ export default async function VouchersPage({
                     Open
                   </a>
                 </td>
+                <td className="px-4 py-3">
+                  {mayCancel ? (
+                    <CancelVoucherButton
+                      id={voucher.id}
+                      voucherNo={voucher.voucherNo}
+                      cancelledReason={
+                        voucher.cancelledAt ? `Cancelled — ${voucher.cancelledReason ?? ''}` : null
+                      }
+                    />
+                  ) : (
+                    <span className="text-xs text-ink/50">
+                      {voucher.cancelledAt ? 'Cancelled' : 'Live'}
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {vouchers.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-ink/50">
+                <td colSpan={8} className="px-4 py-8 text-center text-ink/50">
                   {query || hotel ? 'No vouchers match the current filters.' : 'No vouchers yet.'}
                 </td>
               </tr>

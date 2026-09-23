@@ -63,7 +63,12 @@ function bookingFormData(overrides: Record<string, string> = {}): FormData {
     guestName: 'Test Guest',
     guestEmail: `guest@${TEST_EMAIL_DOMAIN}`,
     guestPhone: '+91 98300 00000',
-    billingAddress: '12 Camac Street, Kolkata',
+    addressLine1: '12 Camac Street',
+    addressLine2: '',
+    city: 'Kolkata',
+    state: 'West Bengal',
+    pin: '700017',
+    country: 'India',
     ...overrides,
   };
   for (const [key, value] of Object.entries(fields)) data.append(key, value);
@@ -267,7 +272,8 @@ describe('createBooking', () => {
       bookingFormData({
         guestName: 'Retyping Is Rude',
         guestPhone: '+91 90000 11111',
-        billingAddress: '12 Test Lane, Kolkata',
+        addressLine1: '12 Test Lane',
+        city: 'Kolkata',
         specialRequests: 'A quiet floor, please.',
       }),
     );
@@ -276,7 +282,8 @@ describe('createBooking', () => {
     expect(state?.values).toMatchObject({
       guestName: 'Retyping Is Rude',
       guestPhone: '+91 90000 11111',
-      billingAddress: '12 Test Lane, Kolkata',
+      addressLine1: '12 Test Lane',
+      city: 'Kolkata',
       specialRequests: 'A quiet floor, please.',
     });
   });
