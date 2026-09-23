@@ -104,33 +104,20 @@ export default async function BookHotelPage({
   return (
     <>
       <FunnelStep step="room_view" hotel={hotel.slug} />
-      <section className="relative h-[34vh] min-h-[260px] overflow-hidden">
-        <div className="absolute inset-0 animate-hero-zoom">
-          <Image
-            src={hotel.heroImage}
-            alt={hotel.name}
-            fill
-            priority
-            sizes="100vw"
-            quality={90}
-            className="object-cover"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/95 via-forest-dark/50 to-forest-dark/15" />
-        <div className="absolute inset-x-0 bottom-0 animate-fade-up px-6 pb-10 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-cream drop-shadow-md">
-            {hotel.location}
-          </p>
-          <h1 className="mt-3 font-display text-3xl text-cream drop-shadow-md sm:text-4xl">
-            {hotel.name}
-          </h1>
+      {/* A slim band, not a hero. This is the results page: a 34vh
+          photograph pushed the room table below the fold on every laptop, and
+          a guest who has already chosen the property is here to compare rooms
+          rather than to be sold the view again. The full hero stays on
+          /book, where a property is still being chosen. */}
+      <section className="bg-forest-dark">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-baseline gap-x-3 px-6 py-4">
+          <h1 className="font-display text-xl text-cream sm:text-2xl">{hotel.name}</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-cream/70">{hotel.location}</p>
         </div>
       </section>
 
-      {/* relative + z-10: the hero above is positioned, so it paints over a
-          statically-positioned sibling and slices the top off this card. */}
-      <section className="relative z-10 px-6">
-        <div className="mx-auto -mt-8 max-w-5xl rounded-xl bg-white p-5 shadow-2xl sm:p-6">
+      <section className="border-b border-forest/10 bg-cream px-6 py-3">
+        <div className="mx-auto max-w-6xl">
           <BookingSearchForm
             hotels={hotels}
             defaultHotel={slug}
@@ -144,8 +131,8 @@ export default async function BookHotelPage({
         </div>
       </section>
 
-      <section className="px-6 py-14">
-        <div className="mx-auto max-w-5xl">
+      <section className="px-6 py-8">
+        <div className="mx-auto max-w-6xl">
           {checkIn && checkOut && !stayError && (
             <p className="text-sm text-ink/60">
               {formatStayDate(checkIn)} &ndash; {formatStayDate(checkOut)} &middot;{' '}

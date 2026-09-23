@@ -33,6 +33,7 @@ export interface RoomRow {
   view?: string;
   sizeSqFt: number | null;
   baseOccupancy: number;
+  extraAdultCharge: number;
   amenities: string[];
   images: string[];
   description?: string;
@@ -80,6 +81,7 @@ export function buildRoomTable(
         view: offer.content?.view,
         sizeSqFt: offer.sizeSqFt,
         baseOccupancy: offer.baseOccupancy,
+        extraAdultCharge: offer.extraAdultCharge,
         amenities: offer.content?.amenities ? [...offer.content.amenities] : [],
         images: offer.content?.images ? [...offer.content.images] : [],
         description: offer.content?.description,

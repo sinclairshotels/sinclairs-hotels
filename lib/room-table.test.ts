@@ -12,6 +12,7 @@ const offer = (overrides: Partial<RoomOffer> = {}): RoomOffer =>
     ratePlanName: 'Room Only',
     sizeSqFt: 210,
     baseOccupancy: 2,
+    extraAdultCharge: 1200,
     roomsLeft: 4,
     nightlyRates: [5000, 5000],
     breakfastGuests: 0,
@@ -100,6 +101,10 @@ describe('buildRoomTable', () => {
     );
     expect(rooms).toHaveLength(1);
     expect(unavailable).toEqual([]);
+  });
+
+  it('carries the extra-guest charge, which the Sleeps column prices', () => {
+    expect(buildRoomTable([offer()], [], 1).rooms[0]?.extraAdultCharge).toBe(1200);
   });
 
   it('reports which plans are on sale, so the toggle only offers what exists', () => {

@@ -37,8 +37,11 @@ export interface RoomOffer {
   // Square feet, staff's figure first and the content file's as a fallback.
   // Null where the room has never been measured.
   sizeSqFt: number | null;
-  // Guests the rate covers, for the card to say who the room sleeps.
+  // Guests the rate covers, for the table to say who the room sleeps, and
+  // what one more costs a night — the number a guest weighs before deciding
+  // they need a second room.
   baseOccupancy: number;
+  extraAdultCharge: number;
   roomsLeft: number;
   nightlyRates: number[];
   // Guests this plan feeds. Zero on Room Only.
@@ -297,7 +300,9 @@ export async function availability(
     if (policy && !blockedBy && refundableIsSellable(checkIn, policy, now)) {
       terms.push({
         rateType: 'REFUNDABLE',
-        base: baseRates.map((rate) => upliftRate(rate, policy.upliftPct)),
+        // Capped at the tax threshold: see lib/cancellation.ts. The slab is
+        // the one this stay is being priced with, not a constant.
+        base: baseRates.map((rate) => upliftRate(rate, policy.upliftPct, slab.threshold)),
         deadline: deadlineFor(checkIn, policy.freeCancellationDays),
       });
     }
@@ -349,6 +354,7 @@ export async function availability(
           ratePlanName: plan.name,
           sizeSqFt: roomType.sizeSqFt ?? contentRooms.get(roomType.contentKey)?.sizeSqFt ?? null,
           baseOccupancy: roomType.baseOccupancy,
+          extraAdultCharge: roomType.extraAdultCharge.toNumber(),
           roomsLeft,
           nightlyRates,
           // Zero on Room Only, so a quote can say "with breakfast for N guests"

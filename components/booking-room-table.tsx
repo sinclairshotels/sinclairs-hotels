@@ -102,10 +102,10 @@ export function BookingRoomTable({
           <table className="w-full table-fixed border-collapse text-left text-sm">
             <thead className="bg-forest text-[11px] uppercase tracking-wide text-cream/90">
               <tr>
-                <th className="w-[28%] px-4 py-3 font-medium">Room type</th>
-                <th className="w-[15%] px-4 py-3 font-medium">Sleeps</th>
-                <th className="w-[19%] px-4 py-3 font-medium">Price for your stay</th>
-                <th className="w-[24%] px-4 py-3 font-medium">Your choices</th>
+                <th className="w-[26%] px-4 py-3 font-medium">Room type</th>
+                <th className="w-[18%] px-4 py-3 font-medium">Sleeps</th>
+                <th className="w-[18%] px-4 py-3 font-medium">Price for your stay</th>
+                <th className="w-[23%] px-4 py-3 font-medium">Your choices</th>
                 <th className="w-[14%] px-4 py-3 font-medium">Select</th>
               </tr>
             </thead>
@@ -144,6 +144,11 @@ export function BookingRoomTable({
                         selection={selection}
                         onChange={setSelection}
                       />
+                      {room.roomsLeft <= SCARCITY_THRESHOLD && (
+                        <p className="mt-1.5 text-xs font-medium text-red-700">
+                          Only {room.roomsLeft} left
+                        </p>
+                      )}
                     </td>
                   </tr>
                 ));
@@ -177,12 +182,19 @@ export function BookingRoomTable({
                           {formatInr(rate.taxTotal)} GST
                         </p>
                       </div>
-                      <SelectQuantity
-                        room={room}
-                        rate={rate}
-                        selection={selection}
-                        onChange={setSelection}
-                      />
+                      <div className="text-right">
+                        <SelectQuantity
+                          room={room}
+                          rate={rate}
+                          selection={selection}
+                          onChange={setSelection}
+                        />
+                        {room.roomsLeft <= SCARCITY_THRESHOLD && (
+                          <p className="mt-1.5 text-xs font-medium text-red-700">
+                            Only {room.roomsLeft} left
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -305,10 +317,6 @@ function RoomCell({ room }: { room: RoomRow }) {
           </DialogContent>
         </Dialog>
       )}
-
-      {room.roomsLeft <= SCARCITY_THRESHOLD && (
-        <p className="mt-2 text-xs font-medium text-red-700">Only {room.roomsLeft} left</p>
-      )}
     </div>
   );
 }
@@ -322,7 +330,11 @@ function Sleeps({ room }: { room: RoomRow }) {
         ))}
       </div>
       <p className="sr-only">Sleeps {room.baseOccupancy}</p>
-      <p className="mt-1 text-[11px] leading-snug text-ink/55">Extra guests charged per night</p>
+      {room.extraAdultCharge > 0 && (
+        <p className="mt-1 whitespace-nowrap text-xs text-ink/55">
+          Extra guests: {formatInr(room.extraAdultCharge)}/night
+        </p>
+      )}
     </div>
   );
 }
