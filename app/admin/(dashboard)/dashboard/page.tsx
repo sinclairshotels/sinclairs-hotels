@@ -3,7 +3,7 @@ import { StatTiles } from '@/components/admin/stat-tiles';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
-import { formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
+import { formatInr, formatReference, formatStayDate, nightsBetween } from '@/lib/booking';
 import { dashboardToday } from '@/lib/dashboard';
 import { FUNNEL_STEPS, type Funnel, type FunnelStep, funnelCounts, toRows } from '@/lib/funnel';
 import { COVERAGE_WARNING_DAYS, coverageWarnings } from '@/lib/rate-calendar';
@@ -232,7 +232,8 @@ function BookingLine({ booking }: { booking: Booking }) {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-medium text-ink">
-          {booking.guestName} <span className="font-normal text-ink/50">· {booking.reference}</span>
+          {booking.guestName}{' '}
+          <span className="font-normal text-ink/50">· {formatReference(booking.reference)}</span>
         </p>
         <p className="text-xs text-ink/50">{formatInr(booking.total.toNumber())}</p>
       </div>

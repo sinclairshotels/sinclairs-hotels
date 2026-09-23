@@ -1,6 +1,12 @@
 import { contactNumbers, directBookingPerk } from '@/content/site';
 import type { Hotel } from '@/content/types';
-import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
+import {
+  breakfastLine,
+  formatInr,
+  formatReference,
+  formatStayDate,
+  nightsBetween,
+} from '@/lib/booking';
 import type { Booking } from '@prisma/client';
 import { buttonHtml, emailLayout, escapeHtml, fieldRowsHtml } from './layout';
 
@@ -8,7 +14,7 @@ export function bookingFields(booking: Booking, hotel?: Hotel): Array<[string, s
   const nights = nightsBetween(booking.checkIn, booking.checkOut);
 
   return [
-    ['Booking Reference', booking.reference],
+    ['Booking Reference', formatReference(booking.reference)],
     ['Property', hotel?.name ?? booking.hotelSlug],
     ['Room', booking.roomName],
     ['Check In', formatStayDate(booking.checkIn)],
@@ -77,7 +83,7 @@ export function bookingConfirmationHtml({
   `;
 
   return emailLayout({
-    title: `Booking ${booking.reference} — ${hotel?.name ?? booking.hotelSlug}`,
+    title: `Booking ${formatReference(booking.reference)} — ${hotel?.name ?? booking.hotelSlug}`,
     bodyHtml,
   });
 }
@@ -115,7 +121,7 @@ export function bookingOversoldHtml({
        </div>`;
 
   return emailLayout({
-    title: `Booking ${booking.reference} — refund due`,
+    title: `Booking ${formatReference(booking.reference)} — refund due`,
     bodyHtml,
   });
 }

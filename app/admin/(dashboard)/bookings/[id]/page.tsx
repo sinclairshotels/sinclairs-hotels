@@ -2,7 +2,13 @@ import { CancelBookingButton } from '@/components/admin/cancel-booking-button';
 import { getHotelBySlug } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
-import { breakfastLine, formatInr, formatStayDate, nightsBetween } from '@/lib/booking';
+import {
+  breakfastLine,
+  formatInr,
+  formatReference,
+  formatStayDate,
+  nightsBetween,
+} from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import type { BookingStatus } from '@prisma/client';
 import type { Metadata } from 'next';
@@ -74,7 +80,7 @@ export default async function BookingDetailPage({
           ← All bookings
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <p className="font-display text-xl text-forest">{booking.reference}</p>
+          <p className="font-display text-xl text-forest">{formatReference(booking.reference)}</p>
           <span
             className={`rounded px-2 py-0.5 text-xs uppercase tracking-wider ${STATUS_STYLE[booking.status]}`}
           >

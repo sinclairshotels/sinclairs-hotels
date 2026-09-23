@@ -16,36 +16,32 @@ export function BreakfastSupplementForm({
   const [value, setValue] = useState(String(amount));
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form action={formAction} className="flex items-center gap-2">
       <input type="hidden" name="hotelSlug" value={hotelSlug} />
-      <label className="block">
-        <span className="block text-xs uppercase tracking-wider text-ink/60">
-          Breakfast supplement per person per night ₹
-        </span>
-        <input
-          type="number"
-          min={0}
-          name="breakfastSupplement"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          aria-label="Breakfast supplement per person per night"
-          className="input mt-1 w-32 py-1.5 text-sm"
-        />
+      <label htmlFor="breakfastSupplement" className="shrink-0 text-sm text-ink/70">
+        Breakfast supplement ₹
       </label>
+      <input
+        id="breakfastSupplement"
+        type="number"
+        min={0}
+        name="breakfastSupplement"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-label="Breakfast supplement per person per night"
+        title="Per person per night. With Breakfast is Room Only plus this, times the room's base guests."
+        className="input w-24 shrink-0 py-1.5 text-sm"
+      />
       <button
         type="submit"
         disabled={pending || value === String(amount)}
-        className="rounded border border-forest/40 px-3 py-1.5 text-xs uppercase tracking-wider text-forest transition hover:bg-forest hover:text-cream disabled:opacity-40"
+        className="shrink-0 rounded border border-forest/40 px-3 py-1.5 text-xs uppercase tracking-wider text-forest transition hover:bg-forest hover:text-cream disabled:opacity-40"
       >
         {pending ? 'Saving…' : 'Save'}
       </button>
-      <p className="w-full text-xs text-ink/50">
-        With Breakfast is Room Only plus this, times the room&rsquo;s base guests. It has no
-        calendar of its own.
-      </p>
       {state.message && (
         <p
-          className={`w-full text-xs ${state.status === 'error' ? 'text-red-700' : 'text-forest'}`}
+          className={`text-xs ${state.status === 'error' ? 'text-red-700' : 'text-forest'}`}
           aria-live="polite"
         >
           {state.message}

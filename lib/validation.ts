@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+const optionalTrimmedEarly = (max: number) =>
+  z.string().trim().max(max).optional().or(z.literal(''));
+
 export const enquirySchema = z.object({
   name: z.string().trim().min(2, 'Please enter your full name').max(120),
   email: z.string().trim().email('Please enter a valid email address').max(200),
@@ -10,7 +13,27 @@ export const enquirySchema = z.object({
     .max(20)
     .regex(/^[0-9+()\-\s]+$/, 'Please enter a valid phone number'),
   property: z.string().trim().min(1, 'Please select a property').max(60),
-  type: z.enum(['GENERAL', 'HOTEL', 'WEDDING', 'MEETINGS']).catch('GENERAL'),
+  type: z.enum(['GENERAL', 'HOTEL', 'WEDDING', 'MEETINGS', 'GROUP']).catch('GENERAL'),
+  city: z
+    .string()
+    .trim()
+    .max(80)
+    .regex(/^[A-Za-z\s'.-]*$/, 'City should be letters only')
+    .optional()
+    .or(z.literal('')),
+  // Six digits, and an Indian PIN never starts at zero.
+  pinCode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/, 'Please enter a 6-digit PIN code')
+    .optional()
+    .or(z.literal('')),
+  replyChannel: z.enum(['WHATSAPP', 'PHONE', 'EMAIL']).catch('EMAIL'),
+  flexibility: optionalTrimmedEarly(40),
+  roomsNeeded: z.preprocess(
+    (val) => (val === '' || val === undefined || val === null ? undefined : val),
+    z.coerce.number().int().min(1).max(400).optional(),
+  ),
   checkIn: z.string().trim().max(10).optional().or(z.literal('')),
   checkOut: z.string().trim().max(10).optional().or(z.literal('')),
   guests: z.preprocess(

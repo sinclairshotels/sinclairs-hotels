@@ -80,14 +80,26 @@ export function BookingWidget({
       <div className="px-4 py-2 sm:py-3">
         <span className="block text-xs uppercase tracking-wider text-ink/50">Check In</span>
         <div className="mt-1 w-full sm:w-32">
-          <DatePicker bare value={checkIn} onChange={setCheckIn} min={todayISO(0)} />
+          <DatePicker
+            bare
+            label="Check in"
+            value={checkIn}
+            onChange={setCheckIn}
+            min={todayISO(0)}
+          />
         </div>
       </div>
 
       <div className="px-4 py-2 sm:py-3">
         <span className="block text-xs uppercase tracking-wider text-ink/50">Check Out</span>
         <div className="mt-1 w-full sm:w-32">
-          <DatePicker bare value={checkOut} onChange={setCheckOut} min={checkIn} />
+          <DatePicker
+            bare
+            label="Check out"
+            value={checkOut}
+            onChange={setCheckOut}
+            min={checkIn}
+          />
         </div>
       </div>
 

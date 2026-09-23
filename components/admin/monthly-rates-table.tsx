@@ -160,7 +160,7 @@ export function MonthlyRatesTable({
               <tr key={room.roomTypeId} className="border-b border-ink/5">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 w-64 min-w-[16rem] border-r border-ink/10 bg-white px-3 py-2 text-left align-top font-normal"
+                  className="sticky left-0 z-10 w-72 min-w-[18rem] border-r border-ink/10 bg-white px-3 py-2 text-left align-top font-normal"
                 >
                   <RoomSetupRow hotelSlug={hotelSlug} room={room} />
                 </th>

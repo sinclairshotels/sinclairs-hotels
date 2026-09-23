@@ -154,6 +154,11 @@ export default async function MonthlyRatesPage({
           />
         </div>
 
+        <p className="mt-2 text-xs text-ink/50">
+          With Breakfast is Room Only plus the supplement, per person per night, times the
+          room&rsquo;s base guests. It has no calendar of its own.
+        </p>
+
         <div className="mt-4 pb-6">
           {roomTypes.length === 0 ? (
             <p className="rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">

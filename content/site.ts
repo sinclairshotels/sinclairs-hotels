@@ -21,6 +21,36 @@ export const directBookingPerk = {
   long: 'Free early check-in from 12 noon, on every direct booking.',
 } as const;
 
+// Check-in and check-out are not the same across the estate, so a booking
+// cannot state one pair for all nine. These are the published times, read off
+// the Terms and Conditions in content/legal.ts — that prose is the source, this
+// is the same thing in a shape a page can render. Change both together.
+//
+// checkIn here is the standard time. Direct bookings get in from 12 noon
+// (directBookingPerk), which only actually moves anything at Udaipur and
+// Gangtok; everywhere else 12 noon is already the standard.
+export const stayTimes: Record<string, { checkIn: string; checkOut: string }> = {
+  siliguri: { checkIn: '12 noon', checkOut: '11 am' },
+  burdwan: { checkIn: '12 noon', checkOut: '11 am' },
+  darjeeling: { checkIn: '12 noon', checkOut: '11 am' },
+  kalimpong: { checkIn: '12 noon', checkOut: '11 am' },
+  dooars: { checkIn: '12 noon', checkOut: '10 am' },
+  ooty: { checkIn: '12 noon', checkOut: '10 am' },
+  'port-blair': { checkIn: '12 noon', checkOut: '10 am' },
+  udaipur: { checkIn: '1 pm', checkOut: '11 am' },
+  gangtok: { checkIn: '2 pm', checkOut: '12 noon' },
+};
+
+// Printed in the confirmation email's footer and on the contact page. A
+// registered address is a legal identity, not marketing copy, so it is stated
+// once rather than retyped per surface.
+export const registeredOffice = {
+  company: 'Sinclairs Hotels Limited',
+  lines: ['Pressman House, 10A Lee Road', 'Kolkata 700020'],
+} as const;
+
+export const reservationsHours = '8 am – 10 pm IST, every day';
+
 export const contactNumbers = {
   tollFree: '1800 120 267 000',
   tollFreeHref: 'tel:1800120267000',

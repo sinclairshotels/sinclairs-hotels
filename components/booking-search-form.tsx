@@ -88,11 +88,11 @@ export function BookingSearchForm({
       </Field>
 
       <Field label="Check In">
-        <DatePicker bare value={checkIn} onChange={handleCheckIn} min={today} />
+        <DatePicker bare label="Check in" value={checkIn} onChange={handleCheckIn} min={today} />
       </Field>
 
       <Field label="Check Out">
-        <DatePicker bare value={checkOut} onChange={setCheckOut} min={tomorrow} />
+        <DatePicker bare label="Check out" value={checkOut} onChange={setCheckOut} min={tomorrow} />
       </Field>
 
       <Field label="Rooms">
