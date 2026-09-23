@@ -1,16 +1,24 @@
 'use client';
 
+import { mergeMounted, slidesToMount } from '@/lib/carousel-mount';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 export function HeroCarousel({ images, alt }: { images: string[]; alt: string }) {
   const [index, setIndex] = useState(0);
+  // See lib/carousel-mount.ts: rendering every slide at once fetched every
+  // hero before the page had painted.
+  const [mounted, setMounted] = useState(() => slidesToMount(0, images.length));
 
   useEffect(() => {
     if (images.length <= 1) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % images.length), 7500);
     return () => clearInterval(id);
   }, [images.length]);
+
+  useEffect(() => {
+    setMounted((current) => mergeMounted(current, slidesToMount(index, images.length)));
+  }, [index, images.length]);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -22,15 +30,17 @@ export function HeroCarousel({ images, alt }: { images: string[]; alt: string })
           }`}
         >
           <div className="relative h-full w-full animate-hero-zoom-loop">
-            <Image
-              src={src}
-              alt={i === 0 ? alt : ''}
-              fill
-              priority={i === 0}
-              className="object-cover"
-              sizes="100vw"
-              quality={90}
-            />
+            {mounted.has(i) && (
+              <Image
+                src={src}
+                alt={i === 0 ? alt : ''}
+                fill
+                priority={i === 0}
+                className="object-cover"
+                sizes="100vw"
+                quality={90}
+              />
+            )}
           </div>
         </div>
       ))}

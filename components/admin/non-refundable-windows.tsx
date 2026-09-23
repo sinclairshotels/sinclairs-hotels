@@ -46,14 +46,11 @@ export function NonRefundableWindows({
     <div className="rounded-lg border border-ink/10 bg-white p-4">
       <p className="text-sm font-medium text-ink">Non-refundable only</p>
       <p className="mt-1 text-xs text-ink/55">
-        Dates this property sells on non-refundable terms only. A stay with any night inside one of
-        these periods is not offered the refundable rate at all.
+        Dates this property sells on non-refundable terms only.
       </p>
 
       {windows.length === 0 ? (
-        <p className="mt-3 text-xs text-ink/50">
-          None. Every date sells both rates, wherever a refundable rate is set up above.
-        </p>
+        <p className="mt-3 text-xs text-ink/50">None.</p>
       ) : (
         <ul className="mt-3 space-y-1">
           {windows.map((window) => (

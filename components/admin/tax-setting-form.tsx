@@ -75,9 +75,7 @@ export function TaxSettingForm({
       </div>
 
       <p className="mt-3 text-xs text-ink/50">
-        The threshold is inclusive: a night at exactly it takes the lower rate. Extra adult and
-        child charges count toward the night&rsquo;s value. Changing this never alters a booking
-        already taken — each one stores the tax it was priced with.
+        The threshold is inclusive: a night at exactly it takes the lower rate.
       </p>
 
       {state.message && (

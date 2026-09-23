@@ -60,6 +60,14 @@ async function book(rooms: number, startOffset: number, nights: number, status =
 async function cleanup() {
   await prisma.booking.deleteMany({ where: { guestEmail: { endsWith: TEST_EMAIL_DOMAIN } } });
   await clearNights(HOTEL, WINDOW);
+  // Reset in full, not just the column the last test touched: these tests
+  // share one settings row, and a supplement left behind changes every later
+  // breakfast rate.
+  await prisma.hotelSettings.upsert({
+    where: { hotelSlug: HOTEL },
+    update: { breakfastSupplement: 0 },
+    create: { hotelSlug: HOTEL, breakfastSupplement: 0 },
+  });
 }
 
 beforeEach(async () => {
@@ -79,6 +87,55 @@ describe('rateCalendar', () => {
     expect(grid?.dates).toHaveLength(5);
     expect(grid?.rows.length).toBeGreaterThan(1);
     expect(grid?.rows.every((row) => row.cells.length === 5)).toBe(true);
+  });
+
+  // With Breakfast used to have a row of its own, and every cell in it read
+  // "—" because only Room Only carries stored prices. It is on sale wherever
+  // Room Only is, so the figure is worked out here instead — the same sum
+  // lib/availability.ts charges the guest.
+  it('works out the With Breakfast rate rather than leaving it blank', async () => {
+    await loadRates(2);
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 500 },
+      create: { hotelSlug: HOTEL, breakfastSupplement: 500 },
+    });
+
+    const grid = await calendar();
+    const row = grid?.rows.find((r) => r.roomName === ROOM);
+    // 5,000 Room Only plus 500 for each of the two guests the rate covers.
+    expect(row?.cells[0]?.rate).toBe(5000);
+    expect(row?.cells[0]?.breakfastRate).toBe(5000 + 500 * (row?.baseOccupancy ?? 0));
+    expect(row?.cells[0]?.breakfastRate).toBe(6000);
+  });
+
+  it('leaves the With Breakfast rate blank only where Room Only itself is missing', async () => {
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 500 },
+      create: { hotelSlug: HOTEL, breakfastSupplement: 500 },
+    });
+
+    const grid = await calendar();
+    const cell = grid?.rows.find((r) => r.roomName === ROOM)?.cells[0];
+    expect(cell?.rate).toBeNull();
+    expect(cell?.breakfastRate).toBeNull();
+  });
+
+  it('says nothing about breakfast at a property that charges no supplement', async () => {
+    await loadRates(2);
+    const grid = await calendar();
+    const cell = grid?.rows.find((r) => r.roomName === ROOM)?.cells[0];
+    expect(cell?.rate).toBe(5000);
+    // Printing "RO ₹5,000 · BB ₹5,000" would read as a mistake rather than as
+    // a property that includes breakfast in the room rate.
+    expect(cell?.breakfastRate).toBeNull();
+  });
+
+  it('gives each room one row, not one per rate plan', async () => {
+    const grid = await calendar();
+    const names = grid?.rows.map((row) => row.roomName) ?? [];
+    expect(new Set(names).size).toBe(names.length);
   });
 
   it('shows an unloaded night as having no rate rather than a rate of zero', async () => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { mergeMounted, slidesToMount } from '@/lib/carousel-mount';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -8,12 +9,19 @@ type Slide = { image: string; name: string; location: string; slug: string };
 
 export function JourneyHero({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0);
+  // See lib/carousel-mount.ts. This one mattered most: six full-bleed heroes,
+  // 1.9 MB, every one fetched before the home page had painted.
+  const [mounted, setMounted] = useState(() => slidesToMount(0, slides.length));
 
   useEffect(() => {
     if (slides.length <= 1) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 6500);
     return () => clearInterval(id);
   }, [slides.length]);
+
+  useEffect(() => {
+    setMounted((current) => mergeMounted(current, slidesToMount(index, slides.length)));
+  }, [index, slides.length]);
 
   const current = slides[index];
   if (!current) return null;
@@ -28,15 +36,17 @@ export function JourneyHero({ slides }: { slides: Slide[] }) {
           }`}
         >
           <div className="relative h-full w-full animate-hero-zoom-loop">
-            <Image
-              src={slide.image}
-              alt={slide.name}
-              fill
-              priority={i === 0}
-              className="object-cover"
-              sizes="100vw"
-              quality={90}
-            />
+            {mounted.has(i) && (
+              <Image
+                src={slide.image}
+                alt={slide.name}
+                fill
+                priority={i === 0}
+                className="object-cover"
+                sizes="100vw"
+                quality={90}
+              />
+            )}
           </div>
         </div>
       ))}

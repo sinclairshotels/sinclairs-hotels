@@ -106,10 +106,7 @@ export default async function BookingsPage({
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Bookings</p>
-        <p className="mt-1 text-sm text-ink/60">
-          Direct bookings taken on the website. Rooms are held against the allotment loaded in
-          Set-up.
-        </p>
+        <p className="mt-1 text-sm text-ink/60">Direct bookings taken on the website.</p>
 
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input

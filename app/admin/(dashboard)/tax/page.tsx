@@ -29,8 +29,7 @@ export default async function TaxPage() {
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Tax</p>
         <p className="mt-1 text-sm text-ink/60">
-          GST on accommodation, charged per room per night against that night&rsquo;s rate — never
-          against the booking total.
+          GST on accommodation, charged per room per night.
         </p>
       </div>
 
@@ -57,9 +56,7 @@ export default async function TaxPage() {
 
           <section className="mt-8">
             <p className="font-display text-lg text-forest">Change log</p>
-            <p className="mt-1 text-xs text-ink/50">
-              Every change to the slab, newest first. A booking keeps the tax it was priced with.
-            </p>
+            <p className="mt-1 text-xs text-ink/50">Every change to the slab, newest first.</p>
             {history.length === 0 ? (
               <p className="mt-3 rounded border border-ink/10 bg-white p-6 text-sm text-ink/60">
                 No changes recorded yet.

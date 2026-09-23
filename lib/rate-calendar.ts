@@ -5,7 +5,16 @@ import { prisma } from '@/lib/db';
 
 export interface CalendarCell {
   date: string;
+  // Room Only, the one plan that has a calendar of its own.
   rate: number | null;
+  // With Breakfast, worked out rather than stored: Room Only plus the
+  // property's supplement for each of the room's base guests, which is exactly
+  // what lib/availability.ts charges. It used to render as a dash, which read
+  // as "no rate loaded" for a plan that is always on sale wherever Room Only
+  // is. Null only when Room Only itself is missing, or the property charges no
+  // supplement — there is nothing to add then, so the two rates are the same
+  // number and printing it twice says nothing.
+  breakfastRate: number | null;
   onSale: number;
   sold: number;
   remaining: number;
@@ -18,17 +27,23 @@ export interface CalendarCell {
   overridden: boolean;
 }
 
+// One row per room, not per (room, plan). The plans share one allotment, so
+// the second row repeated the same inventory under a different name and made
+// the grid twice as tall as it needed to be for a property with four rooms.
 export interface CalendarRow {
   roomTypeId: string;
   roomName: string;
-  ratePlanId: string;
-  ratePlanName: string;
+  baseOccupancy: number;
   cells: CalendarCell[];
 }
 
 export interface RateCalendar {
   hotelSlug: string;
   hotelName: string;
+  // Zero means With Breakfast is not on sale here at all — lib/availability.ts
+  // only offers the plan where there is a supplement to add — which is why
+  // every cell shows one rate rather than two.
+  breakfastSupplement: number;
   dates: string[];
   holidays: Record<string, string>;
   rows: CalendarRow[];
@@ -47,9 +62,9 @@ export function parseCalendarView(value: string | undefined): CalendarView {
 // Dates across, room types down. "Sold" counts the rooms currently held by
 // bookings on that night — the same held-booking rule availability uses, so
 // what staff read here is what a guest would be offered, not a second opinion.
-// Inventory is per room type and price is per rate plan, so a row is a
-// (room type, plan) pair: the same "5 on sale" repeats down a room's plans
-// because the plans share those five rooms.
+// Inventory is per room type and price is per rate plan, but only Room Only
+// carries prices — With Breakfast is derived from it — so a row is a room and
+// the cell carries both figures.
 export async function rateCalendar({
   hotelSlug,
   from,
@@ -66,7 +81,7 @@ export async function rateCalendar({
   const dates = eachNight(from, to);
   if (!hotel || dates.length === 0) return null;
 
-  const [roomTypes, inventory, prices, bookings, holidays] = await Promise.all([
+  const [roomTypes, inventory, prices, bookings, holidays, settings] = await Promise.all([
     prisma.roomType.findMany({
       where: { hotelSlug, active: true },
       include: { ratePlans: { where: { active: true }, orderBy: { sortOrder: 'asc' } } },
@@ -86,7 +101,10 @@ export async function rateCalendar({
     prisma.holiday.findMany({
       where: { date: { gte: from, lt: to }, OR: [{ hotelSlug: null }, { hotelSlug }] },
     }),
+    prisma.hotelSettings.findUnique({ where: { hotelSlug } }),
   ]);
+
+  const breakfast = settings?.breakfastSupplement.toNumber() ?? 0;
 
   const inventoryByRoom = new Map<string, Map<string, (typeof inventory)[number]>>();
   for (const row of inventory) {
@@ -116,39 +134,44 @@ export async function rateCalendar({
   const rows: CalendarRow[] = [];
 
   for (const roomType of roomTypes) {
-    for (const plan of roomType.ratePlans) {
-      rows.push({
-        roomTypeId: roomType.id,
-        roomName: roomType.name,
-        ratePlanId: plan.id,
-        ratePlanName: plan.name,
-        cells: dates.map((date) => {
-          const key = dateKey(date);
-          const row = inventoryByRoom.get(roomType.id)?.get(key);
-          const price = priceByPlan.get(plan.id)?.get(key);
-          const sold = soldByRoom.get(roomType.id)?.get(key) ?? 0;
-          const onSale = row?.roomsOnSale ?? 0;
+    const roomOnly = roomType.ratePlans.find((plan) => plan.code === 'EP');
+    // What one more breakfast-inclusive night costs over Room Only: the
+    // supplement for every guest the rate already covers.
+    const supplement = breakfast * roomType.baseOccupancy;
 
-          return {
-            date: key,
-            rate: price ? price.amount.toNumber() : null,
-            onSale,
-            sold,
-            remaining: Math.max(0, onSale - sold),
-            closed: row?.stopSell ?? false,
-            minStay: row?.minStay ?? null,
-            closedToArrival: row?.closedToArrival ?? false,
-            closedToDeparture: row?.closedToDeparture ?? false,
-            overridden: row?.source === 'DAILY' || price?.source === 'DAILY',
-          };
-        }),
-      });
-    }
+    rows.push({
+      roomTypeId: roomType.id,
+      roomName: roomType.name,
+      baseOccupancy: roomType.baseOccupancy,
+      cells: dates.map((date) => {
+        const key = dateKey(date);
+        const row = inventoryByRoom.get(roomType.id)?.get(key);
+        const price = roomOnly ? priceByPlan.get(roomOnly.id)?.get(key) : undefined;
+        const sold = soldByRoom.get(roomType.id)?.get(key) ?? 0;
+        const onSale = row?.roomsOnSale ?? 0;
+        const rate = price ? price.amount.toNumber() : null;
+
+        return {
+          date: key,
+          rate,
+          breakfastRate: rate !== null && supplement > 0 ? rate + supplement : null,
+          onSale,
+          sold,
+          remaining: Math.max(0, onSale - sold),
+          closed: row?.stopSell ?? false,
+          minStay: row?.minStay ?? null,
+          closedToArrival: row?.closedToArrival ?? false,
+          closedToDeparture: row?.closedToDeparture ?? false,
+          overridden: row?.source === 'DAILY' || price?.source === 'DAILY',
+        };
+      }),
+    });
   }
 
   return {
     hotelSlug,
     hotelName: hotel.name,
+    breakfastSupplement: breakfast,
     dates: dates.map(dateKey),
     holidays: Object.fromEntries(holidays.map((h) => [dateKey(h.date), h.name])),
     rows,

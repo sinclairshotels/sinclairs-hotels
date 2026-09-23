@@ -210,10 +210,8 @@ export function MonthlyRatesTable({
       </div>
 
       <p className="mt-2 text-xs text-ink/50">
-        Each value applies to <strong>every night of that month</strong>. Leave a box empty to leave
-        that half alone — filling only the rooms box changes the allotment without touching the
-        price. Price is the Room Only rate; With Breakfast follows it automatically. Nights already
-        past are skipped.
+        Each value applies to <strong>every night of that month</strong>; leave a box empty to leave
+        it unchanged.
       </p>
 
       {state.status === 'error' && state.message && (

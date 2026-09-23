@@ -130,10 +130,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-ink/50">
-        Leave a box empty to leave that half alone. This night keeps these values even when the
-        month around it is saved again — unless someone chooses to replace overrides.
-      </p>
+      <p className="mt-3 text-xs text-ink/50">Leave a box empty to leave it unchanged.</p>
 
       {settled && state.status === 'error' && state.message && (
         <p className="mt-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
