@@ -5,6 +5,7 @@ import {
   refundPolicy,
   refundableBlocked,
   refundableIsSellable,
+  upliftIsCapped,
   upliftRate,
   withinFreeCancellation,
 } from './cancellation';
@@ -68,17 +69,6 @@ describe('refundableIsSellable', () => {
   });
 });
 
-describe('upliftRate', () => {
-  it('adds the percentage and lands on whole rupees', () => {
-    expect(upliftRate(5400, 15)).toBe(6210);
-    expect(upliftRate(4999, 12.5)).toBe(5624);
-  });
-
-  it('leaves the rate alone at zero percent', () => {
-    expect(upliftRate(5400, 0)).toBe(5400);
-  });
-});
-
 describe('refundableBlocked', () => {
   const peak = { startDate: utc('2026-12-15'), endDate: utc('2027-01-15'), label: 'Peak season' };
 
@@ -107,6 +97,52 @@ describe('refundableBlocked', () => {
 
   it('is null when the property has no windows at all', () => {
     expect(refundableBlocked([], utc('2026-12-24'), utc('2026-12-27'))).toBeNull();
+  });
+});
+
+describe('upliftRate', () => {
+  it('adds the uplift and lands on whole rupees', () => {
+    expect(upliftRate(5400, 15)).toBe(6210);
+    expect(upliftRate(4999, 12.5)).toBe(5624);
+  });
+
+  it('leaves the rate alone at zero percent', () => {
+    expect(upliftRate(5400, 0)).toBe(5400);
+  });
+
+  // The case this exists for: ₹6,900 at 15% prices at ₹7,935, which crosses
+  // the ₹7,500 threshold and takes the whole night from 5% GST to 18%. The
+  // guest would pay ₹1,035 more room and ₹1,083 more tax for flexibility that
+  // was meant to cost ₹1,035, and the property collects none of the
+  // difference.
+  it('holds at the threshold rather than carrying a room into the 18% band', () => {
+    expect(upliftRate(6900, 15, 7500)).toBe(7500);
+  });
+
+  it('leaves an uplift that stays under the threshold alone', () => {
+    expect(upliftRate(5400, 15, 7500)).toBe(6210);
+  });
+
+  it('lands exactly on the threshold without capping anything away', () => {
+    expect(upliftRate(7500, 0, 7500)).toBe(7500);
+  });
+
+  // Above the threshold both rates are already taxed at 18%, so there is
+  // nothing to protect and the uplift applies in full.
+  it('does not cap a room that is already above the threshold', () => {
+    expect(upliftRate(9000, 15, 7500)).toBe(10350);
+  });
+
+  it('applies no cap at all when no threshold is given', () => {
+    expect(upliftRate(6900, 15)).toBe(7935);
+  });
+});
+
+describe('upliftIsCapped', () => {
+  it('is true only where the uplift would cross the threshold', () => {
+    expect(upliftIsCapped(6900, 15, 7500)).toBe(true);
+    expect(upliftIsCapped(5400, 15, 7500)).toBe(false);
+    expect(upliftIsCapped(9000, 15, 7500)).toBe(false);
   });
 });
 

@@ -73,7 +73,7 @@ export const udaipurHotel: Hotel = {
     {
       name: 'Villa',
       bedType: 'Queen bed',
-      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge'],
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'Wardrobe'],
       sizeSqFt: 400,
       description:
         'Experience the pinnacle of opulence in our Villa, a private haven featuring expansive living spaces, elegant decor, and exclusive amenities. Ideal for discerning guests, the villa offers unparalleled privacy along with the warmth of traditional Rajasthani hospitality. It has an attached bath with hot and cold shower, a large wardrobe and luggage rack, queen-size bed, in-room dining, and mini fridge.',

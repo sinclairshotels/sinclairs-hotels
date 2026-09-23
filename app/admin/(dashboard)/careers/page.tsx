@@ -1,10 +1,8 @@
-import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { PositionForm } from '@/components/admin/position-form';
 import { PositionOpenToggle } from '@/components/admin/position-open-toggle';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { recipientPanel } from '@/lib/notification-emails';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -27,7 +25,6 @@ export default async function CareersAdminPage() {
   if (!viewer || !can(viewer, 'careers:read')) notFound();
 
   const mayEdit = can(viewer, 'careers:write');
-  const recipients = viewer.role === 'ADMIN' ? await recipientPanel('CAREERS', []) : null;
 
   const [positions, applications] = await Promise.all([
     prisma.jobPosition.findMany({
@@ -48,12 +45,6 @@ export default async function CareersAdminPage() {
       <div className="shrink-0">
         <p className="font-display text-xl text-forest">Careers</p>
         <p className="mt-1 text-sm text-ink/60">Positions, and the people who applied to them.</p>
-
-        {recipients && (
-          <div className="mt-3 max-w-sm sm:ml-auto">
-            <EmailRecipientsPanel {...recipients} />
-          </div>
-        )}
       </div>
 
       <div className="mt-5 min-h-0 flex-1 space-y-8 overflow-y-auto pb-6 pr-1">

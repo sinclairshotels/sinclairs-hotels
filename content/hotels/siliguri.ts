@@ -36,7 +36,7 @@ export const siliguriHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
-      amenities: ['Ensuite bathroom', 'Rain shower', 'Television', 'Wi-Fi'],
+      amenities: ['Ensuite bathroom', 'Rain shower', 'Television', 'Wi-Fi', 'Air conditioning'],
       sizeSqFt: 192,
       description:
         'Recently refurbished with modern comforts, the room is equipped with an ensuite bathroom, herbal bathroom amenities, a rain shower, twin lighting options, an LCD TV with satellite channels, split AC system and free Wi-Fi.',
@@ -47,7 +47,14 @@ export const siliguriHotel: Hotel = {
     {
       name: 'Garden Suite',
       bedType: 'King bed',
-      amenities: ['Ensuite bathroom', 'Tea and coffee', 'Electronic safe', 'Television'],
+      amenities: [
+        'Ensuite bathroom',
+        'Tea and coffee',
+        'Electronic safe',
+        'Television',
+        'Wi-Fi',
+        'Writing desk',
+      ],
       sizeSqFt: 290,
       description:
         'A bedroom with ensuite bathroom and shower, attached with a small seating area and a private terrace. It has a king size bed, a writing desk, attached terrace garden with sit out, LCD TV with satellite channels, tea/coffee set, safe and free Wi-Fi.',
@@ -58,7 +65,14 @@ export const siliguriHotel: Hotel = {
     {
       name: 'Premier Suite',
       bedType: 'King bed',
-      amenities: ['Ensuite bathroom', 'Tea and coffee', 'Electronic safe', 'Television'],
+      amenities: [
+        'Ensuite bathroom',
+        'Tea and coffee',
+        'Electronic safe',
+        'Television',
+        'Wi-Fi',
+        'Writing desk',
+      ],
       sizeSqFt: 450,
       description:
         'The rooms are luxurious and contemporary with a spacious bedroom, living room and two ensuite bathrooms and showers. There is a king size bed, a separate living room, a writing desk, two 32-inch LCD televisions, tea/coffee set, safe and free Wi-Fi.',

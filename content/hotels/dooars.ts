@@ -42,7 +42,14 @@ export const dooarsHotel: Hotel = {
       name: 'Deluxe Room',
       bedType: 'Two queen beds',
       view: 'Garden view',
-      amenities: ['Private balcony', 'Ensuite bathroom', 'Hot and cold shower', 'Tea and coffee'],
+      amenities: [
+        'Private balcony',
+        'Ensuite bathroom',
+        'Hot and cold shower',
+        'Tea and coffee',
+        'Electronic safe',
+        'Writing desk',
+      ],
       sizeSqFt: 345,
       description:
         'Functional and contemporary, these rooms offer the ultimate in luxurious seclusion with a view of the main lawns. Each has an attached bath with hot and cold shower, herbal bathroom amenities, two queen beds, writing desk, private balcony, electronic safe and tea/coffee set.',
@@ -56,7 +63,14 @@ export const dooarsHotel: Hotel = {
     {
       name: 'Premier Suite',
       bedType: 'King bed',
-      amenities: ['Private balcony', 'Rain shower', 'Bathtub', 'Tea and coffee'],
+      amenities: [
+        'Private balcony',
+        'Rain shower',
+        'Bathtub',
+        'Tea and coffee',
+        'Electronic safe',
+        'Television',
+      ],
       sizeSqFt: 690,
       description:
         'Spaciously created with a bedroom, living room, dining area and additional washroom, this suite has a distinct style recreating the atmosphere of the colonial lifestyle — guests know it fondly as the "Burra Sahib Suite", with a balcony, two baths with bathtub and rain shower, a king size bed, a separate living room with dining table and rich black lacquered furniture beneath a coffered, wood-beamed ceiling, a private garden with sit-out, two 32" LCD televisions, electronic safe, tea/coffee set and refrigerator.',

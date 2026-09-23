@@ -6,8 +6,10 @@ import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { dateKey, formatStayDate, todayInIndia } from '@/lib/booking';
+import { upliftIsCapped } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { MONTHS_AHEAD, monthKey, monthsAhead } from '@/lib/rate-plan';
+import { currentTaxSlab } from '@/lib/tax';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -126,6 +128,29 @@ export default async function MonthlyRatesPage({
   const coveredTo = windowRows.filter((window) => !window.past).at(-1)?.endDate ?? null;
   const { baseline, overriddenByMonth } = await monthlyBaseline(selected, months);
 
+  // Where the refundable uplift would carry a night across the GST threshold,
+  // it is held at the threshold instead (lib/cancellation.ts). Staff see a 15%
+  // uplift yielding less than 15% on those nights, so the screen says why
+  // rather than leaving them to work it out.
+  const slab = await currentTaxSlab();
+  const uplift = settings?.refundableUpliftPct?.toNumber() ?? null;
+  const cappedRooms =
+    uplift === null
+      ? []
+      : [
+          ...new Set(
+            Object.entries(baseline)
+              .filter(
+                ([, cell]) =>
+                  cell.rate !== null && upliftIsCapped(cell.rate, uplift, slab.threshold),
+              )
+              .map(([key]) => key.split(':')[0] as string),
+          ),
+        ].flatMap((roomTypeId) => {
+          const room = roomTypes.find((entry) => entry.id === roomTypeId);
+          return room ? [room.name] : [];
+        });
+
   // A room added in the back office has no entry in content/hotels, so the
   // website has no photograph for it until one is added there.
   const photographed = new Set(getHotelBySlug(selected)?.rooms.map((room) => room.name) ?? []);
@@ -178,6 +203,13 @@ export default async function MonthlyRatesPage({
         <p className="mt-2 text-xs text-ink/50">
           Added to the Room Only rate for each guest on a With Breakfast booking.
         </p>
+
+        {cappedRooms.length > 0 && (
+          <p className="mt-2 text-xs text-gold-dark">
+            The refundable rate is held at ₹{slab.threshold.toLocaleString('en-IN')} for{' '}
+            {cappedRooms.join(', ')}, so the uplift does not push a night into the higher GST band.
+          </p>
+        )}
 
         {unmeasured.length > 0 && (
           <p className="mt-2 text-xs text-gold-dark">

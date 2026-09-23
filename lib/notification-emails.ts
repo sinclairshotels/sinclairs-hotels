@@ -16,17 +16,28 @@ export interface Recipients {
 // The pages that send mail, in sidebar order. `perProperty` is whether the
 // panel offers a list per property as well as a central one: a booking belongs
 // to a hotel, a job application does not.
+// Every list is per property as well as central, because every one of these
+// belongs to a hotel somewhere — a job application included, since a position
+// is posted against a property.
+//
+// `fallback` is whether an empty To still reaches somebody. Bookings, vouchers,
+// payments and enquiries must arrive, so they fall through to the property's
+// own address and then STAFF_NOTIFY_EMAIL. The three that do not are
+// deliberate: an unset cancellations or careers list means nobody asked for
+// the copy, and inventing a recipient for money news or somebody's CV is worse
+// than sending none.
 export const NOTIFICATION_PAGES = [
-  { kind: 'BOOKING', label: 'Bookings', perProperty: true },
-  { kind: 'VOUCHER', label: 'Vouchers', perProperty: true },
-  { kind: 'PAYMENT', label: 'Payments', perProperty: true },
-  { kind: 'ENQUIRY', label: 'Enquiries', perProperty: true },
-  { kind: 'CANCELLATION', label: 'Cancellations', perProperty: false },
-  { kind: 'CAREERS', label: 'Careers', perProperty: false },
+  { kind: 'BOOKING', label: 'Bookings', fallback: true },
+  { kind: 'VOUCHER', label: 'Vouchers', fallback: true },
+  { kind: 'VOUCHER_CANCELLATION', label: 'Voucher cancellations', fallback: false },
+  { kind: 'PAYMENT', label: 'Payments', fallback: true },
+  { kind: 'CANCELLATION', label: 'Booking cancellations', fallback: false },
+  { kind: 'ENQUIRY', label: 'Enquiries', fallback: true },
+  { kind: 'CAREERS', label: 'Careers', fallback: false },
 ] as const satisfies ReadonlyArray<{
   kind: NotificationKind;
   label: string;
-  perProperty: boolean;
+  fallback: boolean;
 }>;
 
 export type NotificationPageKind = (typeof NOTIFICATION_PAGES)[number]['kind'];
@@ -84,28 +95,27 @@ export async function guaranteedRecipients(
   return { ...configured, to: [fallback ?? STAFF_NOTIFY_EMAIL] };
 }
 
-// Everything the panel on an admin page needs, in one call: the addresses
-// already set, the properties this person may see, and what the list falls
-// back to while To is empty.
-export async function recipientPanel(
-  kind: NotificationPageKind,
-  visibleHotels: Array<{ slug: string; name: string }>,
-) {
-  const page = notificationPage(kind);
+// Everything the recipients page needs: every list, in one query, plus what
+// each falls back to while its To is empty.
+export async function allRecipients(hotelSlugs: string[]) {
   const rows = await prisma.notificationEmail.findMany({
-    where: { kind },
-    select: { id: true, hotelSlug: true, field: true, address: true },
+    where: { kind: { in: NOTIFICATION_PAGES.map((page) => page.kind) } },
+    select: { id: true, kind: true, hotelSlug: true, field: true, address: true },
     orderBy: { createdAt: 'asc' },
   });
 
-  return {
-    kind,
-    label: page?.label ?? kind,
-    perProperty: page?.perProperty ?? false,
-    properties: visibleHotels,
-    rows,
-    // Cancellations and Careers have no fallback by design; the rest must
-    // reach somebody, so they fall through to STAFF_NOTIFY_EMAIL.
-    fallback: page?.perProperty ? STAFF_NOTIFY_EMAIL : null,
-  };
+  return NOTIFICATION_PAGES.map((page) => ({
+    kind: page.kind as NotificationKind,
+    label: page.label,
+    rows: rows.filter((row) => row.kind === page.kind),
+    fallback: page.fallback ? STAFF_NOTIFY_EMAIL : null,
+    // Per property, so the page can name the address a property falls back to
+    // rather than only the central one.
+    hotelFallbacks: Object.fromEntries(
+      hotelSlugs.flatMap((slug) => {
+        const address = getHotelBySlug(slug)?.contact?.notificationEmail;
+        return page.fallback && address ? [[slug, address]] : [];
+      }),
+    ),
+  }));
 }

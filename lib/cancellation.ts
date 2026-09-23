@@ -68,8 +68,28 @@ export function refundableBlocked(
   );
 }
 
-export function upliftRate(rate: number, upliftPct: number): number {
-  return Math.round(rate * (1 + upliftPct / 100));
+// The uplift, capped so it cannot carry a room across the GST threshold.
+//
+// GST on accommodation is a slab charged per room per night: at or below the
+// threshold 5%, above it 18%. A ₹6,900 room with a 15% uplift prices at
+// ₹7,935, which is ₹1,035 more room and ₹1,083 more tax — the guest pays
+// ₹2,118 for flexibility that was meant to cost ₹1,035, and the property
+// collects none of the difference. Holding the refundable rate at the
+// threshold keeps the whole of it in the 5% band.
+//
+// Only where the base itself is at or below the threshold. Above it both
+// rates are already in the 18% band and there is nothing to protect.
+export function upliftRate(rate: number, upliftPct: number, threshold?: number): number {
+  const uplifted = Math.round(rate * (1 + upliftPct / 100));
+  if (threshold !== undefined && rate <= threshold && uplifted > threshold) return threshold;
+  return uplifted;
+}
+
+// Whether that cap would bite on a given Room Only rate, for the Set-up screen
+// to say so rather than leaving staff to work out why a 15% uplift sometimes
+// yields less than 15%.
+export function upliftIsCapped(rate: number, upliftPct: number, threshold: number): boolean {
+  return rate <= threshold && Math.round(rate * (1 + upliftPct / 100)) > threshold;
 }
 
 // True while the guest can still cancel for a full refund. Compared date to

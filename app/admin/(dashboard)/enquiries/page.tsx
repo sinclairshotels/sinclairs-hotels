@@ -1,4 +1,3 @@
-import { EmailRecipientsPanel } from '@/components/admin/email-recipients-panel';
 import { AssigneeSelect, StatusControls } from '@/components/admin/enquiry-controls';
 import { EnquiryRowLink } from '@/components/admin/enquiry-row-link';
 import { AdminPagination } from '@/components/admin/pagination';
@@ -7,7 +6,6 @@ import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, parsePageSize } from '@/lib/admin-format';
 import { can, getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { recipientPanel } from '@/lib/notification-emails';
 import { EnquiryStatus, EnquiryType, type Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -127,31 +125,24 @@ export default async function EnquiriesPage({
 
   const isAdmin = viewer.role === 'ADMIN';
 
-  const [enquiries, total, statusCounts, typeCounts, propertyCounts, staff, recipients] =
-    await Promise.all([
-      prisma.enquiry.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: pageSize,
-        skip: (page - 1) * pageSize,
-        include: { assignedTo: { select: { id: true, name: true } } },
-      }),
-      prisma.enquiry.count({ where }),
-      prisma.enquiry.groupBy({ by: ['status'], _count: true }),
-      prisma.enquiry.groupBy({ by: ['type'], _count: true }),
-      prisma.enquiry.groupBy({ by: ['property'], _count: true }),
-      prisma.user.findMany({
-        where: { active: true },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      }),
-      isAdmin
-        ? recipientPanel(
-            'ENQUIRY',
-            hotels.map((hotel) => ({ slug: hotel.slug, name: hotel.name })),
-          )
-        : Promise.resolve(null),
-    ]);
+  const [enquiries, total, statusCounts, typeCounts, propertyCounts, staff] = await Promise.all([
+    prisma.enquiry.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+      include: { assignedTo: { select: { id: true, name: true } } },
+    }),
+    prisma.enquiry.count({ where }),
+    prisma.enquiry.groupBy({ by: ['status'], _count: true }),
+    prisma.enquiry.groupBy({ by: ['type'], _count: true }),
+    prisma.enquiry.groupBy({ by: ['property'], _count: true }),
+    prisma.user.findMany({
+      where: { active: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
 
   const now = Date.now();
 
@@ -280,12 +271,6 @@ export default async function EnquiriesPage({
             Mine
           </Link>
         </form>
-
-        {recipients && (
-          <div className="mt-3 max-w-sm sm:ml-auto">
-            <EmailRecipientsPanel {...recipients} />
-          </div>
-        )}
       </div>
 
       <div className="mt-3 min-h-0 flex-1 overflow-auto rounded-lg border border-ink/10 bg-white">
