@@ -297,6 +297,52 @@ room type and night and STAAH sold the rest, with staff mirroring website
 bookings into STAAH by hand. Kept here because the allotment-held-back wording
 explains why the schema is shaped the way it is.*
 
+**Cancellation policy — superseded 23 Sep 2026: refundable rates are back.**
+Every rate was non-refundable, stated in five places and enforced nowhere,
+because there was nothing to enforce. Each room is now offered on both terms:
+the non-refundable rate as before, and a refundable one priced at the
+property's own **uplift %** on the Room Only rate, cancellable in full until
+**N days before check-in**. Both numbers are per property, set together on
+`/admin/rates/monthly`, and both null means that property sells the
+non-refundable rate only.
+
+Three things this had to get right, and did:
+
+- **A booking stores the terms it was sold under.** `Booking.rateType` and
+  `Booking.cancellationDeadline` are written at booking time and read
+  everywhere afterwards, for the same reason the tax slab is stored: staff
+  moving the policy must not change what somebody already agreed to, in either
+  direction. Existing rows default to `NON_REFUNDABLE` with no deadline, which
+  is exactly what they were sold as.
+- **The uplift is priced server-side.** The form posts a `rateType` and no
+  money, and the serializable transaction re-prices from the property's own
+  settings — so asking for refundable terms pays the uplift or the booking
+  fails, and cannot come back at the cheaper price.
+- **A window that has already closed is not sold.** Booking five days out
+  against a seven-day policy would otherwise charge an uplift for a deadline
+  in the past. Availability drops the refundable offer instead.
+
+A guest cancels from their own booking link. Inside the window the booking
+becomes `REFUND_DUE` — the status that already means money is owed — and
+outside it, `CANCELLED`. Both release the rooms. **The refund itself is still
+a person on `/admin/payments`**: nothing here moves money on its own, which is
+the rule the oversold path already followed. Finance is copied on a
+cancellation only when one owes money, through a new Cancellations row on the
+Notification emails panel.
+
+*Previously (10–22 Sep 2026): all rates non-refundable, no cancellation by the
+guest at all. Kept here because the confirmation email, the voucher and
+`content/legal.ts` all carried that wording, and `content/legal.ts` still
+carries a graduated cancellation policy that contradicts it — see the open
+question below.*
+
+**Open: the voucher's cancellation policy still disagrees.**
+`content/legal.ts`, printed on every voucher and now served at `/terms`, offers
+50% back at 8–20 days and 90% at 21–30 days before check-in. That is a third
+policy, older than both of the above, and it reaches the same guest. It needs
+reconciling with the two rates before cutover — this change did not touch it,
+because rewriting published legal copy is not a developer's call.
+
 **Production data.** There are no live bookings and no rate rows in
 production (confirmed 17 Sep 2026), so **no backfill is needed** and the A0
 migration's data-preservation path never fires in practice. It stays in the

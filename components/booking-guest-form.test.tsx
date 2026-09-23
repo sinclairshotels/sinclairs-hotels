@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BookingGuestForm } from './booking-guest-form';
 
@@ -14,9 +14,30 @@ const stay = {
   rooms: 2,
   adults: 3,
   children: 1,
+  rateType: 'NON_REFUNDABLE' as const,
+  cancellationDeadline: null,
 };
 
 describe('BookingGuestForm', () => {
+  it('states the terms the guest is buying, not a blanket policy', () => {
+    render(<BookingGuestForm stay={stay} />);
+    expect(screen.getByText(/non-refundable and non-transferable/i)).toBeInTheDocument();
+
+    cleanup();
+    render(
+      <BookingGuestForm
+        stay={{
+          ...stay,
+          rateType: 'REFUNDABLE',
+          cancellationDeadline: new Date('2099-05-25T00:00:00.000Z'),
+        }}
+      />,
+    );
+    // The date matters more than the word: "refundable" without one is what a
+    // guest argues about at the desk.
+    expect(screen.getByText(/Free cancellation until 25 May 2099/)).toBeInTheDocument();
+  });
+
   it('collects the guest details the booking needs', () => {
     render(<BookingGuestForm stay={stay} />);
 
@@ -42,6 +63,9 @@ describe('BookingGuestForm', () => {
       hotelSlug: 'gangtok',
       roomTypeId: 'room-deluxe',
       ratePlanId: 'plan-deluxe-ep',
+      // Which terms, but never the price for them — the server re-prices from
+      // the property's own settings.
+      rateType: 'NON_REFUNDABLE',
       checkIn: '2099-06-01',
       checkOut: '2099-06-04',
       rooms: '2',

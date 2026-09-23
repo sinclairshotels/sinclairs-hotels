@@ -37,6 +37,7 @@ export default async function ConfirmBookingPage({
   searchParams: Promise<{
     roomType?: string;
     ratePlan?: string;
+    rateType?: string;
     checkIn?: string;
     checkOut?: string;
     rooms?: string;
@@ -77,6 +78,10 @@ export default async function ConfirmBookingPage({
     hotelSlug: slug,
     roomTypeId: query.roomType,
     ...(query.ratePlan ? { ratePlanId: query.ratePlan } : {}),
+    // Named rather than defaulted: a link that asks for refundable terms must
+    // not quietly come back priced as non-refundable, or the guest pays the
+    // cheaper price and believes they can cancel.
+    rateType: query.rateType === 'REFUNDABLE' ? 'REFUNDABLE' : 'NON_REFUNDABLE',
     checkIn,
     checkOut,
     rooms,
@@ -113,6 +118,8 @@ export default async function ConfirmBookingPage({
                   hotelSlug: slug,
                   roomTypeId: offer.roomTypeId,
                   ratePlanId: offer.ratePlanId,
+                  rateType: offer.rateType,
+                  cancellationDeadline: offer.cancellationDeadline,
                   checkIn: dateKey(checkIn),
                   checkOut: dateKey(checkOut),
                   rooms,

@@ -69,10 +69,18 @@ async function cleanup() {
   await clearNights(HOTEL, RANGE);
   // The breakfast supplement is what puts With Breakfast on offer now, so it
   // is the switch a test has to put back rather than the plan's active flag.
+  // Every settings column is reset, not just the one the last test touched:
+  // these tests share one row, and a half-reset leaks a refundable rate into
+  // the next test's offer count.
+  const blankSettings = {
+    breakfastSupplement: 0,
+    refundableUpliftPct: null,
+    freeCancellationDays: null,
+  };
   await prisma.hotelSettings.upsert({
     where: { hotelSlug: HOTEL },
-    update: { breakfastSupplement: 0 },
-    create: { hotelSlug: HOTEL, breakfastSupplement: 0 },
+    update: blankSettings,
+    create: { hotelSlug: HOTEL, ...blankSettings },
   });
   await prisma.ratePlan.updateMany({
     where: { hotelSlug: HOTEL, code: 'CP' },
@@ -182,6 +190,59 @@ describe('roomOffers', () => {
     const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
     expect(offers).toHaveLength(1);
     expect(offers[0]?.ratePlanCode).toBe('EP');
+  });
+
+  it('offers both sets of cancellation terms, priced apart by the uplift', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 0, refundableUpliftPct: 15, freeCancellationDays: 2 },
+      create: {
+        hotelSlug: HOTEL,
+        breakfastSupplement: 0,
+        refundableUpliftPct: 15,
+        freeCancellationDays: 2,
+      },
+    });
+
+    const offers = (await roomOffers(prisma, query)).filter((o) => o.roomTypeName === ROOM);
+    expect(offers).toHaveLength(2);
+
+    const nonRefundable = offers.find((o) => o.rateType === 'NON_REFUNDABLE');
+    const refundable = offers.find((o) => o.rateType === 'REFUNDABLE');
+
+    expect(nonRefundable?.nightlyRates[0]).toBe(4000);
+    expect(refundable?.nightlyRates[0]).toBe(4600);
+    expect(nonRefundable?.cancellationDeadline).toBeNull();
+    // Two days before check-in, and the same rooms back both — flexibility is
+    // a price, not a second allotment.
+    expect(refundable?.cancellationDeadline).toEqual(
+      new Date(query.checkIn.getTime() - 2 * 86_400_000),
+    );
+    expect(offers.every((offer) => offer.roomsLeft === 2)).toBe(true);
+  });
+
+  it('does not offer a refundable rate whose window has already closed', async () => {
+    await loadNights(room, HOTEL, nights(3), { rate: 4000, roomsOnSale: 2 });
+    await prisma.hotelSettings.upsert({
+      where: { hotelSlug: HOTEL },
+      update: { breakfastSupplement: 0, refundableUpliftPct: 15, freeCancellationDays: 365 },
+      create: {
+        hotelSlug: HOTEL,
+        breakfastSupplement: 0,
+        refundableUpliftPct: 15,
+        freeCancellationDays: 365,
+      },
+    });
+
+    // The deadline is a year before check-in, so searching after it has passed
+    // must not offer an uplift that would buy nothing.
+    const afterDeadline = parseDateOnly('2098-07-01') as Date;
+    const offers = (await roomOffers(prisma, { ...query, now: afterDeadline })).filter(
+      (o) => o.roomTypeName === ROOM,
+    );
+    expect(offers).toHaveLength(1);
+    expect(offers[0]?.rateType).toBe('NON_REFUNDABLE');
   });
 
   it('drops the room when Room Only has an unpriced night, since every plan rests on it', async () => {

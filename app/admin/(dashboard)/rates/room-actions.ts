@@ -43,38 +43,68 @@ export async function saveHotelSetup(_prev: SetupState, formData: FormData): Pro
     return { status: 'error', message: 'Please check the breakfast supplement.' };
   }
 
-  const { hotelSlug, breakfastSupplement } = parsed.data;
+  const { hotelSlug, breakfastSupplement, refundableUpliftPct, freeCancellationDays } = parsed.data;
   const auth = await guard(hotelSlug);
   if (!auth.ok) return { status: 'error', message: auth.message };
 
   const before = await prisma.hotelSettings.findUnique({ where: { hotelSlug } });
-  if (before && before.breakfastSupplement.toNumber() === breakfastSupplement) {
-    return { status: 'success', message: 'Breakfast supplement unchanged.' };
+  const previous = {
+    breakfastSupplement: before?.breakfastSupplement.toNumber() ?? 0,
+    refundableUpliftPct: before?.refundableUpliftPct?.toNumber() ?? null,
+    freeCancellationDays: before?.freeCancellationDays ?? null,
+  };
+  const next = {
+    breakfastSupplement,
+    refundableUpliftPct: refundableUpliftPct ?? null,
+    freeCancellationDays: freeCancellationDays ?? null,
+  };
+
+  if (
+    previous.breakfastSupplement === next.breakfastSupplement &&
+    previous.refundableUpliftPct === next.refundableUpliftPct &&
+    previous.freeCancellationDays === next.freeCancellationDays
+  ) {
+    return { status: 'success', message: 'Nothing changed.' };
   }
 
   await prisma.hotelSettings.upsert({
     where: { hotelSlug },
-    update: { breakfastSupplement },
-    create: { hotelSlug, breakfastSupplement },
+    update: next,
+    create: { hotelSlug, ...next },
   });
+
+  // Turning the refundable rate on or off changes what the property sells, so
+  // it is worth its own line in the log rather than hiding inside a diff.
+  const policyLine =
+    next.refundableUpliftPct === null
+      ? 'no refundable rate'
+      : `refundable at +${next.refundableUpliftPct}% free until ${next.freeCancellationDays} days before check-in`;
 
   await recordAudit({
     user: auth.user,
-    action: 'setup.breakfast_changed',
+    action: 'setup.changed',
     entity: 'HotelSettings',
     entityId: hotelSlug,
     hotelSlug,
-    summary: `Breakfast supplement set to ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night`,
-    before: before ? { breakfastSupplement: before.breakfastSupplement.toNumber() } : null,
-    after: { breakfastSupplement },
+    summary: `Breakfast ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night; ${policyLine}`,
+    before: previous,
+    after: next,
     ip: auth.ip,
   });
-  log.info('setup.breakfast_changed', { hotel: hotelSlug, amount: breakfastSupplement });
+  log.info('setup.changed', {
+    hotel: hotelSlug,
+    amount: breakfastSupplement,
+    refundable_uplift_pct: next.refundableUpliftPct,
+    free_cancellation_days: next.freeCancellationDays,
+  });
 
   refresh();
   return {
     status: 'success',
-    message: `With Breakfast is now Room Only plus ₹${breakfastSupplement.toLocaleString('en-IN')} a head.`,
+    message:
+      next.refundableUpliftPct === null
+        ? 'Saved. This property sells the non-refundable rate only.'
+        : `Saved. Refundable rate is +${next.refundableUpliftPct}%, free to cancel until ${next.freeCancellationDays} days before check-in.`,
   };
 }
 

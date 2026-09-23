@@ -3,7 +3,7 @@ import { FunnelStep } from '@/components/funnel-step';
 import { RoomReviews } from '@/components/room-reviews';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { directBookingPerk } from '@/content/site';
-import { roomOffers } from '@/lib/availability';
+import { type RoomOffer, roomOffers } from '@/lib/availability';
 import {
   MAX_BOOKING_HORIZON_DAYS,
   MAX_NIGHTS,
@@ -16,6 +16,7 @@ import {
   parseDateOnly,
   todayUtc,
 } from '@/lib/booking';
+import { rateTypeLabel } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
@@ -88,6 +89,26 @@ export default async function BookHotelPage({
       ? await roomOffers(prisma, { hotelSlug: slug, checkIn, checkOut, rooms, adults, children })
       : [];
   const bookable = offers.filter((offer) => offer.roomsLeft >= rooms);
+
+  // One card per room and meal plan, carrying both sets of cancellation terms.
+  // Availability returns them as separate offers because they are separately
+  // priced and separately bookable; showing them as separate cards would list
+  // the same room twice and make the cheaper one look like a different room.
+  const grouped = Array.from(
+    bookable
+      .reduce((acc, offer) => {
+        const key = `${offer.roomTypeId}:${offer.ratePlanId}`;
+        const existing = acc.get(key);
+        if (existing) existing.alternatives.push(offer);
+        else acc.set(key, { offer, alternatives: [offer] });
+        return acc;
+      }, new Map<string, { offer: RoomOffer; alternatives: RoomOffer[] }>())
+      .values(),
+  ).map((group) => ({
+    ...group,
+    // Cheapest first, so the headline "from" price is the one being shown.
+    alternatives: [...group.alternatives].sort((a, b) => a.quote.total - b.quote.total),
+  }));
 
   // "Nothing free on these dates" and "we don't sell this property online yet"
   // look identical from an empty result but need completely different copy.
@@ -167,17 +188,19 @@ export default async function BookHotelPage({
           )}
 
           <div className="mt-8 space-y-6">
-            {bookable.map((offer) => {
+            {grouped.map(({ offer, alternatives }) => {
               const perNight = Math.round(offer.quote.roomTotal / offer.quote.nights / rooms);
-              const confirmHref = `/book/${slug}/confirm?${new URLSearchParams({
-                roomType: offer.roomTypeId,
-                ratePlan: offer.ratePlanId,
-                checkIn: dateKey(checkIn as Date),
-                checkOut: dateKey(checkOut as Date),
-                rooms: String(rooms),
-                adults: String(adults),
-                children: String(children),
-              })}`;
+              const hrefFor = (choice: typeof offer) =>
+                `/book/${slug}/confirm?${new URLSearchParams({
+                  roomType: choice.roomTypeId,
+                  ratePlan: choice.ratePlanId,
+                  rateType: choice.rateType,
+                  checkIn: dateKey(checkIn as Date),
+                  checkOut: dateKey(checkOut as Date),
+                  rooms: String(rooms),
+                  adults: String(adults),
+                  children: String(children),
+                })}`;
 
               return (
                 <article
@@ -235,22 +258,40 @@ export default async function BookHotelPage({
                       )}
                     </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs uppercase tracking-wider text-ink/50">From</p>
-                      <p className="font-display text-2xl text-forest">{formatInr(perNight)}</p>
-                      <p className="text-xs text-ink/50">per room / night</p>
-                      <p className="mt-2 text-sm font-medium text-ink">
-                        {formatInr(offer.quote.total)} total
+                    {/* Both sets of terms, priced, side by side — the choice
+                        is only meaningful when the cost of it is visible next
+                        to the date it buys. */}
+                    <div className="shrink-0 space-y-3 sm:w-64">
+                      <p className="text-xs uppercase tracking-wider text-ink/50">
+                        From {formatInr(perNight)} per room / night
                       </p>
-                      <p className="text-xs text-ink/50">
-                        including {formatInr(offer.quote.taxTotal)} GST
-                      </p>
-                      <Link
-                        href={confirmHref}
-                        className="mt-4 inline-block rounded bg-gold px-6 py-2.5 text-xs uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
-                      >
-                        Select
-                      </Link>
+                      {alternatives.map((choice) => (
+                        <div
+                          key={choice.rateType}
+                          className="rounded border border-ink/10 p-3 text-right"
+                        >
+                          <p className="text-xs font-medium uppercase tracking-wider text-forest">
+                            {rateTypeLabel(choice.rateType)}
+                          </p>
+                          <p className="mt-0.5 text-[11px] leading-snug text-ink/60">
+                            {choice.rateType === 'REFUNDABLE' && choice.cancellationDeadline
+                              ? `Free cancellation until ${formatStayDate(choice.cancellationDeadline)}`
+                              : 'No refund if cancelled'}
+                          </p>
+                          <p className="mt-2 font-display text-xl text-forest">
+                            {formatInr(choice.quote.total)}
+                          </p>
+                          <p className="text-[11px] text-ink/50">
+                            total, including {formatInr(choice.quote.taxTotal)} GST
+                          </p>
+                          <Link
+                            href={hrefFor(choice)}
+                            className="mt-3 inline-block rounded bg-gold px-5 py-2 text-xs uppercase tracking-wider text-forest-dark transition hover:bg-gold-light"
+                          >
+                            Select
+                          </Link>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </article>
@@ -261,8 +302,9 @@ export default async function BookHotelPage({
           <RoomReviews hotelName={hotel.name} />
 
           <p className="mt-8 text-center text-xs text-ink/60">
-            {directBookingPerk.long} All rates are non-refundable. A booking cannot be cancelled or
-            refunded once payment clears.
+            {directBookingPerk.long} Each room is offered on both terms: the non-refundable rate is
+            cheaper and keeps nothing back, the refundable rate costs more and can be cancelled in
+            full up to the date shown.
           </p>
 
           <p className="mt-6 text-center text-sm text-ink/60">

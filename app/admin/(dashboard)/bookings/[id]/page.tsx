@@ -9,6 +9,7 @@ import {
   formatStayDate,
   nightsBetween,
 } from '@/lib/booking';
+import { cancellationSentence } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import type { BookingStatus } from '@prisma/client';
 import type { Metadata } from 'next';
@@ -91,8 +92,9 @@ export default async function BookingDetailPage({
           )}
         </div>
         <p className="mt-1 text-sm text-ink/60">
-          Taken {formatDate(booking.createdAt)} at {formatTime(booking.createdAt)}. All bookings are
-          non-refundable; a cancellation releases the room but refunds nothing on its own.
+          Taken {formatDate(booking.createdAt)} at {formatTime(booking.createdAt)}.{' '}
+          {cancellationSentence(booking.rateType, booking.cancellationDeadline)} Cancelling here
+          releases the room; the money is refunded from Payments.
         </p>
       </div>
 

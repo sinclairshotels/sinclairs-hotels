@@ -149,7 +149,7 @@ export default async function EnquiriesPage({
         orderBy: { name: 'asc' },
       }),
       isAdmin
-        ? prisma.notificationEmail.findMany({ orderBy: { address: 'asc' } })
+        ? prisma.notificationEmail.findMany({ orderBy: [{ kind: 'asc' }, { address: 'asc' }] })
         : Promise.resolve([] as NotificationAddress[]),
     ]);
 

@@ -1,5 +1,5 @@
 import { AddRoomTypeRow } from '@/components/admin/add-room-type-row';
-import { BreakfastSupplementForm } from '@/components/admin/breakfast-supplement-form';
+import { HotelSetupForm } from '@/components/admin/hotel-setup-form';
 import { type MonthlyBaseline, MonthlyRatesTable } from '@/components/admin/monthly-rates-table';
 import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
@@ -147,16 +147,19 @@ export default async function MonthlyRatesPage({
             </button>
           </form>
 
-          <BreakfastSupplementForm
+          <HotelSetupForm
             key={selected}
             hotelSlug={selected}
             amount={settings?.breakfastSupplement.toNumber() ?? 0}
+            refundableUpliftPct={settings?.refundableUpliftPct?.toNumber() ?? null}
+            freeCancellationDays={settings?.freeCancellationDays ?? null}
           />
         </div>
 
         <p className="mt-2 text-xs text-ink/50">
           With Breakfast is Room Only plus the supplement, per person per night, times the
-          room&rsquo;s base guests. It has no calendar of its own.
+          room&rsquo;s base guests. Leave both refundable boxes empty to sell the non-refundable
+          rate only; fill both to offer a refundable rate alongside it.
         </p>
 
         <div className="mt-4 pb-6">

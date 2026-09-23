@@ -13,7 +13,10 @@ import { STAFF_NOTIFY_EMAIL } from '@/lib/mail';
 // Gangtok gets an address of its own.
 export async function notificationRecipients(hotelSlug?: string | null): Promise<string[]> {
   const rows = await prisma.notificationEmail.findMany({
-    where: { OR: [{ hotelSlug: null }, ...(hotelSlug ? [{ hotelSlug }] : [])] },
+    where: {
+      kind: 'GENERAL',
+      OR: [{ hotelSlug: null }, ...(hotelSlug ? [{ hotelSlug }] : [])],
+    },
     select: { address: true, hotelSlug: true },
   });
 
@@ -31,4 +34,16 @@ export async function notificationRecipients(hotelSlug?: string | null): Promise
 
   const fallback = hotelSlug ? getHotelBySlug(hotelSlug)?.contact?.notificationEmail : null;
   return [fallback ?? STAFF_NOTIFY_EMAIL];
+}
+
+// Finance, copied on a cancellation that owes money. Deliberately has no
+// fallback: an unset list means nobody has asked for the copy, and inventing a
+// recipient for money news is worse than sending none. The guest and the
+// property are told either way.
+export async function cancellationRecipients(): Promise<string[]> {
+  const rows = await prisma.notificationEmail.findMany({
+    where: { kind: 'CANCELLATION' },
+    select: { address: true },
+  });
+  return [...new Set(rows.map((row) => row.address))];
 }
