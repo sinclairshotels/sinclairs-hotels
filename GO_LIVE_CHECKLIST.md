@@ -256,6 +256,31 @@ nothing (`NEXT_PUBLIC_GTM_ID`, `RESEND_API_KEY`).
       (`lib/site-url.ts`). **Remove the override at cutover**, once
       `siteConfig.url` is genuinely this app.
 
+### Region — the functions and the database must sit together
+
+Every page here that is not a plain prerender talks to Postgres at least once,
+and several talk to it three or four times. A function in Washington and a
+database in Singapore pays ~220 ms of round trip *per query*, which no amount
+of front-end work can win back.
+
+- [x] **Vercel functions pinned to `sin1` (Singapore)** — `vercel.json`'s
+      `regions`. Chosen to match the Neon project, which `CLAUDE.md` records as
+      Singapore. Mumbai (`bom1`) would be nearer the guests but further from the
+      data, and the data is what each request waits on.
+- [ ] **Confirm the production Neon compute is in Singapore too.** The `dev`
+      and `prod` branches live in the same Neon project, so both follow the
+      project's region — but confirm it in the Neon console rather than from
+      this file, and if production is anywhere else, move it before cutover
+      rather than after. Asked of Subham; unanswered at the time of writing.
+- [ ] **Turn Neon auto-suspend off on the production branch.** A suspended
+      compute costs a cold start on the first request after idle, which is
+      exactly the request a guest arriving from Google makes. It is a
+      per-branch setting; leave it on for `dev`, where the wait costs nobody a
+      booking.
+- [ ] **Re-check after cutover**, from a device in India rather than from CI:
+      the numbers in the PR that set this were measured against a local server
+      and therefore say nothing about the region.
+
 ## Data
 
 - [x] **Historical data migration — done (2026-09-08): four legacy tables from
