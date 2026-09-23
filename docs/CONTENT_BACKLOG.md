@@ -100,3 +100,18 @@ Recorded so nobody re-raises them:
       say nothing about when — an undated quote is honest, a guessed date is not.
       Supplying real dates means adding the field back to `Review` and to
       `components/room-reviews.tsx` together.
+
+- [ ] **Source links for eleven of the twelve press mentions.** `/media` now
+      only styles an item as a link where `content/site.ts`'s `pressMentions`
+      entry carries a `url` — before, every card lifted under the cursor and
+      then went nowhere, which is why they looked like they linked to the wrong
+      page. One (Curly Tales) has a URL; the other eleven need the article's
+      own address, or the clipping scanned as the Telegraph pieces were. Until
+      then they render as plain cards, correctly.
+
+- [ ] **Room sizes for the ten rooms nobody has measured.** Burdwan's three,
+      Dooars' Wooden Cottage and all six at Port Blair have no figure, so their
+      tiles show no size and `/admin/rates/monthly` lists them by name under the
+      table. The other twenty-nine came from the old site's copy and are seeded
+      into `RoomType.sizeSqFt`; staff can correct any of them there. Square feet
+      only — the m² shown beside it is worked out from that one number.

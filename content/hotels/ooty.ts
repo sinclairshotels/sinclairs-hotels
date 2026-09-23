@@ -46,8 +46,9 @@ export const ootyHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      sizeSqFt: 210,
       description:
-        'Overlooks pine forests interspersed with eucalyptus trees. These forest-facing rooms measure 210 sq. ft. and come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Overlooks pine forests interspersed with eucalyptus trees. These forest-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (1).webp',
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (2).webp',
@@ -58,8 +59,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      sizeSqFt: 210,
       description:
-        'Offers a breathtaking view of the Blue Mountains and Ooty valley. These garden-facing rooms measure 210 sq. ft. and come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Offers a breathtaking view of the Blue Mountains and Ooty valley. These garden-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/ooty/accommodations/premier-room/ADS_4926.webp',
         '/images/hotels/ooty/accommodations/premier-room/ADS_4928.webp',
@@ -70,8 +72,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Superior Room',
+      sizeSqFt: 273,
       description:
-        'Cozy and quiet, the superior rooms overlook the pine forests. Measuring 273 sq. ft., they come with a queen-sized bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Cozy and quiet, the superior rooms overlook the pine forests. They come with a queen-sized bed, a writing desk, and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/ooty/accommodations/superior-room/ADS_4285.webp',
         '/images/hotels/ooty/accommodations/superior-room/ADS_4287.webp',
@@ -82,8 +85,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Deluxe Suite',
+      sizeSqFt: 397,
       description:
-        'Spacious and luxurious, the deluxe suites overlook the Blue Mountains and the Ooty valley. Measuring 397 sq. ft., they come with a queen-sized bed, sofa seating and a dining table, and an attached four-fixture bath with hot and cold shower.',
+        'Spacious and luxurious, the deluxe suites overlook the Blue Mountains and the Ooty valley. They come with a queen-sized bed, sofa seating and a dining table, and an attached four-fixture bath with hot and cold shower.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-suite/Deluxe suite.webp',
         '/images/hotels/ooty/accommodations/deluxe-suite/ADS_4981.webp',
@@ -93,8 +97,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Nilgiri Suite',
+      sizeSqFt: 890,
       description:
-        'Popular with honeymooners, this suite provides elite comfort with spectacular views of pine forests from a private viewing veranda. Measuring 890 sq. ft., it comes with a queen-sized bed, sofa seating, a dining table, a private deck facing the forest, and an attached four-fixture bath with hot and cold running water.',
+        'Popular with honeymooners, this suite provides elite comfort with spectacular views of pine forests from a private viewing veranda. It comes with a queen-sized bed, sofa seating, a dining table, a private deck facing the forest, and an attached four-fixture bath with hot and cold running water.',
       images: [
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (1).webp',
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (2).webp',
@@ -108,12 +113,14 @@ export const ootyHotel: Hotel = {
     {
       name: "Pine n' Petals",
       description:
-        'Located on the lobby level of the hotel, this multicuisine restaurant offers a varied selection for breakfast, lunch and dinner in a cozy ambience with family-friendly, warm service. Open 7:30 AM to 10:30 PM.',
+        'Located on the lobby level of the hotel, this multicuisine restaurant offers a varied selection for breakfast, lunch and dinner in a cozy ambience with family-friendly, warm service.',
+      openingHours: '7:30 am – 10:30 pm',
     },
     {
       name: 'Alto Espirito',
       description:
-        'A stylish Spanish bar with catchy Spanish tunes, delectable Spanish snacks and dapper cocktails. Open 11 AM to 10:30 PM.',
+        'A stylish Spanish bar with catchy Spanish tunes, delectable Spanish snacks and dapper cocktails.',
+      openingHours: '11 am – 10:30 pm',
       images: [
         '/images/hotels/ooty/dining/ALTO ESPIRITO.webp',
         '/images/hotels/ooty/dining/ADS_5282.webp',

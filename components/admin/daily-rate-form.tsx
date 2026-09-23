@@ -3,7 +3,7 @@
 import { type DailyRateState, saveDailyRate } from '@/app/admin/(dashboard)/rates/plan-actions';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { dateKey, todayUtc } from '@/lib/booking';
+import { dateKey, todayInIndia } from '@/lib/booking';
 import { useActionState, useEffect, useState } from 'react';
 
 const initialState: DailyRateState = { status: 'idle' };
@@ -19,7 +19,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
 
   const [hotelSlug, setHotelSlug] = useState(hotels[0]?.slug ?? '');
   const [roomTypeId, setRoomTypeId] = useState(hotels[0]?.rooms[0]?.roomTypeId ?? '');
-  const [date, setDate] = useState(dateKey(todayUtc()));
+  const [date, setDate] = useState(dateKey(todayInIndia()));
   const [roomsOnSale, setRoomsOnSale] = useState('');
   const [rate, setRate] = useState('');
   // The success line describes the values that were saved. The moment any of
@@ -98,7 +98,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
           <DatePicker
             value={date}
             onChange={change(setDate)}
-            min={dateKey(todayUtc())}
+            min={dateKey(todayInIndia())}
             label="Night to override"
           />
         </Field>

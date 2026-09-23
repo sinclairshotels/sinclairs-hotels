@@ -1,7 +1,7 @@
 import { hotels } from '@/content/hotels';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { type LoadedRoom, clearNights, findRoom, loadNights } from '../test-utils/inventory';
-import { addDays, parseDateOnly, todayUtc } from './booking';
+import { addDays, parseDateOnly, todayInIndia } from './booking';
 import { prisma } from './db';
 import { COVERAGE_WARNING_DAYS, coverageWarnings, rateCalendar } from './rate-calendar';
 

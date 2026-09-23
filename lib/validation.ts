@@ -257,6 +257,13 @@ export const roomTypeSchema = z.object({
   maxChildren: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10)),
   extraAdultCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
   extraChildCharge: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(1_000_000)),
+  // Optional, and blank means "not measured" rather than zero: ten of the
+  // thirty-nine rooms have no figure, and storing 0 would print "0 m² · 0 sq ft"
+  // on the tile.
+  sizeSqFt: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().int().min(50, 'A room is bigger than that').max(20_000).optional(),
+  ),
 });
 
 // Dates come in as strings and are parsed with parseDateOnly in the action, so

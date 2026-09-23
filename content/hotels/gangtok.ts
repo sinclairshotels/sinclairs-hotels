@@ -42,8 +42,9 @@ export const gangtokHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      sizeSqFt: 335,
       description:
-        'The well-appointed rooms in wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the hotel. Rooms overlook the forest or road side and feature a king-size bed or two twin beds, at 335 sq. ft.',
+        'The well-appointed rooms in wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the hotel. Rooms overlook the forest or road side and feature a king-size bed or two twin beds.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double1.webp',
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double2.webp',
@@ -52,8 +53,9 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
+      sizeSqFt: 554,
       description:
-        'The ideal solution for privacy while keeping family members close in complete comfort and style, the Family Room consists of two adjoining double rooms with two toilets, together spanning 554 sq. ft.',
+        'The ideal solution for privacy while keeping family members close in complete comfort and style, the Family Room consists of two adjoining double rooms with two toilets.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Sinclairs-Gangtok-Deluxe-Family-Room.webp',
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
@@ -63,8 +65,9 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      sizeSqFt: 340,
       description:
-        'These well-appointed rooms face the mountain range and Gangtok town, offering a relaxed stay for couples, with a private standing balcony affording a panoramic view of the town against the mountains. Some rooms have a triple bed, ideal for an extra adult, at 340 sq. ft.',
+        'These well-appointed rooms face the mountain range and Gangtok town, offering a relaxed stay for couples, with a private standing balcony affording a panoramic view of the town against the mountains. Some rooms have a triple bed, ideal for an extra adult.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room2.webp',
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room4.webp',
@@ -73,8 +76,9 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Premier Suite',
+      sizeSqFt: 535,
       description:
-        'This spacious 535 sq. ft. suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',
+        'This spacious suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite1.webp',
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite Living Room.webp',
@@ -83,8 +87,9 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Valentine Room',
+      sizeSqFt: 340,
       description:
-        'Specially designed for honeymooners and couples celebrating an anniversary, the alluring view, mood lighting and special accessories all add up to a romantic setting, complete with a complimentary platter of goodies, at 340 sq. ft.',
+        'Specially designed for honeymooners and couples celebrating an anniversary, the alluring view, mood lighting and special accessories all add up to a romantic setting, complete with a complimentary platter of goodies.',
       images: [
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom1.webp',
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom2.webp',
@@ -96,7 +101,8 @@ export const gangtokHotel: Hotel = {
     {
       name: 'Magnolia',
       description:
-        "the hotel's multi-cuisine restaurant, a floor above the lobby, serving a daily fresh selection of Indian, Continental and Oriental dishes for breakfast, lunch and dinner (7 AM–11 PM); special Jain preparations available.",
+        "the hotel's multi-cuisine restaurant, a floor above the lobby, serving a daily fresh selection of Indian, Continental and Oriental dishes for breakfast, lunch and dinner; special Jain preparations available.",
+      openingHours: '7 am – 11 pm',
       images: [
         '/images/hotels/gangtok/dining/Magnolia1.webp',
         '/images/hotels/gangtok/dining/Magnolia2.webp',
@@ -106,7 +112,8 @@ export const gangtokHotel: Hotel = {
     {
       name: 'Guras Bar & Lounge',
       description:
-        "a spacious bar named for Sikkim's Rhododendron trees, with an orchestra deck and private seating area offering panoramic views of Gangtok against the Kanchenjunga range, serving whisky, lager and craft cocktails with chef-inspired snacks (11 AM–11 PM).",
+        "a spacious bar named for Sikkim's Rhododendron trees, with an orchestra deck and private seating area offering panoramic views of Gangtok against the Kanchenjunga range, serving whisky, lager and craft cocktails with chef-inspired snacks.",
+      openingHours: '11 am – 11 pm',
       images: [
         '/images/hotels/gangtok/dining/GurasBarandLounge3.webp',
         '/images/hotels/gangtok/dining/GurasBarandLounge17.webp',

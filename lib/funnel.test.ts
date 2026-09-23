@@ -1,4 +1,4 @@
-import { addDays, todayUtc } from '@/lib/booking';
+import { addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { FUNNEL_STEPS, funnelCounts, toRows } from '@/lib/funnel';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -16,7 +16,7 @@ async function event(step: string, hotelSlug: string | null, days = 1) {
 
 async function booking(hotelSlug: string, status: 'PENDING_PAYMENT' | 'CONFIRMED', days = 1) {
   const suffix = Math.random().toString(36).slice(2, 10);
-  const today = todayUtc();
+  const today = todayInIndia();
   await prisma.booking.create({
     data: {
       reference: `FN-${suffix}`,

@@ -3,7 +3,7 @@ import { RatesTabs } from '@/components/admin/rates-tabs';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
-import { addDays, dateKey, parseDateOnly, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, parseDateOnly, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import {
   CALENDAR_VIEWS,
@@ -31,7 +31,7 @@ export default async function RatesPage({
   if (!viewer || !can(viewer, 'rates:read')) notFound();
 
   const { hotel: hotelParam, from: fromParam, days: daysParam } = await searchParams;
-  const today = todayUtc();
+  const today = todayInIndia();
   const view = parseCalendarView(daysParam);
 
   // A Hotel user sees only their own properties, so the picker cannot offer a

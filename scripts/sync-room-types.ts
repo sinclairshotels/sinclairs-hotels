@@ -49,10 +49,17 @@ async function main() {
       });
 
       const roomType = existing
-        ? // Only the ordering follows content; everything else is staff's.
+        ? // Only the ordering follows content; everything else is staff's. The
+          // one exception is a size that has never been set: content carries
+          // the figures the old site published, so seeding a null from them
+          // saves re-typing thirty of them, while a size staff have entered is
+          // left exactly as it is.
           await prisma.roomType.update({
             where: { id: existing.id },
-            data: { sortOrder: index },
+            data: {
+              sortOrder: index,
+              ...(existing.sizeSqFt === null && room.sizeSqFt ? { sizeSqFt: room.sizeSqFt } : {}),
+            },
           })
         : await prisma.roomType.create({
             data: {
@@ -60,6 +67,7 @@ async function main() {
               contentKey: room.name,
               name: room.name,
               sortOrder: index,
+              sizeSqFt: room.sizeSqFt ?? null,
             },
           });
 

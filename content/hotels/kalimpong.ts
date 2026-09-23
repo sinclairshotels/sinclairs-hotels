@@ -47,8 +47,9 @@ export const kalimpongHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      sizeSqFt: 420,
       description:
-        'The richly appointed premier rooms in dark wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the resort. Each room features one king size bed or two twin beds plus a day bed, and a private balcony overlooking the mountains. Room size: 420 sq. ft.',
+        'The richly appointed premier rooms in dark wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the resort. Each room features one king size bed or two twin beds plus a day bed, and a private balcony overlooking the mountains.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom2.webp',
@@ -58,8 +59,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Plus Room',
+      sizeSqFt: 460,
       description:
-        'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on. Room size: 460 sq. ft.',
+        'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom2.webp',
@@ -69,8 +71,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Attic Room',
+      sizeSqFt: 524,
       description:
-        'Similar to the premier rooms but with a spacious attic reached via a wooden staircase, ideal for families — the attic has its own king size bed and a separate wardrobe for children. Room size: 524 sq. ft.',
+        'Similar to the premier rooms but with a spacious attic reached via a wooden staircase, ideal for families — the attic has its own king size bed and a separate wardrobe for children.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom2.webp',
@@ -80,8 +83,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Premier Suite',
+      sizeSqFt: 900,
       description:
-        'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table. Room size: 900 sq. ft.',
+        'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuite1.webp',
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuiteLivingRoom.webp',
@@ -91,8 +95,9 @@ export const kalimpongHotel: Hotel = {
     },
     {
       name: 'Wooden Cottage Room',
+      sizeSqFt: 284,
       description:
-        'Made entirely out of steam-treated recyclable wood, this secluded cottage has two rooms with attached baths — even the toilets, barring the shower area, are built from wood. The king size bed has a large upholstered headboard, and the room opens onto a private sit-out area overlooking the mountains, ideal for honeymooners. Room size: 284 sq. ft.',
+        'Made entirely out of steam-treated recyclable wood, this secluded cottage has two rooms with attached baths — even the toilets, barring the shower area, are built from wood. The king size bed has a large upholstered headboard, and the room opens onto a private sit-out area overlooking the mountains, ideal for honeymooners.',
       images: [
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage1.webp',
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage2.webp',
@@ -105,7 +110,8 @@ export const kalimpongHotel: Hotel = {
     {
       name: 'The Golden Oak',
       description:
-        'All-day dining restaurant a floor below the lobby, serving daily fresh Indian, Continental and Oriental dishes for breakfast, lunch and dinner, with open-terrace seating looking out over the mountains. Timings: 12:30 PM to 3 PM | 7:30 PM to 10 PM.',
+        'All-day dining restaurant a floor below the lobby, serving daily fresh Indian, Continental and Oriental dishes for breakfast, lunch and dinner, with open-terrace seating looking out over the mountains.',
+      openingHours: '12:30 pm – 3 pm · 7:30 pm – 10 pm',
       images: [
         '/images/hotels/kalimpong/dining/TheGoldenOak.webp',
         '/images/hotels/kalimpong/dining/TheGoldenOak1.webp',
@@ -116,7 +122,8 @@ export const kalimpongHotel: Hotel = {
     {
       name: 'Alto Espirito',
       description:
-        'A debonair bar created on a Spanish theme, serving whisky, lager and artfully made cocktails alongside chef-inspired snacks and nibbles. Timings: 12 Noon to 11 PM.',
+        'A debonair bar created on a Spanish theme, serving whisky, lager and artfully made cocktails alongside chef-inspired snacks and nibbles.',
+      openingHours: '12 noon – 11 pm',
       images: [
         '/images/hotels/kalimpong/dining/Alto Espirito Bar 3.webp',
         '/images/hotels/kalimpong/dining/Alto Espirito Bar 1.webp',
@@ -127,7 +134,8 @@ export const kalimpongHotel: Hotel = {
     {
       name: 'The Birch',
       description:
-        'A cosy coffee shop with a smart selection of coffee and breads, with the option of indoor or outdoor seating. Timings: 10 AM to 10:30 PM.',
+        'A cosy coffee shop with a smart selection of coffee and breads, with the option of indoor or outdoor seating.',
+      openingHours: '10 am – 10:30 pm',
     },
   ],
   foodGallery: [

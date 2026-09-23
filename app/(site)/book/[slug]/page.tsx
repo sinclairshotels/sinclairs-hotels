@@ -14,12 +14,13 @@ import {
   formatStayDate,
   nightsBetween,
   parseDateOnly,
-  todayUtc,
+  todayInIndia,
 } from '@/lib/booking';
 import { rateTypeLabel } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
+import { formatRoomSize } from '@/lib/room-size';
 import { pageMetadata } from '@/lib/seo';
 import { staySchema } from '@/lib/validation';
 import type { Metadata } from 'next';
@@ -75,7 +76,7 @@ export default async function BookHotelPage({
 
   const query = await searchParams;
   const parsed = staySchema.safeParse({ hotelSlug: slug, ...query });
-  const today = todayUtc();
+  const today = todayInIndia();
 
   const checkIn = parsed.success ? parseDateOnly(parsed.data.checkIn) : null;
   const checkOut = parsed.success ? parseDateOnly(parsed.data.checkOut) : null;
@@ -234,6 +235,12 @@ export default async function BookHotelPage({
                       <h2 className="font-display text-xl text-forest">{offer.roomTypeName}</h2>
                       <p className="text-xs uppercase tracking-wider text-gold-dark">
                         {offer.ratePlanName}
+                        {formatRoomSize(offer.sizeSqFt) ? (
+                          <span className="normal-case tracking-wide text-ink/50">
+                            {' · '}
+                            {formatRoomSize(offer.sizeSqFt)}
+                          </span>
+                        ) : null}
                       </p>
                       {offer.breakfastGuests > 0 && (
                         <p className="mt-0.5 text-xs text-ink/60">

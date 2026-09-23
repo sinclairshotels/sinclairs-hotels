@@ -1,4 +1,4 @@
-import { addDays, todayUtc } from '@/lib/booking';
+import { addDays, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { clearNights, findRoom, loadNights, planFor } from '@/test-utils/inventory';
@@ -12,7 +12,10 @@ const ROOM = 'Premier Room';
 
 // Wider than the window the page reads, so a night parked just outside it
 // cannot survive into the next case.
-const WINDOW = { gte: addDays(todayUtc(), -5), lt: addDays(todayUtc(), FROM_PRICE_DAYS + 30) };
+const WINDOW = {
+  gte: addDays(todayInIndia(), -5),
+  lt: addDays(todayInIndia(), FROM_PRICE_DAYS + 30),
+};
 
 describe('fromPricePerHotel', () => {
   beforeEach(async () => {
@@ -25,9 +28,9 @@ describe('fromPricePerHotel', () => {
 
   it('reports the cheapest room-only night a property has loaded', async () => {
     const room = await findRoom(HOTEL, ROOM);
-    await loadNights(room, HOTEL, [addDays(todayUtc(), 1)], { rate: 6000 });
-    await loadNights(room, HOTEL, [addDays(todayUtc(), 2)], { rate: 4200 });
-    await loadNights(room, HOTEL, [addDays(todayUtc(), 3)], { rate: 9000 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), 1)], { rate: 6000 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), 2)], { rate: 4200 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), 3)], { rate: 9000 });
 
     expect((await fromPricePerHotel()).get(HOTEL)).toBe(4200);
   });
@@ -38,20 +41,20 @@ describe('fromPricePerHotel', () => {
 
   it('ignores a cheaper night beyond the window', async () => {
     const room = await findRoom(HOTEL, ROOM);
-    await loadNights(room, HOTEL, [addDays(todayUtc(), 1)], { rate: 6000 });
-    await loadNights(room, HOTEL, [addDays(todayUtc(), FROM_PRICE_DAYS + 2)], { rate: 1000 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), 1)], { rate: 6000 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), FROM_PRICE_DAYS + 2)], { rate: 1000 });
 
     expect((await fromPricePerHotel()).get(HOTEL)).toBe(6000);
   });
 
   it('ignores yesterday, which nobody can book', async () => {
     const room = await findRoom(HOTEL, ROOM);
-    await loadNights(room, HOTEL, [addDays(todayUtc(), 1)], { rate: 6000 });
+    await loadNights(room, HOTEL, [addDays(todayInIndia(), 1)], { rate: 6000 });
     await prisma.ratePrice.create({
       data: {
         ratePlanId: room.ratePlanId,
         hotelSlug: HOTEL,
-        date: addDays(todayUtc(), -1),
+        date: addDays(todayInIndia(), -1),
         amount: 500,
       },
     });
@@ -59,14 +62,14 @@ describe('fromPricePerHotel', () => {
     expect((await fromPricePerHotel()).get(HOTEL)).toBe(6000);
 
     await prisma.ratePrice.deleteMany({
-      where: { hotelSlug: HOTEL, date: addDays(todayUtc(), -1) },
+      where: { hotelSlug: HOTEL, date: addDays(todayInIndia(), -1) },
     });
   });
 
   it('quotes room-only even when a meal plan is priced lower', async () => {
     const room = await findRoom(HOTEL, ROOM);
     const withBreakfast = await planFor(room.roomTypeId, 'CP');
-    const night = addDays(todayUtc(), 1);
+    const night = addDays(todayInIndia(), 1);
 
     await loadNights(room, HOTEL, [night], { rate: 6000 });
     await prisma.ratePrice.upsert({

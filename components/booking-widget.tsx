@@ -4,23 +4,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import type { Hotel } from '@/content/types';
 import { hotelItem, pushEcommerceEvent, recordFunnelStep } from '@/lib/analytics';
+import { dateKey, defaultStayWindow, todayInIndia } from '@/lib/booking';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
-function todayISO(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
-}
 
 // The first property in the list is not a guess worth making — it reads as
 // chosen, and a guest who searches without noticing gets Burdwan.
 const NO_PROPERTY = '';
-
-// Tomorrow and the day after: a stay that can actually be booked, rather than
-// tonight, which is often past a property's cut-off by the time anyone looks.
-const DEFAULT_CHECK_IN = 1;
-const DEFAULT_CHECK_OUT = 2;
 
 export function BookingWidget({
   hotels,
@@ -30,8 +20,12 @@ export function BookingWidget({
 }: { hotels: Hotel[]; hotel?: string; ctaSource?: string }) {
   const router = useRouter();
   const [property, setProperty] = useState(hotel ?? NO_PROPERTY);
-  const [checkIn, setCheckIn] = useState(todayISO(DEFAULT_CHECK_IN));
-  const [checkOut, setCheckOut] = useState(todayISO(DEFAULT_CHECK_OUT));
+  // The same window the booking page opens on when it is reached without
+  // dates, so a room's Book Now cannot land on a different week from the one
+  // the guest was just looking at.
+  const [defaults] = useState(defaultStayWindow);
+  const [checkIn, setCheckIn] = useState(defaults.checkIn);
+  const [checkOut, setCheckOut] = useState(defaults.checkOut);
   const [guests, setGuests] = useState(2);
 
   function handleSearch(event: React.FormEvent) {
@@ -85,7 +79,7 @@ export function BookingWidget({
             label="Check in"
             value={checkIn}
             onChange={setCheckIn}
-            min={todayISO(0)}
+            min={dateKey(todayInIndia())}
           />
         </div>
       </div>

@@ -3,13 +3,14 @@ import {
   allocateExtras,
   bookingReference,
   dateKey,
+  defaultStayWindow,
   eachNight,
   formatStayDate,
   nightsBetween,
   parseDateOnly,
   quoteStay,
   taxForNight,
-  todayUtc,
+  todayInIndia,
 } from './booking';
 
 describe('parseDateOnly', () => {
@@ -209,8 +210,55 @@ describe('bookingReference', () => {
   });
 });
 
-describe('todayUtc', () => {
-  it('truncates an instant to its UTC date', () => {
-    expect(dateKey(todayUtc(new Date('2026-09-16T23:30:00Z')))).toBe('2026-09-16');
+describe('todayInIndia', () => {
+  it('is the date in India, not the date in UTC', () => {
+    // 23:30Z is 05:00 the next morning in Kolkata. A UTC "today" here is the
+    // guest's yesterday, which is the whole bug: it offered a night that had
+    // already started.
+    expect(dateKey(todayInIndia(new Date('2026-09-16T23:30:00Z')))).toBe('2026-09-17');
+  });
+
+  it.each([
+    // The last instant of the 23rd in India, and the first of the 24th.
+    ['2026-09-23T18:29:59.999Z', '2026-09-23'],
+    ['2026-09-23T18:30:00.000Z', '2026-09-24'],
+    // Mid-morning and late evening India time, well clear of the boundary.
+    ['2026-09-24T04:30:00.000Z', '2026-09-24'],
+    ['2026-09-24T18:00:00.000Z', '2026-09-24'],
+  ])('%s is %s in India', (instant, expected) => {
+    expect(dateKey(todayInIndia(new Date(instant)))).toBe(expected);
+  });
+});
+
+describe('defaultStayWindow', () => {
+  it('is tomorrow and the day after, counted from India', () => {
+    expect(defaultStayWindow(new Date('2026-09-24T04:30:00.000Z'))).toEqual({
+      checkIn: '2026-09-25',
+      checkOut: '2026-09-26',
+    });
+  });
+
+  // The bug this exists to stop: a guest on a hotel page at 00:30 IST saw one
+  // pair of dates and the booking page opened on another, because one side
+  // counted from the UTC date and the other did not. Both sides call this now,
+  // so the only way they can disagree is if it is not deterministic.
+  it.each([
+    ['2026-09-23T18:29:00.000Z', '2026-09-24', '2026-09-25'],
+    ['2026-09-23T18:31:00.000Z', '2026-09-25', '2026-09-26'],
+    ['2026-09-23T20:00:00.000Z', '2026-09-25', '2026-09-26'],
+    ['2026-09-23T23:59:00.000Z', '2026-09-25', '2026-09-26'],
+  ])('at %s opens on %s to %s either side of midnight IST', (instant, checkIn, checkOut) => {
+    expect(defaultStayWindow(new Date(instant))).toEqual({ checkIn, checkOut });
+  });
+
+  it('gives the same answer whatever the runtime timezone is', () => {
+    // Deterministic by construction — no getDate(), no toLocaleString — which
+    // is what keeps the server-rendered value and the hydrated one identical.
+    const instant = new Date('2026-09-23T20:00:00.000Z');
+    const first = defaultStayWindow(instant);
+    const previousTz = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    expect(defaultStayWindow(instant)).toEqual(first);
+    process.env.TZ = previousTz;
   });
 });

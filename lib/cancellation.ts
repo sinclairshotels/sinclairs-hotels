@@ -1,4 +1,4 @@
-import { addDays, dateKey, formatStayDate, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, formatStayDate, todayInIndia } from '@/lib/booking';
 import type { BookingRateType } from '@prisma/client';
 
 // One place that decides what a rate type means, because five surfaces say it:
@@ -36,7 +36,7 @@ export function refundableIsSellable(
   policy: RefundPolicy,
   now: Date = new Date(),
 ): boolean {
-  return deadlineFor(checkIn, policy.freeCancellationDays) >= todayUtc(now);
+  return deadlineFor(checkIn, policy.freeCancellationDays) >= todayInIndia(now);
 }
 
 // A date range a property sells on non-refundable terms only.
@@ -80,7 +80,7 @@ export function withinFreeCancellation(
   now: Date = new Date(),
 ): boolean {
   if (rateType !== 'REFUNDABLE' || !deadline) return false;
-  return dateKey(todayUtc(now)) <= dateKey(deadline);
+  return dateKey(todayInIndia(now)) <= dateKey(deadline);
 }
 
 // The sentence every surface uses. Takes the booking's own stored terms rather

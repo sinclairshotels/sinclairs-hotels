@@ -10,7 +10,7 @@ import {
   bookingReference,
   nightsBetween,
   parseDateOnly,
-  todayUtc,
+  todayInIndia,
 } from '@/lib/booking';
 import { SERIALIZABLE, isWriteConflict, prisma } from '@/lib/db';
 import { generateOrderId, ipayConfigured, requestBaseUrl, startSale } from '@/lib/ipay';
@@ -88,7 +88,7 @@ export async function createBooking(
   const d = parsed.data;
   const checkIn = parseDateOnly(d.checkIn);
   const checkOut = parseDateOnly(d.checkOut);
-  const today = todayUtc();
+  const today = todayInIndia();
 
   // The dates arrive in a hidden field, so they are re-checked here rather
   // than trusted from the page that rendered them.

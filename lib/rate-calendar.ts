@@ -1,6 +1,6 @@
 import { hotels } from '@/content/hotels';
 import { heldBookingFilter } from '@/lib/availability';
-import { addDays, dateKey, eachNight, todayUtc } from '@/lib/booking';
+import { addDays, dateKey, eachNight, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 
 export interface CalendarCell {
@@ -170,7 +170,7 @@ export const COVERAGE_WARNING_DAYS = 30;
 // all or runs out within the warning window. A calendar quietly running out is
 // the failure mode with no symptom — the site simply stops offering the room.
 export async function coverageWarnings(now: Date = new Date()): Promise<CoverageWarning[]> {
-  const today = todayUtc(now);
+  const today = todayInIndia(now);
 
   const [roomTypes, loaded] = await Promise.all([
     prisma.roomType.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } }),

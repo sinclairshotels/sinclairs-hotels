@@ -46,8 +46,9 @@ export const darjeelingHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      sizeSqFt: 223,
       description:
-        'Each of these cozy and well appointed rooms have ensuite washrooms, and are equipped with modern facilities. Room size: 223 sq. ft., with an attached bath with hot and cold shower.',
+        'Each of these cozy and well appointed rooms have ensuite washrooms, and are equipped with modern facilities, including an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double1.webp',
@@ -58,8 +59,9 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      sizeSqFt: 223,
       description:
-        'Enjoy beautiful mountain views with a spectacular sunrise from these rooms overlooking the Himalayas. Room size: 223 sq. ft., with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'Enjoy beautiful mountain views with a spectacular sunrise from these rooms overlooking the Himalayas, with a Kanchenjunga view and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-1.webp',
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-2.webp',
@@ -68,8 +70,9 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Kanchenjunga Room',
+      sizeSqFt: 271,
       description:
-        'This room has a stunning view of the mountains and is ideal for newly-weds. Room size: 271 sq. ft. with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'This room has a stunning view of the mountains and is ideal for newly-weds, with a Kanchenjunga view and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 1.webp',
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 2.webp',
@@ -79,8 +82,9 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Burra Sahib Suite',
+      sizeSqFt: 446,
       description:
-        'This spacious suite has a bedroom and a living room with wooden floors and rich furnishings which reflect the typical hill style of the hotel. Room size: 446 sq. ft. with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'This spacious suite has a bedroom and a living room with wooden floors and rich furnishings which reflect the typical hill style of the hotel, with a Kanchenjunga view and an attached bath with hot and cold shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite-Bathroom-View1.webp',
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite1.webp',
@@ -91,8 +95,9 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
+      sizeSqFt: 446,
       description:
-        'For guests with greater space requirements, this room is the ideal solution to ensure your privacy and have your family next to you in complete comfort and style. It consists of two adjoining double rooms, with the possibility of adding an extra bed in both rooms, sharing a common bathroom with separate areas for relaxing and a writing desk. Room size: 446 sq. ft.',
+        'For guests with greater space requirements, this room is the ideal solution to ensure your privacy and have your family next to you in complete comfort and style. It consists of two adjoining double rooms, with the possibility of adding an extra bed in both rooms, sharing a common bathroom with separate areas for relaxing and a writing desk.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room2.webp',
@@ -116,7 +121,8 @@ export const darjeelingHotel: Hotel = {
     {
       name: 'The Dorjee Lounge',
       description:
-        'A colonial style bar with an unhindered view of the Himalayan mountain range, ideal for a game of pool or relaxing with a book. Open 11 AM to 11 PM.',
+        'A colonial style bar with an unhindered view of the Himalayan mountain range, ideal for a game of pool or relaxing with a book.',
+      openingHours: '11 am – 11 pm',
       images: [
         '/images/hotels/darjeeling/dining/Dorjee Lounge Set Up.webp',
         '/images/hotels/darjeeling/dining/Dorjee Lounge Pool Table.webp',

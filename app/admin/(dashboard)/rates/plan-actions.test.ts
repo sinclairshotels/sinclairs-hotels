@@ -1,4 +1,4 @@
-import { dateKey, todayUtc } from '@/lib/booking';
+import { dateKey, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { monthKey, monthsAhead } from '@/lib/rate-plan';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,7 +29,7 @@ const TEST_EMAIL_DOMAIN = 'vitest-rate-plan.invalid';
 
 // The eleventh month ahead: far enough that no other suite is loading it, and
 // still inside the twelve the screen offers.
-const MONTH = monthsAhead(todayUtc(), 12)[10] as string;
+const MONTH = monthsAhead(todayInIndia(), 12)[10] as string;
 const [MONTH_YEAR, MONTH_NUMBER] = MONTH.split('-').map(Number) as [number, number];
 const MONTH_START = new Date(Date.UTC(MONTH_YEAR, MONTH_NUMBER - 1, 1));
 const MONTH_END = new Date(Date.UTC(MONTH_YEAR, MONTH_NUMBER, 1));
@@ -288,7 +288,7 @@ describe('the monthly and daily rate screens', () => {
     });
 
     it('refuses a night in the past', async () => {
-      const yesterday = new Date(todayUtc().getTime() - 86_400_000);
+      const yesterday = new Date(todayInIndia().getTime() - 86_400_000);
       const result = await saveDay(dailyForm({ date: dateKey(yesterday), rate: '9000' }));
 
       expect(result.status).toBe('error');

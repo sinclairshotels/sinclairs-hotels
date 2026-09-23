@@ -399,6 +399,12 @@ model RoomType {
   extraAdultCharge Decimal @default(0) @db.Decimal(10, 2)
   extraChildCharge Decimal @default(0) @db.Decimal(10, 2)
 
+  // Square feet. Null where nobody has measured the room, which is a real
+  // state for ten of the thirty-nine: the tile then shows no size at all and
+  // the Set-up screen lists it as missing, rather than either guessing or
+  // rendering an empty label.
+  sizeSqFt Int?
+
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

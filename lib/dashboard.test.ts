@@ -1,4 +1,4 @@
-import { addDays, todayUtc } from '@/lib/booking';
+import { addDays, todayInIndia } from '@/lib/booking';
 import { dashboardToday } from '@/lib/dashboard';
 import { prisma } from '@/lib/db';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -57,7 +57,7 @@ async function clear() {
 }
 
 describe('dashboardToday', () => {
-  const today = todayUtc();
+  const today = todayInIndia();
 
   beforeEach(async () => {
     room = await findRoom(HOTEL, ROOM);
