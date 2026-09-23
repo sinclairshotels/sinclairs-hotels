@@ -5,7 +5,7 @@ export const portBlairHotel: Hotel = {
   name: 'Sinclairs Bayview',
   location: 'Port Blair',
   state: 'Andaman and Nicobar Islands',
-  tagline: 'A quiet getaway for those who want to unwind and explore the Andamans.',
+  tagline: 'Stay by the sea. Explore the Andamans.',
   description:
     "Located right on the waterfront, Sinclairs Bayview is Port Blair's only hotel to offer spectacular views of the Bay of Bengal from almost all its rooms. Refreshingly environment-friendly and functionally decorated, it is a quiet getaway for those who want to unwind and explore the Andamans, just 15 minutes from the airport and the town's shopping centre. The hotel's 46 rooms and suites are virtually on the sea, opening onto the crystal-blue waters of the Indian Ocean, with the Valentine rooms offering views of the ocean on one side and Ross Island on the other. A rare relic from World War II — a bunker built by the Japanese, its cannon still in place — remains within the hotel grounds.",
   history:
@@ -71,7 +71,7 @@ export const portBlairHotel: Hotel = {
       bedType: 'King and queen beds',
       amenities: ['Ensuite bathroom'],
       description:
-        'A spacious room where a family of four can spend their vacation together in great comfort, equipped with one king and one queen size bed. The attached three-fixture toilet is ideal for the family.',
+        'A spacious room where a family of four can spend their vacation together in great comfort, equipped with one king and one queen size bed. En-suite bath.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-room/PremierFamilyRoom1.webp',
         '/images/hotels/port-blair/accommodations/premier-family-room/PremierFamilyRoom2.webp',
@@ -83,7 +83,7 @@ export const portBlairHotel: Hotel = {
       name: 'Premier Family Suite',
       amenities: ['Ensuite bathroom', 'Family suite'],
       description:
-        'The family suite combines the luxury of space and fine décor. With an arresting view of the sea, the spacious suite enables the family to stay together in comfort and style, with an attached three-fixture toilet.',
+        'The family suite combines the luxury of space and fine décor. With an arresting view of the sea, the spacious suite enables the family to stay together in comfort and style, with an en-suite bath.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-suite/PremierFamilyRoom12.webp',
         '/images/hotels/port-blair/accommodations/premier-family-suite/PremierFamilyRoom13.webp',
@@ -96,7 +96,7 @@ export const portBlairHotel: Hotel = {
       bedType: 'Two queen beds',
       amenities: ['Ensuite bathroom'],
       description:
-        'A family room with an attic where children can have good fun. With two queen size beds, the room is ideal for a family of four to stay together comfortably, with an attached three-fixture toilet.',
+        'A family room with an attic where children can have good fun. With two queen size beds, the room is ideal for a family of four to stay together comfortably, with an en-suite bath.',
       images: [
         '/images/hotels/port-blair/accommodations/premier-family-attic-room/PremierAtticRoom1.webp',
         '/images/hotels/port-blair/accommodations/premier-family-attic-room/PremierAtticRoom2.webp',

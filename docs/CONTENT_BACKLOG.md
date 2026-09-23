@@ -122,23 +122,22 @@ Sections A–C were done in one PR; D is recorded in `PLAN.md`'s decisions log.
 
 ### A. Site-wide
 
-- [ ] Hotel pages: more space between the tagline and the booking bar, all nine.
-- [ ] Reviews: a hotel page and a booking page show only that hotel's reviews.
+- [x] Hotel pages: more space between the tagline and the booking bar, all nine.
+- [x] Reviews: a hotel page and a booking page show only that hotel's reviews.
       No cross-hotel quotes anywhere; a hotel with none shows none.
-- [ ] Room tiles and booking rows show that property's check-in and check-out
+- [x] Room tiles and booking rows show that property's check-in and check-out
       times.
-- [ ] "In your room" per room type — bed, bathroom, TV, Wi-Fi, tea/coffee,
+- [x] "In your room" per room type — bed, bathroom, TV, Wi-Fi, tea/coffee,
       safe, minibar, AC/heater, work desk, balcony where true — as icons with
       labels, sourced from each room's existing description, unknowns left out
       rather than guessed. Editable on Set-up.
-- [ ] Explore: every hotel, a list of places with name, one-line description,
+- [x] Explore: every hotel, a list of places with name, one-line description,
       distance in km from the hotel, drive time, and a photo where one exists.
-      Content order kept. No photo means no image slot. Flag any place whose
-      coordinates are missing.
-- [ ] Merge "Dining" and "Food and Dining" into one Dining section per hotel.
+      Content order kept. No photo means no image slot.
+- [x] Merge "Dining" and "Food and Dining" into one Dining section per hotel.
 - [x] "Timings" → "Opening hours" everywhere. Done in PR #20, with
       `content/opening-hours.test.ts` holding the one format.
-- [ ] Pluralise by count: "1 dining venue", "1 event space".
+- [x] Pluralise by count: "1 dining venue", "1 event space".
 - [x] Press and Media: layout and links. Done in PR #20 — eleven of the twelve
       mentions have no source URL and now render as plain cards rather than
       dead links; those URLs are still wanted (see the entry above).
@@ -146,36 +145,61 @@ Sections A–C were done in one PR; D is recorded in `PLAN.md`'s decisions log.
 
 ### B. Booking journey
 
-- [ ] Book Now on a room opens the booking page with that room pre-selected
+- [x] Book Now on a room opens the booking page with that room pre-selected
       and visible in the summary.
 - [x] Date handoff: the property page and the booking page open on the same
       dates. Done in PR #20, with the midnight-IST test.
-- [ ] "Not yet bookable online" is a dead end. Name the room types with no
+- [x] "Not yet bookable online" is a dead end. Name the room types with no
       rates loaded for those dates, and offer an Enquire button.
 
 ### C. Per hotel
 
-- [ ] **Burdwan** — replace the overview copy; remove "finest accommodation",
-      "pulsating environment for relaxation" and "fun-filled destination for
-      business executives" wherever they appear; remove yoga from amenities;
-      opening hours for Palm Terrace and O3 Bar (blank until the team supply
-      them); Explore photos and distances.
-- [ ] **Dooars** — Burra Sahib Suite and Wooden Cottage descriptions to two
-      sentences, fittings moved into "In your room"; remove the café from
-      Dining, there is none.
-- [ ] **Kalimpong** — tagline "Mountain views. A slower pace."; Explore
+- [x] **Burdwan** — overview copy rewritten without "finest accommodation",
+      "pulsating environment for relaxation" or "fun-filled destination for
+      business executives"; yoga out of the amenities; Explore distances.
+- [x] **Dooars** — Premier Suite (the Burra Sahib) and Wooden Cottage
+      descriptions to two sentences, fittings moved into "In your room"; café
+      removed from Dining and from the amenity list.
+- [x] **Kalimpong** — tagline "Mountain views. A slower pace."; Explore
       distances.
-- [ ] **Bayview (Port Blair)** — room sizes for every room type; dining opening
-      hours; Explore distances; tagline "Stay by the sea. Explore the
-      Andamans."; Premier Family Room's "attached three-fixture toilet" becomes
-      "En-suite bath".
-- [ ] **Udaipur** — tagline "Palatial stays and memorable celebrations in
+- [x] **Bayview (Port Blair)** — Explore distances; tagline "Stay by the sea.
+      Explore the Andamans."; Premier Family Room's "attached three-fixture
+      toilet" is now "En-suite bath".
+- [x] **Udaipur** — tagline "Palatial stays and memorable celebrations in
       Haldighati."; amenity lists out of room descriptions and into "In your
       room"; Explore distances; "1 dining venue".
-- [ ] **Darjeeling** — tagline "Mountain mornings. Darjeeling at your
-      doorstep."; gallery intro loses "the pool", there is none; Explore photos
-      and distances; "1 event space".
-- [ ] **Siliguri** — Explore photos; "1 dining venue".
+- [x] **Darjeeling** — tagline "Mountain mornings. Darjeeling at your
+      doorstep."; gallery intro loses "the pool" (it is decided per property
+      now, and Darjeeling's "Pool Table" does not count); Explore distances;
+      "1 event space".
+- [x] **Siliguri** — "1 dining venue"; Explore distances.
+
+### Still needed from the team
+
+These were in round 2 but are values or files nobody here can invent. Each
+shows nothing rather than a guess until they arrive.
+
+- [ ] **Burdwan** — the replacement overview paragraph (the round-2 note says
+      "the supplied paragraph", but none came with it; the current copy is a
+      rewrite of the old one with the three phrases removed).
+- [ ] **Burdwan** — opening hours for The Palm Terrace and O3 Lounge Bar.
+- [ ] **Bayview** — room sizes for all six room types, and dining opening
+      hours. No figures exist for either; the tiles show no size and the venues
+      no hours.
+- [ ] **Explore photos** — Burdwan (Pir Baharam, Meghnad Saha Planetarium, Deer
+      Park), Darjeeling (Lloyd Botanical Garden), Siliguri (Kalchakra
+      Monastery, ISKCON Temple), and the others listed as photo-less. A place
+      with no photo renders with no image slot, which is the intended
+      behaviour, not a gap in the code.
+- [ ] **Coordinates** — every Explore distance is an estimate from coordinates
+      taken off public references, except where a property publishes its own
+      road figure (all ten Dooars places, and the long runs out of Gangtok,
+      Darjeeling, Udaipur, Ooty, Burdwan and Port Blair). Confirm the hotel
+      coordinates and any distance that looks wrong; a corrected road figure
+      goes in `roadKm` on that place and overrides the estimate. Still with no
+      coordinate at all, so showing no distance: Burdwan's Pir Baharam and
+      Bhalkimachan, Kalimpong's Dharmodaya Vihar, and Port Blair's four island
+      trips, which are reached by ferry rather than road.
 
 ### D. Decision — room descriptions across every hotel
 

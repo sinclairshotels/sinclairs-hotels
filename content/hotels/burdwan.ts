@@ -7,7 +7,7 @@ export const burdwanHotel: Hotel = {
   state: 'West Bengal',
   tagline: 'The rice bowl of India',
   description:
-    'Situated at High Street 1 in Renaissance Township, Sinclairs Burdwan is an upscale tourist resort offering the finest accommodation, club and banquet facilities. Spread over four acres, the resort is a perfect getaway for families looking for a break from stressful city life. Conveniently located a two-hour drive from Kolkata airport and five minutes from Ullas Bus Stand, the resort has 19 well-appointed Premier rooms, 4 Junior suites and 1 Maharaja suite. Sinclairs Burdwan provides a pulsating environment for relaxation and a fun-filled destination for business executives.',
+    'Situated at High Street 1 in Renaissance Township, Sinclairs Burdwan is a four-acre resort with club and banquet facilities, two hours from Kolkata airport and five minutes from Ullas Bus Stand. It has 19 Premier rooms, 4 Junior suites and 1 Maharaja suite, an all-day multicuisine restaurant overlooking the pool and gardens, and banquet space for weddings and company meetings.',
   history:
     'Sinclairs Burdwan opened in 2015 in Renaissance Township, on the edge of a city once ruled by the Bardhaman Raj — a zamindari estate that governed the region from 1657 until India abolished hereditary landholding in 1955.',
   heroImage: '/images/hotels/burdwan/amenities/SwimmingPoolNightView.webp',
@@ -28,7 +28,7 @@ export const burdwanHotel: Hotel = {
     'Lounge Bar',
     'Sightseeing Tours',
     'Elevator',
-    'Gym and Yoga',
+    'Gym',
     'Car Parking',
     'Open Air Terrace',
     'In-house Generator',

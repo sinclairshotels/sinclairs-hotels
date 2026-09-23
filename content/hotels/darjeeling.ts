@@ -5,7 +5,7 @@ export const darjeelingHotel: Hotel = {
   name: 'Sinclairs Darjeeling',
   location: 'Darjeeling',
   state: 'West Bengal',
-  tagline: "Kanchenjunga, the world's third highest peak, is the reason to be here.",
+  tagline: 'Mountain mornings. Darjeeling at your doorstep.',
   description:
     'Strategically located a few minutes from the town centre, Chowrasta, Sinclairs Darjeeling offers splendid views of Mount Kanchenjunga, unmatched by any other hotel in the region. The hotel is an exciting blend of modernity and Victorian charm, perfect for those looking to explore the hill town or relax in comfort. Sinclairs Darjeeling offers 46 rooms and suites, including a special suite for honeymooners that opens out to a private balcony with unhindered views of the Himalayan mountain range.',
   history:

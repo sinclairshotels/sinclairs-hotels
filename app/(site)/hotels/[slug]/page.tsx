@@ -18,6 +18,7 @@ import { WeddingSection } from '@/components/wedding-section';
 import { awards } from '@/content/awards';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { contactNumbers, siteConfig } from '@/content/site';
+import type { Hotel } from '@/content/types';
 import { formatInr } from '@/lib/booking';
 import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
 import { mapsEmbedEnabled } from '@/lib/maps';
@@ -422,11 +423,7 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       {hotel.gallery.length > 0 && (
         <section id="gallery" className="scroll-mt-32 py-10 sm:py-16">
           <div className="mx-auto max-w-7xl px-6">
-            <SectionHeading
-              eyebrow="In Pictures"
-              title="Gallery"
-              lede={`The facade, the pool, the lounges — a closer look at ${hotel.name}.`}
-            />
+            <SectionHeading eyebrow="In Pictures" title="Gallery" lede={galleryLede(hotel)} />
             <div className="mt-10">
               <GalleryLightbox images={hotel.gallery} />
             </div>
@@ -507,6 +504,15 @@ export default async function HotelPage({ params }: { params: Promise<Params> })
       />
     </div>
   );
+}
+
+// Not every property has a pool — Darjeeling has none, and the one lede used
+// to name it on all nine. The line describes what this hotel actually has.
+// Matched on "swimming pool", not "pool": Darjeeling's amenity list has a pool
+// table, which is the very hotel this fix is for.
+function galleryLede(hotel: Hotel): string {
+  const pool = hotel.amenities.some((amenity) => /swimming pool/i.test(amenity));
+  return `The facade, ${pool ? 'the pool' : 'the grounds'}, the lounges — a closer look at ${hotel.name}.`;
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

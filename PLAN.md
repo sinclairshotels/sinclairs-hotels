@@ -433,6 +433,15 @@ re-prices a guest who has already agreed to pay. The screen that edits it is
 quote, which makes it a different kind of control from a rate edit. This lands
 in Phase B.
 
+**Every room reads the same way** (decision taken 23 Sep 2026). Room
+descriptions shorten to two sentences and their fittings move into the "In your
+room" list, at all nine properties rather than only Dooars. The list is derived
+from each room's own copy (`lib/room-facilities.ts`) and overridable per room on
+Set-up, so moving a fitting out of the prose does not lose it: it appears as an
+icon instead. Dooars' two rooms are done; the remaining thirty-seven are
+guest-facing copy and are tracked in `docs/CONTENT_BACKLOG.md` rather than done
+in the same pull request as the mechanism.
+
 ## Working agreement
 
 - Commit early and often to `main` (or short-lived branches) on the public

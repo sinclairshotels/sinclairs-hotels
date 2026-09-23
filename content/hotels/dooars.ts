@@ -24,7 +24,6 @@ export const dooarsHotel: Hotel = {
     "Children's park",
     'Library',
     'Thematic bar',
-    'Café',
     'Cycling track (cycles on hire)',
     'Bonfire',
     'Car park & valet service',
@@ -65,15 +64,19 @@ export const dooarsHotel: Hotel = {
       bedType: 'King bed',
       amenities: [
         'Private balcony',
+        'Private sit-out',
         'Rain shower',
         'Bathtub',
         'Tea and coffee',
         'Electronic safe',
         'Television',
+        'Mini fridge',
+        'Separate living room',
+        'Dining table',
       ],
       sizeSqFt: 690,
       description:
-        'Spaciously created with a bedroom, living room, dining area and additional washroom, this suite has a distinct style recreating the atmosphere of the colonial lifestyle — guests know it fondly as the "Burra Sahib Suite", with a balcony, two baths with bathtub and rain shower, a king size bed, a separate living room with dining table and rich black lacquered furniture beneath a coffered, wood-beamed ceiling, a private garden with sit-out, two 32" LCD televisions, electronic safe, tea/coffee set and refrigerator.',
+        'A bedroom, living room, dining area and second washroom under a coffered, wood-beamed ceiling, furnished in black lacquer in the colonial manner — guests know it fondly as the Burra Sahib Suite. A private garden with a sit-out opens off it.',
       images: [
         '/images/hotels/dooars/accommodations/premier-suite/Burra Sahib Suite.webp',
         '/images/hotels/dooars/accommodations/premier-suite/Living room of Burra Sahib suite.webp',
@@ -83,9 +86,15 @@ export const dooarsHotel: Hotel = {
     },
     {
       name: 'Wooden Cottage',
-      amenities: ['Ensuite bathroom', 'Private sit-out'],
+      amenities: [
+        'Ensuite bathroom',
+        'Private sit-out',
+        'Walk-in shower',
+        'Television',
+        'Sofa seating',
+      ],
       description:
-        'One of just two free-standing wooden cottages on the property, panelled entirely in warm pinewood beneath a vaulted, beamed ceiling, with a private sit-out looking straight into the forest. Comes with a sofa and coffee table, flat-screen TV and an attached bath with a walk-in shower — a rustic retreat for guests seeking seclusion amid the greenery.',
+        'One of just two free-standing cottages on the property, panelled entirely in warm pinewood beneath a vaulted, beamed ceiling. A private sit-out looks straight into the forest.',
       images: [
         '/images/hotels/dooars/accommodations/wooden-cottage/Wooden Cottage Room.webp',
         '/images/hotels/dooars/accommodations/wooden-cottage/DSC_1218.webp',
@@ -108,11 +117,6 @@ export const dooarsHotel: Hotel = {
     {
       name: 'Thematic Bar',
       description: 'overlooks the Gorumara sanctuary, ideal for unwinding in the evening.',
-    },
-    {
-      name: 'Café',
-      description: 'an epicurean delight for casual bites through the day.',
-      images: ['/images/hotels/dooars/dining/Sinclairs-Retreat-Dooars-Cafe.webp'],
     },
   ],
   foodGallery: [

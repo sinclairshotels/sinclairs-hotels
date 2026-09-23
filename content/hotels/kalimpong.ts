@@ -5,7 +5,7 @@ export const kalimpongHotel: Hotel = {
   name: 'Sinclairs Retreat Kalimpong',
   location: 'Kalimpong',
   state: 'West Bengal',
-  tagline: 'An ideal retreat for those in search of a restful nature experience.',
+  tagline: 'Mountain views. A slower pace.',
   description:
     'Nestled in virgin green surroundings, Sinclairs Retreat Kalimpong stands out over five acres of aesthetically landscaped grounds, with an unmatched view of the Himalayan mountain range and a luxuriant forested valley. This cozy boutique resort has 44 rooms, two large suites and two rooms in a wooden cottage, all with a view of the alluring Himalayan range. Guests can enjoy local fare and international favourites at the all-day dining venue The Golden Oak, sip a drink at the thematic bar, or relax by the swimming pool and rejuvenate at the spa.',
   history:
