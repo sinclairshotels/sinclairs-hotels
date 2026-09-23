@@ -37,6 +37,8 @@ export interface RoomOffer {
   // Square feet, staff's figure first and the content file's as a fallback.
   // Null where the room has never been measured.
   sizeSqFt: number | null;
+  // Guests the rate covers, for the card to say who the room sleeps.
+  baseOccupancy: number;
   roomsLeft: number;
   nightlyRates: number[];
   // Guests this plan feeds. Zero on Room Only.
@@ -346,6 +348,7 @@ export async function availability(
           ratePlanCode: plan.code,
           ratePlanName: plan.name,
           sizeSqFt: roomType.sizeSqFt ?? contentRooms.get(roomType.contentKey)?.sizeSqFt ?? null,
+          baseOccupancy: roomType.baseOccupancy,
           roomsLeft,
           nightlyRates,
           // Zero on Room Only, so a quote can say "with breakfast for N guests"

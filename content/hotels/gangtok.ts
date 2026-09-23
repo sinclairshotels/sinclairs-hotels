@@ -42,6 +42,8 @@ export const gangtokHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      bedType: 'King or twin beds',
+      view: 'Forest view',
       sizeSqFt: 335,
       description:
         'The well-appointed rooms in wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the hotel. Rooms overlook the forest or road side and feature a king-size bed or two twin beds.',
@@ -53,6 +55,7 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
+      amenities: ['Two adjoining rooms', 'Two bathrooms'],
       sizeSqFt: 554,
       description:
         'The ideal solution for privacy while keeping family members close in complete comfort and style, the Family Room consists of two adjoining double rooms with two toilets.',
@@ -65,6 +68,9 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      bedType: 'Triple bed available',
+      view: 'Mountain view',
+      amenities: ['Private balcony'],
       sizeSqFt: 340,
       description:
         'These well-appointed rooms face the mountain range and Gangtok town, offering a relaxed stay for couples, with a private standing balcony affording a panoramic view of the town against the mountains. Some rooms have a triple bed, ideal for an extra adult.',
@@ -76,6 +82,8 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Premier Suite',
+      view: 'Valley view',
+      amenities: ['Private balcony', 'Separate living room'],
       sizeSqFt: 535,
       description:
         'This spacious suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',
@@ -87,6 +95,8 @@ export const gangtokHotel: Hotel = {
     },
     {
       name: 'Valentine Room',
+      view: 'Mountain view',
+      amenities: ['Mood lighting', 'Complimentary platter'],
       sizeSqFt: 340,
       description:
         'Specially designed for honeymooners and couples celebrating an anniversary, the alluring view, mood lighting and special accessories all add up to a romantic setting, complete with a complimentary platter of goodies.',

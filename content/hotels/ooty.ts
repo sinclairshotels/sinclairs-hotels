@@ -46,6 +46,9 @@ export const ootyHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      bedType: 'Queen and twin beds',
+      view: 'Forest view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
         'Overlooks pine forests interspersed with eucalyptus trees. These forest-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
@@ -59,6 +62,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      bedType: 'Queen and twin beds',
+      view: 'Valley view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
         'Offers a breathtaking view of the Blue Mountains and Ooty valley. These garden-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
@@ -72,6 +78,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Superior Room',
+      bedType: 'Queen bed',
+      view: 'Forest view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 273,
       description:
         'Cozy and quiet, the superior rooms overlook the pine forests. They come with a queen-sized bed, a writing desk, and an attached bath with hot and cold shower.',
@@ -85,6 +94,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Deluxe Suite',
+      bedType: 'Queen bed',
+      view: 'Valley view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 397,
       description:
         'Spacious and luxurious, the deluxe suites overlook the Blue Mountains and the Ooty valley. They come with a queen-sized bed, sofa seating and a dining table, and an attached four-fixture bath with hot and cold shower.',
@@ -97,6 +109,9 @@ export const ootyHotel: Hotel = {
     },
     {
       name: 'Nilgiri Suite',
+      bedType: 'Queen bed',
+      view: 'Forest view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Private sit-out'],
       sizeSqFt: 890,
       description:
         'Popular with honeymooners, this suite provides elite comfort with spectacular views of pine forests from a private viewing veranda. It comes with a queen-sized bed, sofa seating, a dining table, a private deck facing the forest, and an attached four-fixture bath with hot and cold running water.',

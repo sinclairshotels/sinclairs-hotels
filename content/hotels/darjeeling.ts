@@ -46,6 +46,7 @@ export const darjeelingHotel: Hotel = {
   rooms: [
     {
       name: 'Deluxe Room',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
         'Each of these cozy and well appointed rooms have ensuite washrooms, and are equipped with modern facilities, including an attached bath with hot and cold shower.',
@@ -59,6 +60,8 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Premier Room',
+      view: 'Kanchenjunga view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
         'Enjoy beautiful mountain views with a spectacular sunrise from these rooms overlooking the Himalayas, with a Kanchenjunga view and an attached bath with hot and cold shower.',
@@ -70,6 +73,8 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Kanchenjunga Room',
+      view: 'Kanchenjunga view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 271,
       description:
         'This room has a stunning view of the mountains and is ideal for newly-weds, with a Kanchenjunga view and an attached bath with hot and cold shower.',
@@ -82,6 +87,8 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Burra Sahib Suite',
+      view: 'Kanchenjunga view',
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Separate living room'],
       sizeSqFt: 446,
       description:
         'This spacious suite has a bedroom and a living room with wooden floors and rich furnishings which reflect the typical hill style of the hotel, with a Kanchenjunga view and an attached bath with hot and cold shower.',
@@ -95,6 +102,7 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
+      amenities: ['Writing desk'],
       sizeSqFt: 446,
       description:
         'For guests with greater space requirements, this room is the ideal solution to ensure your privacy and have your family next to you in complete comfort and style. It consists of two adjoining double rooms, with the possibility of adding an extra bed in both rooms, sharing a common bathroom with separate areas for relaxing and a writing desk.',
