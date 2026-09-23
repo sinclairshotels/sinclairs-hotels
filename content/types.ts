@@ -68,8 +68,32 @@ export interface BookingOffice {
   email: string;
 }
 
+export interface DriveProfile {
+  roadFactor: number;
+  averageSpeedKph: number;
+}
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export interface SightseeingSpot {
   name: string;
+  // One line, what a guest would want to know before deciding to go. Absent
+  // where nobody has written one yet — the entry then shows its name alone
+  // rather than filler.
+  blurb?: string;
+  // Where the place is. The distance shown on the page is worked out from this
+  // and the hotel's own coordinates, so there is no typed figure to fall out of
+  // date, and a place without coordinates shows no distance at all rather than
+  // a guess. content/sightseeing.test.ts lists the ones still missing.
+  coords?: LatLng;
+  // Road kilometres, where the property publishes its own figure. It wins over
+  // the estimate worked out from the coordinates — a hill road that doubles
+  // back is nothing like the line across the valley, and the team's number is
+  // the one guests are quoted on the phone.
+  roadKm?: number;
   image?: string;
 }
 
@@ -103,10 +127,22 @@ export interface Hotel {
   sceneryImage: string;
   amenities: string[];
   rooms: RoomType[];
+  // A qualification printed under the room list, where the rooms promise
+  // something the weather can withhold. Only the hill properties carry one:
+  // a Kanchenjunga view is a view of cloud for half of July.
+  roomsNote?: string;
   dining: DiningVenue[];
   foodGallery?: GalleryImage[];
   gallery: GalleryImage[];
   sightseeing: SightseeingSpot[];
+  // The property's own position, which every Explore distance is measured
+  // from. Absent means the section shows no distances at all — one missing
+  // hotel coordinate silently wrongs every place beneath it, so it is better
+  // to show none than to measure from the wrong town.
+  coords?: LatLng;
+  // How the roads round this property behave, for the drive time beside each
+  // distance. Absent means no times are shown — see lib/distance.ts.
+  drive?: DriveProfile;
   eventSpaces?: EventSpaces;
   weddings?: WeddingContent;
   meetings?: MeetingsContent;

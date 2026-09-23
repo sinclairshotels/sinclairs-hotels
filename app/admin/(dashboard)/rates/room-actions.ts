@@ -7,6 +7,7 @@ import { dateKey, formatStayDate, parseDateOnly } from '@/lib/booking';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
+import { roomFacilityOptions } from '@/lib/room-facilities';
 import {
   addRoomTypeSchema,
   deactivateRoomTypeSchema,
@@ -31,6 +32,19 @@ async function guard(hotelSlug: string) {
     return { ok: false as const, message: 'Too many requests. Please try again in a minute.' };
   }
   return { ok: true as const, user: auth.user, ip };
+}
+
+// A posted key is only kept if the catalogue knows it, or the room's own copy
+// does — the checklist's options are exactly those two sets, so anything else
+// was typed by hand at the form.
+function allowedFacilities(
+  hotelSlug: string,
+  contentKey: string,
+  posted: FormDataEntryValue[],
+): string[] {
+  const room = getHotelBySlug(hotelSlug)?.rooms.find((r) => r.name === contentKey);
+  const allowed = new Set(roomFacilityOptions(room).map((facility) => facility.key));
+  return [...new Set(posted.map(String))].filter((key) => allowed.has(key));
 }
 
 function refresh() {
@@ -135,6 +149,14 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
   });
   if (!before) return { status: 'error', message: 'That room does not belong to this property.' };
 
+  // Checkboxes, so getAll rather than the entries object the schema parsed —
+  // Object.fromEntries keeps only the last of a repeated field. Left alone
+  // unless the checklist was actually touched: saving the room's occupancy
+  // should not quietly freeze today's derived list into the database.
+  const facilities = formData.get('facilitiesEdited')
+    ? allowedFacilities(input.hotelSlug, before.contentKey, formData.getAll('facilities'))
+    : before.facilities;
+
   const after = await prisma.roomType.update({
     where: { id: before.id },
     data: {
@@ -146,6 +168,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       extraAdultCharge: input.extraAdultCharge,
       extraChildCharge: input.extraChildCharge,
       sizeSqFt: input.sizeSqFt ?? null,
+      facilities,
     },
   });
 
@@ -165,6 +188,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       extraAdultCharge: before.extraAdultCharge.toNumber(),
       extraChildCharge: before.extraChildCharge.toNumber(),
       sizeSqFt: before.sizeSqFt,
+      facilities: before.facilities,
     },
     after: {
       name: after.name,
@@ -174,6 +198,7 @@ export async function saveRoomType(_prev: SetupState, formData: FormData): Promi
       extraAdultCharge: after.extraAdultCharge.toNumber(),
       extraChildCharge: after.extraChildCharge.toNumber(),
       sizeSqFt: after.sizeSqFt,
+      facilities: after.facilities,
     },
     ip: auth.ip,
   });

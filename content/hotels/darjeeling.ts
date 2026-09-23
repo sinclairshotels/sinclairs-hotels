@@ -5,7 +5,7 @@ export const darjeelingHotel: Hotel = {
   name: 'Sinclairs Darjeeling',
   location: 'Darjeeling',
   state: 'West Bengal',
-  tagline: "Kanchenjunga, the world's third highest peak, is the reason to be here.",
+  tagline: 'Mountain mornings. Darjeeling at your doorstep.',
   description:
     'Strategically located a few minutes from the town centre, Chowrasta, Sinclairs Darjeeling offers splendid views of Mount Kanchenjunga, unmatched by any other hotel in the region. The hotel is an exciting blend of modernity and Victorian charm, perfect for those looking to explore the hill town or relax in comfort. Sinclairs Darjeeling offers 46 rooms and suites, including a special suite for honeymooners that opens out to a private balcony with unhindered views of the Himalayan mountain range.',
   history:
@@ -49,7 +49,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
-        'Each of these cozy and well appointed rooms have ensuite washrooms, and are equipped with modern facilities, including an attached bath with hot and cold shower.',
+        'A cosy base for exploring Darjeeling, the Deluxe Room offers a comfortable place to return to after a day in town. An en suite bathroom with a hot shower completes the room.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-room/Deluxe Room Double1.webp',
@@ -64,7 +64,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 223,
       description:
-        'Enjoy beautiful mountain views with a spectacular sunrise from these rooms overlooking the Himalayas, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'Make the mountain outlook part of your stay. The Premier Room looks towards Kanchenjunga, with views of the peaks on clear mornings and an en suite bathroom for freshening up after your day out.',
       images: [
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-1.webp',
         '/images/hotels/darjeeling/accommodations/premier-room/Sinclairs-Darjeeling-Premier-Room-2.webp',
@@ -77,7 +77,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower'],
       sizeSqFt: 271,
       description:
-        'This room has a stunning view of the mountains and is ideal for newly-weds, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'With more space than the Premier Room and an outlook towards Kanchenjunga, this room invites you to linger over the view. A welcoming choice for a couple’s getaway, with an en suite bathroom and shower.',
       images: [
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 1.webp',
         '/images/hotels/darjeeling/accommodations/kanchenjunga-room/Kanchenjunga Room 2.webp',
@@ -91,7 +91,7 @@ export const darjeelingHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Separate living room'],
       sizeSqFt: 446,
       description:
-        'This spacious suite has a bedroom and a living room with wooden floors and rich furnishings which reflect the typical hill style of the hotel, with a Kanchenjunga view and an attached bath with hot and cold shower.',
+        'Wooden floors and traditional furnishings bring warmth to this mountain-facing suite. A separate bedroom and living room give you space to read, relax and spend time together, with Kanchenjunga in view when the skies are clear.',
       images: [
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite-Bathroom-View1.webp',
         '/images/hotels/darjeeling/accommodations/burra-sahib-suite/Sinclairs-Darjeeling-Burra-Sahib-Suite1.webp',
@@ -102,10 +102,10 @@ export const darjeelingHotel: Hotel = {
     },
     {
       name: 'Deluxe Family Room',
-      amenities: ['Writing desk'],
+      amenities: ['Writing desk', 'Two adjoining rooms', 'Shared bathroom'],
       sizeSqFt: 446,
       description:
-        'For guests with greater space requirements, this room is the ideal solution to ensure your privacy and have your family next to you in complete comfort and style. It consists of two adjoining double rooms, with the possibility of adding an extra bed in both rooms, sharing a common bathroom with separate areas for relaxing and a writing desk.',
+        'Keep the family close while enjoying separate sleeping spaces. Two adjoining double rooms share one bathroom, with areas to relax and a writing desk. Extra beds can be arranged in each room, subject to availability and charges.',
       images: [
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
         '/images/hotels/darjeeling/accommodations/deluxe-family-room/Deluxe Family Room2.webp',
@@ -114,6 +114,7 @@ export const darjeelingHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'Kanchenjunga Restaurant',
@@ -194,27 +195,78 @@ export const darjeelingHotel: Hotel = {
       alt: 'The Pinnacle banquet hall arranged in a U-shape layout for a meeting',
     },
   ],
+  coords: { lat: 27.041, lng: 88.263 },
+  drive: { roadFactor: 1.9, averageSpeedKph: 25 },
   sightseeing: [
-    { name: 'Tiger Hill', image: '/images/hotels/darjeeling/explore/Drive to Tiger Hill.webp' },
+    {
+      name: 'Tiger Hill',
+      blurb: 'Sunrise over Kanchenjunga, and Everest on a clear morning. Leave before 4 am.',
+      coords: { lat: 27.0007, lng: 88.2672 },
+      roadKm: 11,
+      image: '/images/hotels/darjeeling/explore/Drive to Tiger Hill.webp',
+    },
     {
       name: 'Darjeeling Himalayan Railway (Toy Train)',
+      blurb: 'The 1881 narrow-gauge line, a UNESCO site; joy rides run up to Ghoom.',
+      coords: { lat: 27.0428, lng: 88.264 },
       image: '/images/hotels/darjeeling/explore/Darjeeling Himalayan Railway.webp',
     },
-    { name: 'Batasia Loop', image: '/images/hotels/darjeeling/explore/Batasia Loop.webp' },
-    { name: 'Chowrasta', image: '/images/hotels/darjeeling/explore/Darjeeling Chowrasta.webp' },
-    { name: 'The Mall', image: '/images/hotels/darjeeling/explore/the Mall.webp' },
-    { name: 'Lloyd Botanical Garden' },
-    { name: 'Ropeway', image: '/images/hotels/darjeeling/explore/Darjeeling Ropeway.webp' },
+    {
+      name: 'Batasia Loop',
+      blurb: 'The spiral where the toy train turns, wrapped round the Gorkha war memorial.',
+      coords: { lat: 27.029, lng: 88.2497 },
+      roadKm: 5,
+      image: '/images/hotels/darjeeling/explore/Batasia Loop.webp',
+    },
+    {
+      name: 'Chowrasta',
+      blurb: 'The Mall’s open square, for a bench, a bookshop and the view.',
+      coords: { lat: 27.0431, lng: 88.2637 },
+      image: '/images/hotels/darjeeling/explore/Darjeeling Chowrasta.webp',
+    },
+    {
+      name: 'The Mall',
+      blurb: 'The pedestrian ring round Observatory Hill, ten minutes from the hotel.',
+      coords: { lat: 27.0425, lng: 88.2635 },
+      image: '/images/hotels/darjeeling/explore/the Mall.webp',
+    },
+    {
+      name: 'Lloyd Botanical Garden',
+      blurb: 'Himalayan orchids and a cold house, in a bowl below the market.',
+      coords: { lat: 27.0391, lng: 88.2578 },
+    },
+    {
+      name: 'Ropeway',
+      blurb: 'The Rangeet valley cable car, out over the tea gardens.',
+      coords: { lat: 27.0483, lng: 88.2542 },
+      image: '/images/hotels/darjeeling/explore/Darjeeling Ropeway.webp',
+    },
     {
       name: 'Zoological Park',
+      blurb: 'Padmaja Naidu’s snow leopards and red pandas, high on Jawahar Road.',
+      coords: { lat: 27.0508, lng: 88.256 },
       image: '/images/hotels/darjeeling/explore/Padmaja Naidu Himalayan Zoological Park.webp',
     },
     {
       name: 'Himalayan Mountaineering Institute',
+      blurb: 'Tenzing Norgay’s institute, and the museum of the 1953 Everest climb.',
+      coords: { lat: 27.051, lng: 88.2565 },
       image: '/images/hotels/darjeeling/explore/Himalayan Mountaineering Institute.webp',
     },
-    { name: 'Ghoom Monastery', image: '/images/hotels/darjeeling/explore/Ghoom Monastery.webp' },
-    { name: 'Mirik', image: '/images/hotels/darjeeling/explore/Mirik.webp' },
+    {
+      name: 'Ghoom Monastery',
+      blurb: 'The 1850 Yiga Choeling gompa and its fifteen-foot Maitreya.',
+      coords: { lat: 27.0099, lng: 88.2452 },
+      roadKm: 8,
+      image: '/images/hotels/darjeeling/explore/Ghoom Monastery.webp',
+    },
+    {
+      name: 'Mirik',
+      blurb: 'A lake town among tea gardens and orange groves, a half-day out.',
+      coords: { lat: 26.8869, lng: 88.1869 },
+      roadKm: 49,
+      image: '/images/hotels/darjeeling/explore/Mirik.webp',
+    },
   ],
   eventSpaces: {
     totalSqFt: 960,

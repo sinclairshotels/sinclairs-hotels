@@ -115,3 +115,111 @@ Recorded so nobody re-raises them:
       table. The other twenty-nine came from the old site's copy and are seeded
       into `RoomType.sizeSqFt`; staff can correct any of them there. Square feet
       only — the m² shown beside it is worked out from that one number.
+
+## Website feedback, round 2 (23 Sep 2026)
+
+Sections A–C were done in one PR; D is recorded in `PLAN.md`'s decisions log.
+
+### A. Site-wide
+
+- [x] Hotel pages: more space between the tagline and the booking bar, all nine.
+- [x] Reviews: a hotel page and a booking page show only that hotel's reviews.
+      No cross-hotel quotes anywhere; a hotel with none shows none.
+- [x] Room tiles and booking rows show that property's check-in and check-out
+      times.
+- [x] "In your room" per room type — bed, bathroom, TV, Wi-Fi, tea/coffee,
+      safe, minibar, AC/heater, work desk, balcony where true — as icons with
+      labels, sourced from each room's existing description, unknowns left out
+      rather than guessed. Editable on Set-up.
+- [x] Explore: every hotel, a list of places with name, one-line description,
+      distance in km from the hotel, drive time, and a photo where one exists.
+      Content order kept. No photo means no image slot.
+- [x] Merge "Dining" and "Food and Dining" into one Dining section per hotel.
+- [x] "Timings" → "Opening hours" everywhere. Done in PR #20, with
+      `content/opening-hours.test.ts` holding the one format.
+- [x] Pluralise by count: "1 dining venue", "1 event space".
+- [x] Press and Media: layout and links. Done in PR #20 — eleven of the twelve
+      mentions have no source URL and now render as plain cards rather than
+      dead links; those URLs are still wanted (see the entry above).
+- [x] Careers in the footer. Done in PR #19.
+
+### B. Booking journey
+
+- [x] Book Now on a room opens the booking page with that room pre-selected
+      and visible in the summary.
+- [x] Date handoff: the property page and the booking page open on the same
+      dates. Done in PR #20, with the midnight-IST test.
+- [x] "Not yet bookable online" is a dead end. Name the room types with no
+      rates loaded for those dates, and offer an Enquire button.
+
+### C. Per hotel
+
+- [x] **Burdwan** — overview copy rewritten without "finest accommodation",
+      "pulsating environment for relaxation" or "fun-filled destination for
+      business executives"; yoga out of the amenities; Explore distances.
+- [x] **Dooars** — Premier Suite (the Burra Sahib) and Wooden Cottage
+      descriptions to two sentences, fittings moved into "In your room"; café
+      removed from Dining and from the amenity list.
+- [x] **Kalimpong** — tagline "Mountain views. A slower pace."; Explore
+      distances.
+- [x] **Bayview (Port Blair)** — Explore distances; tagline "Stay by the sea.
+      Explore the Andamans."; Premier Family Room's "attached three-fixture
+      toilet" is now "En-suite bath".
+- [x] **Udaipur** — tagline "Palatial stays and memorable celebrations in
+      Haldighati."; amenity lists out of room descriptions and into "In your
+      room"; Explore distances; "1 dining venue".
+- [x] **Darjeeling** — tagline "Mountain mornings. Darjeeling at your
+      doorstep."; gallery intro loses "the pool" (it is decided per property
+      now, and Darjeeling's "Pool Table" does not count); Explore distances;
+      "1 event space".
+- [x] **Siliguri** — "1 dining venue"; Explore distances.
+
+### Still needed from the team
+
+These were in round 2 but are values or files nobody here can invent. Each
+shows nothing rather than a guess until they arrive.
+
+- [ ] **Burdwan** — the replacement overview paragraph (the round-2 note says
+      "the supplied paragraph", but none came with it; the current copy is a
+      rewrite of the old one with the three phrases removed).
+- [ ] **Burdwan** — opening hours for The Palm Terrace and O3 Lounge Bar.
+- [x] **Bayview** — room sizes for all six room types. Supplied 23 Sep 2026
+      with the room copy and applied: 315, 340, 500, 540, 500, 540 sq ft.
+- [ ] **Bayview** — dining opening hours. Still no figures; the venues show no
+      hours rather than guessed ones.
+- [ ] **Room sizes still open** — Burdwan's Junior Suite and Maharaja Suite
+      (marked "[Confirm size]" in the copy, so the tiles show no size), and
+      three marked provisional or needing an area basis: Burdwan Premier Room
+      338 sq ft, Dooars Wooden Cottage 282 sq ft, and Bayview's two attic
+      categories, whose 500 and 540 sq ft are listed with the attic (100 and
+      120 sq ft) noted separately — confirm whether the headline figure
+      includes it.
+- [ ] **Explore photos** — Burdwan (Pir Baharam, Meghnad Saha Planetarium, Deer
+      Park), Darjeeling (Lloyd Botanical Garden), Siliguri (Kalchakra
+      Monastery, ISKCON Temple), and the others listed as photo-less. A place
+      with no photo renders with no image slot, which is the intended
+      behaviour, not a gap in the code.
+- [ ] **Coordinates** — every Explore distance is an estimate from coordinates
+      taken off public references, except where a property publishes its own
+      road figure (all ten Dooars places, and the long runs out of Gangtok,
+      Darjeeling, Udaipur, Ooty, Burdwan and Port Blair). Confirm the hotel
+      coordinates and any distance that looks wrong; a corrected road figure
+      goes in `roadKm` on that place and overrides the estimate. Still with no
+      coordinate at all, so showing no distance: Burdwan's Pir Baharam and
+      Bhalkimachan, Kalimpong's Dharmodaya Vihar, and Port Blair's four island
+      trips, which are reached by ferry rather than road.
+
+### D. Decision — room descriptions across every hotel
+
+Room descriptions shorten and their fittings move into "In your room", at every
+property rather than only Dooars, so every room reads the same way. Recorded in
+`PLAN.md`.
+
+- [x] All thirty-nine rewritten from the copy supplied 23 Sep 2026. Where the
+      new copy drops a fitting the old prose named and the property has, it
+      moved into that room's `amenities` so the list still shows it: Burdwan's
+      in-room dining, phone and the Junior Suite's bed and bathroom;
+      Kalimpong's cottage shower; Siliguri's two suite showers. Bayview gained
+      its sea views as a `view`, and the three hill properties carry the
+      supplied line, "Mountain views are subject to weather and visibility.",
+      under their room lists.

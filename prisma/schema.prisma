@@ -439,6 +439,12 @@ model RoomType {
   // rendering an empty label.
   sizeSqFt Int?
 
+  // What is in the room, as lib/room-facilities.ts's catalogue keys. Empty
+  // means nobody has edited it, not that the room has nothing: the site then
+  // derives the list from the room's own copy in content/hotels, which is
+  // where every one of these came from in the first place.
+  facilities String[] @default([])
+
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

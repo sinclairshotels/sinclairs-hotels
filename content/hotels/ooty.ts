@@ -51,7 +51,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
-        'Overlooks pine forests interspersed with eucalyptus trees. These forest-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Pine and eucalyptus trees frame the outlook from this forest-facing room. A writing desk and en suite bathroom with a hot shower provide a comfortable base for days exploring Ooty and evenings back at the hotel.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (1).webp',
         '/images/hotels/ooty/accommodations/deluxe-room/Deluxe (2).webp',
@@ -67,7 +67,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 210,
       description:
-        'Offers a breathtaking view of the Blue Mountains and Ooty valley. These garden-facing rooms come with a queen-sized bed and a twin bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Looking towards the gardens, Ooty valley and the Blue Mountains, the Premier Room makes the scenery part of your stay. A writing desk and en suite shower complete a comfortable space to return to after sightseeing.',
       images: [
         '/images/hotels/ooty/accommodations/premier-room/ADS_4926.webp',
         '/images/hotels/ooty/accommodations/premier-room/ADS_4928.webp',
@@ -83,7 +83,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Writing desk'],
       sizeSqFt: 273,
       description:
-        'Cozy and quiet, the superior rooms overlook the pine forests. They come with a queen-sized bed, a writing desk, and an attached bath with hot and cold shower.',
+        'Enjoy extra space and an outlook over the pine forest. With a queen-size bed, writing desk and en suite bathroom, the Superior Room is a welcoming choice for guests who prefer a little more room to settle in.',
       images: [
         '/images/hotels/ooty/accommodations/superior-room/ADS_4285.webp',
         '/images/hotels/ooty/accommodations/superior-room/ADS_4287.webp',
@@ -99,7 +99,7 @@ export const ootyHotel: Hotel = {
       amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Dining table', 'Sofa seating'],
       sizeSqFt: 397,
       description:
-        'Spacious and luxurious, the deluxe suites overlook the Blue Mountains and the Ooty valley. They come with a queen-sized bed, sofa seating and a dining table, and an attached four-fixture bath with hot and cold shower.',
+        'Views towards the Blue Mountains and Ooty valley accompany a room with space to relax over a meal or a conversation. The Deluxe Suite includes a queen-size bed, sofa seating, a dining table and an attached bathroom.',
       images: [
         '/images/hotels/ooty/accommodations/deluxe-suite/Deluxe suite.webp',
         '/images/hotels/ooty/accommodations/deluxe-suite/ADS_4981.webp',
@@ -120,7 +120,7 @@ export const ootyHotel: Hotel = {
       ],
       sizeSqFt: 890,
       description:
-        'Popular with honeymooners, this suite provides elite comfort with spectacular views of pine forests from a private viewing veranda. It comes with a queen-sized bed, sofa seating, a dining table, a private deck facing the forest, and an attached four-fixture bath with hot and cold running water.',
+        'A private forest-facing deck is the highlight of the Nilgiri Suite. Inside, a queen-size bed, sofa seating and dining table give you plenty of space to spend time together, making it a welcoming choice for a longer escape.',
       images: [
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (1).webp',
         '/images/hotels/ooty/accommodations/nilgiri-suite/Nilgiri suite (2).webp',
@@ -199,26 +199,88 @@ export const ootyHotel: Hotel = {
       alt: 'The fitness centre at Sinclairs Ooty',
     },
   ],
+  coords: { lat: 11.405, lng: 76.695 },
+  drive: { roadFactor: 1.8, averageSpeedKph: 28 },
   sightseeing: [
     {
       name: 'Nilgiri Mountain Railway',
+      blurb: 'The 1908 rack railway from Mettupalayam, a UNESCO site.',
+      coords: { lat: 11.409, lng: 76.697 },
       image: '/images/hotels/ooty/explore/Nilgiri Mountain railway.webp',
     },
-    { name: "Dolphin's Nose", image: '/images/hotels/ooty/explore/Dolphin_s Nose.webp' },
-    { name: 'Dodabetta', image: '/images/hotels/ooty/explore/dodabetta peak.webp' },
+    {
+      name: "Dolphin's Nose",
+      blurb: 'A cliff over the Catherine Falls gorge, out past Coonoor.',
+      coords: { lat: 11.345, lng: 76.82 },
+      roadKm: 30,
+      image: '/images/hotels/ooty/explore/Dolphin_s Nose.webp',
+    },
+    {
+      name: 'Dodabetta',
+      blurb: 'The highest peak in the Nilgiris at 8,650 ft, with a telescope house.',
+      coords: { lat: 11.403, lng: 76.735 },
+      roadKm: 10,
+      image: '/images/hotels/ooty/explore/dodabetta peak.webp',
+    },
     {
       name: 'Botanical Gardens',
+      blurb: 'Twenty-two hectares laid out in 1848, and the May flower show.',
+      coords: { lat: 11.416, lng: 76.706 },
       image: '/images/hotels/ooty/explore/Botanical Garden-Ooty.webp',
     },
-    { name: 'Tea Factory', image: '/images/hotels/ooty/explore/The Tea factory.webp' },
-    { name: 'Ooty Lake', image: '/images/hotels/ooty/explore/Ooty Lake.webp' },
-    { name: 'Coonoor', image: '/images/hotels/ooty/explore/Coonoor- Ooty.webp' },
-    { name: 'Charing Cross' },
-    { name: 'Toda Villages', image: '/images/hotels/ooty/explore/Toda Villages.webp' },
-    { name: 'Pykara', image: '/images/hotels/ooty/explore/Pykara Lake.webp' },
-    { name: 'Honey & Bee Museum', image: '/images/hotels/ooty/explore/bee museum.webp' },
-    { name: 'Government Museum' },
-    { name: 'Lalit Kala Academy' },
+    {
+      name: 'Tea Factory',
+      blurb: 'Doddabetta’s working factory and tea museum, with tastings.',
+      coords: { lat: 11.406, lng: 76.729 },
+      image: '/images/hotels/ooty/explore/The Tea factory.webp',
+    },
+    {
+      name: 'Ooty Lake',
+      blurb: 'The 1824 boating lake, ten minutes below the town.',
+      coords: { lat: 11.403, lng: 76.689 },
+      image: '/images/hotels/ooty/explore/Ooty Lake.webp',
+    },
+    {
+      name: 'Coonoor',
+      blurb: 'The quieter hill town down the line, for Sim’s Park and the tea slopes.',
+      coords: { lat: 11.353, lng: 76.796 },
+      roadKm: 19,
+      image: '/images/hotels/ooty/explore/Coonoor- Ooty.webp',
+    },
+    {
+      name: 'Charing Cross',
+      blurb: 'The junction at the middle of town, and the start of the shopping streets.',
+      coords: { lat: 11.411, lng: 76.698 },
+    },
+    {
+      name: 'Toda Villages',
+      blurb: 'The barrel-vaulted huts of the Nilgiris’ first people, on the downs.',
+      coords: { lat: 11.42, lng: 76.72 },
+      image: '/images/hotels/ooty/explore/Toda Villages.webp',
+    },
+    {
+      name: 'Pykara',
+      blurb: 'A lake, a falls and a boathouse in the shola forest, north-west of town.',
+      coords: { lat: 11.464, lng: 76.572 },
+      roadKm: 21,
+      image: '/images/hotels/ooty/explore/Pykara Lake.webp',
+    },
+    {
+      name: 'Honey & Bee Museum',
+      blurb: 'A small museum on the Nilgiri bee, above the Botanical Gardens.',
+      coords: { lat: 11.415, lng: 76.704 },
+      image: '/images/hotels/ooty/explore/bee museum.webp',
+    },
+    {
+      name: 'Government Museum',
+      blurb: 'Nilgiri tribal craft and sculpture, on the Mysore road.',
+      coords: { lat: 11.423, lng: 76.693 },
+    },
+    {
+      name: 'Lalit Kala Academy',
+      blurb: 'Contemporary south Indian painting and sculpture, beside the museum.',
+      coords: { lat: 11.423, lng: 76.694 },
+    },
   ],
   eventSpaces: {
     totalSqFt: 3870,

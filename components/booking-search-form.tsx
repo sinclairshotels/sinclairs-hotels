@@ -21,6 +21,7 @@ export function BookingSearchForm({
   defaultRooms,
   defaultAdults,
   defaultChildren,
+  room,
   compact = false,
 }: {
   hotels: Hotel[];
@@ -30,6 +31,10 @@ export function BookingSearchForm({
   defaultRooms?: number;
   defaultAdults?: number;
   defaultChildren?: number;
+  // The room a guest arrived on, carried through the search so it is still
+  // chosen when the results come back. Dropped when the search moves to
+  // another property, where the name means nothing.
+  room?: string;
   compact?: boolean;
 }) {
   const router = useRouter();
@@ -62,9 +67,9 @@ export function BookingSearchForm({
       { cta_source: 'booking_search', hotel: hotelSlug },
     );
     recordFunnelStep('search', hotelSlug);
-    router.push(
-      `/book/${hotelSlug}?${new URLSearchParams({ checkIn, checkOut, rooms, adults, children })}`,
-    );
+    const query = new URLSearchParams({ checkIn, checkOut, rooms, adults, children });
+    if (room && hotelSlug === defaultHotel) query.set('room', room);
+    router.push(`/book/${hotelSlug}?${query}`);
   }
 
   return (

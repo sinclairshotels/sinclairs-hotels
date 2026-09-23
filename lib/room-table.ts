@@ -1,4 +1,5 @@
 import type { BlockedOffer, RoomOffer } from '@/lib/availability';
+import type { RoomFacility } from '@/lib/room-facilities';
 import type { BookingRateType, RatePlanCode } from '@prisma/client';
 
 // Reshapes what availability() returns into what the room table renders:
@@ -34,7 +35,7 @@ export interface RoomRow {
   sizeSqFt: number | null;
   baseOccupancy: number;
   extraAdultCharge: number;
-  amenities: string[];
+  facilities: RoomFacility[];
   images: string[];
   description?: string;
   roomsLeft: number;
@@ -50,7 +51,7 @@ export interface UnavailableRow {
 // Why a room is not on sale, in words a guest can act on. Deliberately vague
 // about our own mistakes — an unpriced night is a calendar nobody loaded, and
 // telling a guest that helps them not at all.
-const BLOCK_REASON: Record<BlockedOffer['reason'], string> = {
+export const BLOCK_REASON: Record<BlockedOffer['reason'], string> = {
   unpriced: 'Not available for these dates',
   'stop-sell': 'Not available for these dates',
   'sold-out': 'Sold out for these dates',
@@ -82,7 +83,7 @@ export function buildRoomTable(
         sizeSqFt: offer.sizeSqFt,
         baseOccupancy: offer.baseOccupancy,
         extraAdultCharge: offer.extraAdultCharge,
-        amenities: offer.content?.amenities ? [...offer.content.amenities] : [],
+        facilities: offer.facilities,
         images: offer.content?.images ? [...offer.content.images] : [],
         description: offer.content?.description,
         roomsLeft: offer.roomsLeft,

@@ -1,14 +1,16 @@
 import { reviews } from '@/content/reviews';
 
-// Two quotes from guests who stayed at this property, shown where a guest is
-// choosing a room. Falls back to the group's own reviews for a property with
-// none of its own — a real quote about another Sinclairs is worth more than an
-// empty panel, and the attribution says which.
+// Two quotes from guests who stayed at *this* property, and nobody else's.
+//
+// It used to pad a property with fewer than two of its own by borrowing other
+// hotels' quotes, on the reasoning that a real quote about another Sinclairs
+// beat an empty panel. It does not: a guest reading about Bayview is being
+// shown somebody's praise of Darjeeling, under a heading about Bayview, while
+// deciding whether to book Bayview. The attribution line named the other
+// property, which makes it honest but no less misleading at a glance. A
+// property with no quotes now shows none.
 export function RoomReviews({ hotelName }: { hotelName: string }) {
-  const own = reviews.filter((review) => review.propertyName === hotelName);
-  const shown = (
-    own.length >= 2 ? own : [...own, ...reviews.filter((r) => !own.includes(r))]
-  ).slice(0, 2);
+  const shown = reviews.filter((review) => review.propertyName === hotelName).slice(0, 2);
   if (shown.length === 0) return null;
 
   return (

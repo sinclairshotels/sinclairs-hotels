@@ -7,7 +7,7 @@ export const burdwanHotel: Hotel = {
   state: 'West Bengal',
   tagline: 'The rice bowl of India',
   description:
-    'Situated at High Street 1 in Renaissance Township, Sinclairs Burdwan is an upscale tourist resort offering the finest accommodation, club and banquet facilities. Spread over four acres, the resort is a perfect getaway for families looking for a break from stressful city life. Conveniently located a two-hour drive from Kolkata airport and five minutes from Ullas Bus Stand, the resort has 19 well-appointed Premier rooms, 4 Junior suites and 1 Maharaja suite. Sinclairs Burdwan provides a pulsating environment for relaxation and a fun-filled destination for business executives.',
+    'Situated at High Street 1 in Renaissance Township, Sinclairs Burdwan is a four-acre resort with club and banquet facilities, two hours from Kolkata airport and five minutes from Ullas Bus Stand. It has 19 Premier rooms, 4 Junior suites and 1 Maharaja suite, an all-day multicuisine restaurant overlooking the pool and gardens, and banquet space for weddings and company meetings.',
   history:
     'Sinclairs Burdwan opened in 2015 in Renaissance Township, on the edge of a city once ruled by the Bardhaman Raj — a zamindari estate that governed the region from 1657 until India abolished hereditary landholding in 1955.',
   heroImage: '/images/hotels/burdwan/amenities/SwimmingPoolNightView.webp',
@@ -28,7 +28,7 @@ export const burdwanHotel: Hotel = {
     'Lounge Bar',
     'Sightseeing Tours',
     'Elevator',
-    'Gym and Yoga',
+    'Gym',
     'Car Parking',
     'Open Air Terrace',
     'In-house Generator',
@@ -44,6 +44,7 @@ export const burdwanHotel: Hotel = {
   rooms: [
     {
       name: 'Premier Room',
+      sizeSqFt: 338,
       bedType: 'Twin beds',
       amenities: [
         'Ensuite bathroom',
@@ -52,9 +53,10 @@ export const burdwanHotel: Hotel = {
         'Television',
         'Mini fridge',
         'Direct dial phone',
+        'In-room dining',
       ],
       description:
-        'A twin bedroom with an ensuite bathroom and shower. The twin beds are of a larger than normal size for greater comfort, and the room comes with direct dial telephones, mini bar, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'Generous twin beds and an en suite shower make the Premier Room an easy choice for a shared stay. Make yourself a cup of tea, settle in after a day out, or order a relaxed meal in your room.',
       images: [
         '/images/hotels/burdwan/accommodations/premier-room/Premier room (1).webp',
         '/images/hotels/burdwan/accommodations/premier-room/Premier room (2).webp',
@@ -64,9 +66,17 @@ export const burdwanHotel: Hotel = {
     },
     {
       name: 'Junior Suite',
-      amenities: ['Tea and coffee', 'Electronic safe', 'Television', 'Direct dial phone'],
+      bedType: 'Double bed',
+      amenities: [
+        'Tea and coffee',
+        'Electronic safe',
+        'Television',
+        'Direct dial phone',
+        'Ensuite bathroom',
+        'Mini fridge',
+      ],
       description:
-        'A spacious air-conditioned bedroom with a large bed and an attached toilet, along with a spacious seating lounge with TV. Rooms feature direct dial telephones, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'A spacious bedroom and seating lounge give you room to settle into a longer stay. Unwind in the air-conditioned interiors, catch up over tea or enjoy an evening in, with in-room dining available.',
       images: [
         '/images/hotels/burdwan/accommodations/junior-suite/Junior suite (1).webp',
         '/images/hotels/burdwan/accommodations/junior-suite/Junior suite (2).webp',
@@ -83,9 +93,11 @@ export const burdwanHotel: Hotel = {
         'Television',
         'Mini fridge',
         'Separate living room',
+        'Direct dial phone',
+        'In-room dining',
       ],
       description:
-        'The suite has a bedroom and a living room, each with an ensuite bathroom and shower. The decor recreates the ornate lifestyle of the erstwhile maharajas, complemented by direct dial telephones, mini bar, tea and coffee maker, satellite television, electronic safe and in-room dining.',
+        'Ornate interiors give the Maharaja Suite its distinctive character. A separate bedroom and living room, each with a bathroom and shower, offer added privacy and space for a leisurely stay or a special occasion.',
       images: [
         '/images/hotels/burdwan/accommodations/maharaja-suite/Maharaja suite_bedroom (1).webp',
         '/images/hotels/burdwan/accommodations/maharaja-suite/Maharaja suite_living room (1).webp',
@@ -198,37 +210,97 @@ export const burdwanHotel: Hotel = {
       alt: 'Landscaped lawn and garden pathway at Sinclairs Burdwan',
     },
   ],
+  coords: { lat: 23.245, lng: 87.8615 },
+  drive: { roadFactor: 1.35, averageSpeedKph: 40 },
   sightseeing: [
     {
       name: 'Curzon Gate (Vijay Toran)',
+      blurb: 'The 1903 ceremonial arch at the head of GT Road, lit after dark.',
+      coords: { lat: 23.2404, lng: 87.8608 },
       image: '/images/hotels/burdwan/explore/curzon gate.webp',
     },
-    { name: '108 Shiva Mandir', image: '/images/hotels/burdwan/explore/108 shiv mandir.webp' },
+    {
+      name: '108 Shiva Mandir',
+      blurb: 'A ring of 108 identical Shiva shrines at Nawab Hat, laid out in 1788.',
+      coords: { lat: 23.2665, lng: 87.8483 },
+      image: '/images/hotels/burdwan/explore/108 shiv mandir.webp',
+    },
     {
       name: 'Sarvamangala Mandir',
+      blurb: "Burdwan's presiding Kali temple, busiest at dusk.",
+      coords: { lat: 23.2437, lng: 87.8536 },
       image: '/images/hotels/burdwan/explore/sarbamangala kali mandir.webp',
     },
-    { name: 'Pir Baharam' },
-    { name: 'Meghnad Saha Planetarium' },
+    {
+      name: 'Pir Baharam',
+      blurb: 'The old quarter’s dargah, and one of the town’s oldest standing shrines.',
+    },
+    {
+      name: 'Meghnad Saha Planetarium',
+      blurb: 'Sky shows named for the Bengali astrophysicist.',
+      coords: { lat: 23.2389, lng: 87.8676 },
+    },
     {
       name: 'Burdwan Science Centre',
+      blurb: 'Hands-on exhibits and a small aquarium, near Golapbag.',
+      coords: { lat: 23.231, lng: 87.857 },
       image: '/images/hotels/burdwan/explore/science meuseum.webp',
     },
-    { name: 'Town Hall', image: '/images/hotels/burdwan/explore/town hall.webp' },
+    {
+      name: 'Town Hall',
+      blurb: 'The Raj-era hall on GT Road, still the town’s meeting place.',
+      coords: { lat: 23.2372, lng: 87.8622 },
+      image: '/images/hotels/burdwan/explore/town hall.webp',
+    },
     {
       name: 'Krishnasayar Ecological Park',
+      blurb: 'A 33-acre lake with boating and a walking circuit.',
+      coords: { lat: 23.2302, lng: 87.876 },
       image: '/images/hotels/burdwan/explore/krishnasayar lake and park.webp',
     },
-    { name: 'Golapbag', image: '/images/hotels/burdwan/explore/golapbag.webp' },
-    { name: 'Deer Park' },
+    {
+      name: 'Golapbag',
+      blurb: 'The Maharaja’s rose garden, now the university’s botanical grounds.',
+      coords: { lat: 23.2352, lng: 87.8483 },
+      image: '/images/hotels/burdwan/explore/golapbag.webp',
+    },
+    {
+      name: 'Deer Park',
+      blurb: 'Spotted deer in the woods beside Krishnasayar.',
+      coords: { lat: 23.2312, lng: 87.8755 },
+    },
     {
       name: 'Kankaleshwari Kali Mandir',
+      blurb: 'The black-stone Kankaleshwari idol at Kanchannagar.',
+      coords: { lat: 23.242, lng: 87.832 },
       image: '/images/hotels/burdwan/explore/Kankaleswar mandir.webp',
     },
-    { name: 'Kalna Raj Bari', image: '/images/hotels/burdwan/explore/Rajbari.webp' },
-    { name: 'Santiniketan', image: '/images/hotels/burdwan/explore/Santiniketan.webp' },
-    { name: 'Bishnupur', image: '/images/hotels/burdwan/explore/Bishnupur.webp' },
-    { name: 'Bhalkimachan', image: '/images/hotels/burdwan/explore/Bhalkimachan.webp' },
+    {
+      name: 'Kalna Raj Bari',
+      blurb: 'Terracotta temples and the Nabakailash Shiva circle at Ambika Kalna.',
+      coords: { lat: 23.22, lng: 88.367 },
+      roadKm: 55,
+      image: '/images/hotels/burdwan/explore/Rajbari.webp',
+    },
+    {
+      name: 'Santiniketan',
+      blurb: 'Tagore’s university town, and the Sonajhuri haat at weekends.',
+      coords: { lat: 23.6793, lng: 87.683 },
+      roadKm: 70,
+      image: '/images/hotels/burdwan/explore/Santiniketan.webp',
+    },
+    {
+      name: 'Bishnupur',
+      blurb: 'The Malla kings’ terracotta temples, and Baluchari weavers at work.',
+      coords: { lat: 23.073, lng: 87.319 },
+      roadKm: 90,
+      image: '/images/hotels/burdwan/explore/Bishnupur.webp',
+    },
+    {
+      name: 'Bhalkimachan',
+      blurb: 'The forest watchtower and picnic ground in Ausgram, west of the town.',
+      image: '/images/hotels/burdwan/explore/Bhalkimachan.webp',
+    },
   ],
   eventSpaces: {
     totalSqFt: 4790,

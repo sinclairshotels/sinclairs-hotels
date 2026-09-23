@@ -1,16 +1,19 @@
 'use client';
 
 import { Lightbox } from '@/components/lightbox';
-import type { SightseeingSpot } from '@/content/types';
+import type { ExploreEntry } from '@/lib/sightseeing';
 import Image from 'next/image';
 import { useState } from 'react';
 
-// The order in the content file is the order the property recommends, so spots
-// render in it. Splitting the photo-less ones into a separate row (as this did
-// before) moved them away from the places they sit beside — Darjeeling's Lloyd
-// Botanical Garden landed at the bottom of the section, six spots from where it
-// belongs.
-export function ExploreGrid({ spots }: { spots: SightseeingSpot[] }) {
+// A list of places, not a wall of thumbnails: a guest deciding what to do with
+// a morning needs to know what a place is and how far it is, which a cropped
+// photograph with a caption cannot say.
+//
+// The order in the content file is the order the property recommends, so
+// entries render in it — including the ones with no photograph, which keep
+// their place in the list rather than being swept to the bottom. A place with
+// no photo has no image slot at all; an empty grey box is worse than none.
+export function ExploreGrid({ spots }: { spots: ExploreEntry[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const photos = spots
@@ -20,33 +23,40 @@ export function ExploreGrid({ spots }: { spots: SightseeingSpot[] }) {
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {spots.map((spot) => (
-          <li key={spot.name}>
-            {spot.image ? (
+          <li
+            key={spot.name}
+            className="flex gap-4 rounded-lg border border-forest/10 bg-white p-3 shadow-sm transition hover:shadow-lg"
+          >
+            {spot.image && (
               <button
                 type="button"
                 aria-label={`Open photo: ${spot.name}`}
                 onClick={() => setOpenIndex(photoIndex.get(spot.image as string) ?? 0)}
-                className="group relative block aspect-[4/3] w-full overflow-hidden rounded-lg shadow-sm transition duration-300 hover:shadow-xl"
+                className="group relative h-24 w-24 shrink-0 overflow-hidden rounded"
               >
                 <Image
                   src={spot.image}
                   alt={spot.name}
                   fill
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  sizes="96px"
                   className="transform-gpu object-cover transition duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/85 via-forest-dark/10 to-transparent" />
-                <span className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 text-left text-xs leading-relaxed text-cream">
-                  {spot.name}
-                </span>
               </button>
-            ) : (
-              <div className="flex aspect-[4/3] w-full items-end rounded-lg border border-forest/15 bg-forest/5 px-4 pb-3.5">
-                <span className="text-xs leading-relaxed text-ink/70">{spot.name}</span>
-              </div>
             )}
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-base leading-snug text-forest">{spot.name}</p>
+              {spot.blurb && (
+                <p className="mt-1 text-xs leading-relaxed text-ink/65">{spot.blurb}</p>
+              )}
+              {spot.distance && (
+                <p className="mt-2 text-[11px] uppercase tracking-wider text-gold-dark">
+                  {spot.distance}
+                  {spot.drive ? ` · about ${spot.drive}` : ''}
+                </p>
+              )}
+            </div>
           </li>
         ))}
       </ul>

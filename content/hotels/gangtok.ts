@@ -46,7 +46,7 @@ export const gangtokHotel: Hotel = {
       view: 'Forest view',
       sizeSqFt: 335,
       description:
-        'The well-appointed rooms in wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the hotel. Rooms overlook the forest or road side and feature a king-size bed or two twin beds.',
+        'Warm wood finishes and a choice of king or twin beds create a comfortable base in Gangtok. These rooms face the forest or road, offering a place to rest between outings and evenings in town.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double1.webp',
         '/images/hotels/gangtok/accommodations/deluxe-room/Deluxe Double2.webp',
@@ -58,7 +58,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Two adjoining rooms', 'Two bathrooms'],
       sizeSqFt: 554,
       description:
-        'The ideal solution for privacy while keeping family members close in complete comfort and style, the Family Room consists of two adjoining double rooms with two toilets.',
+        'Two adjoining double rooms give families space to stay together while keeping separate sleeping areas. The layout includes two toilets, making shared mornings easier and providing more privacy during your holiday.',
       images: [
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Sinclairs-Gangtok-Deluxe-Family-Room.webp',
         '/images/hotels/gangtok/accommodations/deluxe-family-room/Deluxe Family Room1.webp',
@@ -73,7 +73,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Private balcony'],
       sizeSqFt: 340,
       description:
-        'These well-appointed rooms face the mountain range and Gangtok town, offering a relaxed stay for couples, with a private standing balcony affording a panoramic view of the town against the mountains. Some rooms have a triple bed, ideal for an extra adult.',
+        'Step onto your private standing balcony for views across Gangtok towards the mountains. The Premier Room brings the town’s changing skyline into your stay, with selected rooms offering a bed arrangement for an additional adult.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room2.webp',
         '/images/hotels/gangtok/accommodations/premier-room/Premier Room4.webp',
@@ -86,7 +86,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Private balcony', 'Separate living room', 'Sofa seating'],
       sizeSqFt: 535,
       description:
-        'This spacious suite has a bedroom and a separate living room with sofa seating, wooden floors and rich furnishings that reflect the typical hill style of the hotel, along with a private balcony facing the valley.',
+        'A valley-facing balcony and separate living room make this suite a welcoming place to spend time between excursions. Wooden floors and sofa seating add warmth, while the separate bedroom lets you retreat when you are ready to rest.',
       images: [
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite1.webp',
         '/images/hotels/gangtok/accommodations/premier-suite/Premier Suite Living Room.webp',
@@ -99,7 +99,7 @@ export const gangtokHotel: Hotel = {
       amenities: ['Mood lighting', 'Complimentary platter'],
       sizeSqFt: 340,
       description:
-        'Specially designed for honeymooners and couples celebrating an anniversary, the alluring view, mood lighting and special accessories all add up to a romantic setting, complete with a complimentary platter of goodies.',
+        'Designed for time together, the Valentine Room pairs a scenic outlook with mood lighting and a complimentary platter of treats. A comfortable setting for a honeymoon, an anniversary or a few days away as a couple.',
       images: [
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom1.webp',
         '/images/hotels/gangtok/accommodations/valentine-room/ValentineRoom2.webp',
@@ -107,6 +107,7 @@ export const gangtokHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'Magnolia',
@@ -227,39 +228,130 @@ export const gangtokHotel: Hotel = {
       alt: 'Candlelit rooftop terrace dining set-up in the evening at Sinclairs Gangtok',
     },
   ],
+  coords: { lat: 27.32, lng: 88.61 },
+  drive: { roadFactor: 2.0, averageSpeedKph: 28 },
   sightseeing: [
-    { name: 'Tashi View Point', image: '/images/hotels/gangtok/explore/tashi view point.webp' },
-    { name: 'Hanuman Tok', image: '/images/hotels/gangtok/explore/hanuman tok.webp' },
-    { name: 'Ganesh Tok', image: '/images/hotels/gangtok/explore/ganesh tok.webp' },
+    {
+      name: 'Tashi View Point',
+      blurb: 'The classic Kanchenjunga viewpoint north of town, best at first light.',
+      coords: { lat: 27.3606, lng: 88.61 },
+      image: '/images/hotels/gangtok/explore/tashi view point.webp',
+    },
+    {
+      name: 'Hanuman Tok',
+      blurb: 'An army-kept temple on the ridge, with the range laid out behind it.',
+      coords: { lat: 27.335, lng: 88.63 },
+      image: '/images/hotels/gangtok/explore/hanuman tok.webp',
+    },
+    {
+      name: 'Ganesh Tok',
+      blurb: 'A small shrine and a wrap-around terrace over the town.',
+      coords: { lat: 27.342, lng: 88.626 },
+      image: '/images/hotels/gangtok/explore/ganesh tok.webp',
+    },
     {
       name: 'Flower Exhibition Centre',
+      blurb: 'A warm glasshouse of orchids and anthuriums below the Ridge.',
+      coords: { lat: 27.327, lng: 88.613 },
       image: '/images/hotels/gangtok/explore/flower exhibition centre.webp',
     },
-    { name: 'Cottage Industry and Handicraft Centre' },
+    {
+      name: 'Cottage Industry and Handicraft Centre',
+      blurb: 'Sikkimese weaving, carpets and thangka painting, made on site.',
+      coords: { lat: 27.331, lng: 88.612 },
+    },
     {
       name: 'Namgyal Institute of Tibetology',
+      blurb: 'Tibetan manuscripts, thangkas and ritual bronzes, in a 1958 building.',
+      coords: { lat: 27.3186, lng: 88.6104 },
       image: '/images/hotels/gangtok/explore/namgyal institute.webp',
     },
-    { name: 'Do-drul Chorten', image: '/images/hotels/gangtok/explore/drodul.webp' },
+    {
+      name: 'Do-drul Chorten',
+      blurb: 'A gold-topped stupa ringed by 108 prayer wheels.',
+      coords: { lat: 27.317, lng: 88.608 },
+      image: '/images/hotels/gangtok/explore/drodul.webp',
+    },
     {
       name: 'Rumtek Monastery',
+      blurb: 'The Karmapa’s seat, and the grandest monastery in Sikkim.',
+      coords: { lat: 27.288, lng: 88.561 },
+      roadKm: 24,
       image: '/images/hotels/gangtok/explore/rumtek monastery.webp',
     },
-    { name: 'Banjhakri Falls', image: '/images/hotels/gangtok/explore/banjhakri.webp' },
-    { name: 'Seven Sister Water Falls', image: '/images/hotels/gangtok/explore/seven sister.webp' },
-    { name: 'Himalayan Zoological Park', image: '/images/hotels/gangtok/explore/zoo.webp' },
+    {
+      name: 'Banjhakri Falls',
+      blurb: 'A landscaped falls and energy park on the way out of town.',
+      coords: { lat: 27.303, lng: 88.59 },
+      image: '/images/hotels/gangtok/explore/banjhakri.webp',
+    },
+    {
+      name: 'Seven Sister Water Falls',
+      blurb: 'Seven drops beside the North Sikkim highway, with a viewing deck.',
+      coords: { lat: 27.48, lng: 88.59 },
+      roadKm: 32,
+      image: '/images/hotels/gangtok/explore/seven sister.webp',
+    },
+    {
+      name: 'Himalayan Zoological Park',
+      blurb: 'Red panda and snow leopard in open hillside enclosures at Bulbuley.',
+      coords: { lat: 27.345, lng: 88.628 },
+      image: '/images/hotels/gangtok/explore/zoo.webp',
+    },
     {
       name: 'Tsomgo Lake',
+      blurb: 'A glacial lake at 12,400 ft, frozen in winter. Permit needed.',
+      coords: { lat: 27.375, lng: 88.762 },
+      roadKm: 38,
       image: '/images/hotels/gangtok/explore/Gangtok Tsogmo Lake.webp',
     },
-    { name: 'Baba Mandir', image: '/images/hotels/gangtok/explore/baba mandir.webp' },
-    { name: 'Nathula Pass', image: '/images/hotels/gangtok/explore/nathula.webp' },
-    { name: 'Lachung', image: '/images/hotels/gangtok/explore/lachung.webp' },
-    { name: 'Yumthang Valley', image: '/images/hotels/gangtok/explore/yumgtang.webp' },
-    { name: 'Ravangla', image: '/images/hotels/gangtok/explore/ravangla.webp' },
-    { name: 'Pelling', image: '/images/hotels/gangtok/explore/pelling.webp' },
+    {
+      name: 'Baba Mandir',
+      blurb: 'The soldiers’ shrine beyond Tsomgo, on the way to Nathula.',
+      coords: { lat: 27.373, lng: 88.8 },
+      roadKm: 52,
+      image: '/images/hotels/gangtok/explore/baba mandir.webp',
+    },
+    {
+      name: 'Nathula Pass',
+      blurb: 'The old silk route pass on the China border, open Wed–Sun with a permit.',
+      coords: { lat: 27.387, lng: 88.831 },
+      roadKm: 56,
+      image: '/images/hotels/gangtok/explore/nathula.webp',
+    },
+    {
+      name: 'Lachung',
+      blurb: 'A north Sikkim village at 8,600 ft, the base for Yumthang.',
+      coords: { lat: 27.689, lng: 88.743 },
+      roadKm: 118,
+      image: '/images/hotels/gangtok/explore/lachung.webp',
+    },
+    {
+      name: 'Yumthang Valley',
+      blurb: 'The valley of flowers beyond Lachung, at its best in April and May.',
+      coords: { lat: 27.82, lng: 88.7 },
+      roadKm: 148,
+      image: '/images/hotels/gangtok/explore/yumgtang.webp',
+    },
+    {
+      name: 'Ravangla',
+      blurb: 'South Sikkim’s ridge town, under the 130-ft Buddha Park statue.',
+      coords: { lat: 27.306, lng: 88.361 },
+      roadKm: 65,
+      image: '/images/hotels/gangtok/explore/ravangla.webp',
+    },
+    {
+      name: 'Pelling',
+      blurb: 'West Sikkim, and the closest the roads come to Kanchenjunga.',
+      coords: { lat: 27.3, lng: 88.239 },
+      roadKm: 115,
+      image: '/images/hotels/gangtok/explore/pelling.webp',
+    },
     {
       name: 'Pemayangtse Monastery',
+      blurb: 'The 1705 Nyingma monastery above Pelling, with its seven-tier wooden shrine.',
+      coords: { lat: 27.305, lng: 88.252 },
+      roadKm: 118,
       image: '/images/hotels/gangtok/explore/pemeyanchi.webp',
     },
   ],

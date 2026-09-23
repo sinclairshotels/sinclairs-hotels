@@ -17,6 +17,7 @@ import {
 } from '@/lib/cancellation';
 import type { NonRefundableRange } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
+import { type RoomFacility, roomFacilities } from '@/lib/room-facilities';
 import { currentTaxSlab } from '@/lib/tax';
 import type { BookingRateType, Prisma, PrismaClient, RatePlanCode } from '@prisma/client';
 
@@ -37,6 +38,10 @@ export interface RoomOffer {
   // Square feet, staff's figure first and the content file's as a fallback.
   // Null where the room has never been measured.
   sizeSqFt: number | null;
+  // What is in the room, staff's list where they have edited one and the
+  // room's own copy otherwise — the same resolution the hotel page uses, so
+  // the two screens cannot list different fittings.
+  facilities: RoomFacility[];
   // Guests the rate covers, for the table to say who the room sleeps, and
   // what one more costs a night — the number a guest weighs before deciding
   // they need a second room.
@@ -353,6 +358,7 @@ export async function availability(
           ratePlanCode: plan.code,
           ratePlanName: plan.name,
           sizeSqFt: roomType.sizeSqFt ?? contentRooms.get(roomType.contentKey)?.sizeSqFt ?? null,
+          facilities: roomFacilities(contentRooms.get(roomType.contentKey), roomType.facilities),
           baseOccupancy: roomType.baseOccupancy,
           extraAdultCharge: roomType.extraAdultCharge.toNumber(),
           roomsLeft,

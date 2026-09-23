@@ -5,7 +5,7 @@ export const kalimpongHotel: Hotel = {
   name: 'Sinclairs Retreat Kalimpong',
   location: 'Kalimpong',
   state: 'West Bengal',
-  tagline: 'An ideal retreat for those in search of a restful nature experience.',
+  tagline: 'Mountain views. A slower pace.',
   description:
     'Nestled in virgin green surroundings, Sinclairs Retreat Kalimpong stands out over five acres of aesthetically landscaped grounds, with an unmatched view of the Himalayan mountain range and a luxuriant forested valley. This cozy boutique resort has 44 rooms, two large suites and two rooms in a wooden cottage, all with a view of the alluring Himalayan range. Guests can enjoy local fare and international favourites at the all-day dining venue The Golden Oak, sip a drink at the thematic bar, or relax by the swimming pool and rejuvenate at the spa.',
   history:
@@ -52,7 +52,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Day bed'],
       sizeSqFt: 420,
       description:
-        'The richly appointed premier rooms in dark wood finish are spacious and comfortable, blending well with the intimate and tranquil atmosphere of the resort. Each room features one king size bed or two twin beds plus a day bed, and a private balcony overlooking the mountains.',
+        'A private mountain-facing balcony and daybed give you two inviting places to unwind. Warm wood finishes complement the spacious room, with a king-size bed or twin beds to suit your stay.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-room/PremierRoom2.webp',
@@ -65,7 +65,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Television', 'Wi-Fi', 'Fireplace', 'Day bed'],
       sizeSqFt: 460,
       description:
-        'These charming guest rooms provide a relaxed stay for individuals or a couple, with modern amenities such as flat screen LED televisions and wireless internet, a private balcony, a fireplace and a daybed to lounge on.',
+        'Enjoy a little more room to slow down, with a private balcony and a daybed for reading or lounging. The Premier Plus Room offers an easy setting for quiet mornings and relaxed evenings in Kalimpong.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-plus-room/PremierPlusRoom2.webp',
@@ -79,7 +79,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Attic', 'Separate wardrobe'],
       sizeSqFt: 524,
       description:
-        'Similar to the premier rooms but with a spacious attic reached via a wooden staircase, ideal for families — the attic has its own king size bed and a separate wardrobe for children.',
+        'An attic sleeping area gives families extra space while staying together. Reached by a wooden staircase, the upper level has its own king-size bed and wardrobe, adding a separate place to settle in at the end of the day.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom1.webp',
         '/images/hotels/kalimpong/accommodations/premier-attic-room/PremierAtticRoom2.webp',
@@ -94,7 +94,7 @@ export const kalimpongHotel: Hotel = {
       amenities: ['Private balcony', 'Separate living room', 'Dining table', 'Sofa seating'],
       sizeSqFt: 900,
       description:
-        'With a view of the swimming pool and the mountains, this extravagant suite has two separate rooms — a bedroom with a king bed and a mountain-facing balcony, and a living room with a full sofa set and a four-seater dining table.',
+        'With views of the pool and mountains, this suite has space for unhurried days indoors. A king bedroom opens onto a mountain-facing balcony, while the separate living room offers sofa seating and a dining table for four.',
       images: [
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuite1.webp',
         '/images/hotels/kalimpong/accommodations/premier-suite/PremierSuiteLivingRoom.webp',
@@ -106,10 +106,10 @@ export const kalimpongHotel: Hotel = {
       name: 'Wooden Cottage Room',
       bedType: 'King bed',
       view: 'Mountain view',
-      amenities: ['Ensuite bathroom', 'Private sit-out'],
+      amenities: ['Ensuite bathroom', 'Private sit-out', 'Hot and cold shower'],
       sizeSqFt: 284,
       description:
-        'Made entirely out of steam-treated recyclable wood, this secluded cottage has two rooms with attached baths — even the toilets, barring the shower area, are built from wood. The king size bed has a large upholstered headboard, and the room opens onto a private sit-out area overlooking the mountains, ideal for honeymooners.',
+        'Warm wooden interiors and a king-size bed make this cottage room an inviting hideaway. Step onto the private sit-out to enjoy the mountain outlook, or settle inside after a day exploring Kalimpong. An attached bathroom completes the room.',
       images: [
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage1.webp',
         '/images/hotels/kalimpong/accommodations/wooden-cottage-room/WoodenCottage2.webp',
@@ -118,6 +118,7 @@ export const kalimpongHotel: Hotel = {
       ],
     },
   ],
+  roomsNote: 'Mountain views are subject to weather and visibility.',
   dining: [
     {
       name: 'The Golden Oak',
@@ -226,36 +227,109 @@ export const kalimpongHotel: Hotel = {
       alt: "The children's play area at Sinclairs Retreat Kalimpong",
     },
   ],
+  coords: { lat: 27.07, lng: 88.478 },
+  drive: { roadFactor: 1.9, averageSpeedKph: 25 },
   sightseeing: [
-    { name: 'Durpin Dara', image: '/images/hotels/kalimpong/explore/durpin.webp' },
+    {
+      name: 'Durpin Dara',
+      blurb: 'The town’s highest ridge, with the Teesta on one side and the plains on the other.',
+      coords: { lat: 27.0503, lng: 88.467 },
+      image: '/images/hotels/kalimpong/explore/durpin.webp',
+    },
     {
       name: 'Durpin Monastery',
+      blurb: 'Zang Dhok Palri Phodang, consecrated by the Dalai Lama in 1976.',
+      coords: { lat: 27.05, lng: 88.4665 },
       image: '/images/hotels/kalimpong/explore/Kalimpong Durpin Monastery.webp',
     },
-    { name: 'Thongsa Gompa', image: '/images/hotels/kalimpong/explore/thongsa gompa.webp' },
-    { name: 'Flower Nurseries', image: '/images/hotels/kalimpong/explore/flower.webp' },
+    {
+      name: 'Thongsa Gompa',
+      blurb: 'The oldest monastery in Kalimpong, founded in 1692.',
+      coords: { lat: 27.065, lng: 88.47 },
+      image: '/images/hotels/kalimpong/explore/thongsa gompa.webp',
+    },
+    {
+      name: 'Flower Nurseries',
+      blurb: 'The orchid and gladioli nurseries the town trades on.',
+      coords: { lat: 27.062, lng: 88.472 },
+      image: '/images/hotels/kalimpong/explore/flower.webp',
+    },
     {
       name: "Dr Graham's Homes",
+      blurb: 'The 1900 hillside school and its stone chapel, above Deolo.',
+      coords: { lat: 27.076, lng: 88.479 },
       image: '/images/hotels/kalimpong/explore/graham_s home.webp',
     },
-    { name: 'Deolo Hill', image: '/images/hotels/kalimpong/explore/deolo.webp' },
-    { name: 'Macfarlane Church', image: '/images/hotels/kalimpong/explore/Church.webp' },
-    { name: 'Tharpa Choling Gompa' },
+    {
+      name: 'Deolo Hill',
+      blurb: 'The highest point in Kalimpong, with gardens and a view over the Relli valley.',
+      coords: { lat: 27.079, lng: 88.482 },
+      image: '/images/hotels/kalimpong/explore/deolo.webp',
+    },
+    {
+      name: 'Macfarlane Church',
+      blurb: 'The 1891 Scottish mission church in the middle of town.',
+      coords: { lat: 27.066, lng: 88.469 },
+      image: '/images/hotels/kalimpong/explore/Church.webp',
+    },
+    {
+      name: 'Tharpa Choling Gompa',
+      blurb: 'A Gelug monastery of 1922, quiet on a back lane.',
+      coords: { lat: 27.07, lng: 88.473 },
+    },
     {
       name: 'Mangal Dham',
+      blurb: 'A modern marble temple to Krishna, built in memory of Guru Mangaldasji.',
+      coords: { lat: 27.057, lng: 88.464 },
       image: '/images/hotels/kalimpong/explore/Kalimpong Mangal Dham.webp',
     },
-    { name: 'Army Golf Club', image: '/images/hotels/kalimpong/explore/army golf club.webp' },
-    { name: 'Kalibari', image: '/images/hotels/kalimpong/explore/market.webp' },
+    {
+      name: 'Army Golf Club',
+      blurb: 'Nine holes on the ridge, open to visitors by arrangement.',
+      coords: { lat: 27.056, lng: 88.47 },
+      image: '/images/hotels/kalimpong/explore/army golf club.webp',
+    },
+    {
+      name: 'Kalibari',
+      blurb: 'The town Kali temple, beside the main bazaar.',
+      coords: { lat: 27.067, lng: 88.471 },
+      image: '/images/hotels/kalimpong/explore/market.webp',
+    },
     {
       name: 'Central Sericulture Station',
+      blurb: 'Silkworms, mulberry and the reeling sheds, open on weekdays.',
+      coords: { lat: 27.063, lng: 88.465 },
       image: '/images/hotels/kalimpong/explore/sericulture.webp',
     },
-    { name: 'Cinchona Plantation', image: '/images/hotels/kalimpong/explore/cinchona.webp' },
-    { name: 'Tea Estates', image: '/images/hotels/kalimpong/explore/tea estate.webp' },
-    { name: 'Dharmodaya Vihar' },
-    { name: 'Hanuman Mandir', image: '/images/hotels/kalimpong/explore/hanuman mandir.webp' },
-    { name: 'Chardham Trip (Namchi)' },
+    {
+      name: 'Cinchona Plantation',
+      blurb: 'The quinine plantations the British laid out at Munsong, down the Relli road.',
+      coords: { lat: 27.02, lng: 88.52 },
+      roadKm: 25,
+      image: '/images/hotels/kalimpong/explore/cinchona.webp',
+    },
+    {
+      name: 'Tea Estates',
+      blurb: 'Working gardens on the Teesta slopes, with tastings by arrangement.',
+      coords: { lat: 27.04, lng: 88.45 },
+      image: '/images/hotels/kalimpong/explore/tea estate.webp',
+    },
+    {
+      name: 'Dharmodaya Vihar',
+      blurb: 'A Theravada Buddhist temple, and one of the town’s quieter corners.',
+    },
+    {
+      name: 'Hanuman Mandir',
+      blurb: 'A hilltop shrine with a tall Hanuman figure over the valley.',
+      coords: { lat: 27.072, lng: 88.475 },
+      image: '/images/hotels/kalimpong/explore/hanuman mandir.webp',
+    },
+    {
+      name: 'Chardham Trip (Namchi)',
+      blurb: 'Four shrines and a 108-ft Shiva at Solophok, a long day out in Sikkim.',
+      coords: { lat: 27.16, lng: 88.36 },
+      roadKm: 78,
+    },
   ],
   eventSpaces: {
     totalSqFt: 3828,

@@ -5,7 +5,7 @@ export const udaipurHotel: Hotel = {
   name: 'Sinclairs Palace Retreat Udaipur',
   location: 'Haldighati, Udaipur',
   state: 'Rajasthan',
-  tagline: 'Experience the grandeur and elegance of a bygone royal era.',
+  tagline: 'Palatial stays and memorable celebrations in Haldighati.',
   description:
     "Experience the grandeur and elegance of a bygone royal era at Sinclairs Palace Retreat, a palace hotel set in the heart of Haldighati, an hour's drive from Udaipur city. The 95-room hotel blends rich history with modern opulence, offering guests a royal retreat with impeccable service and panoramic views of the surrounding landscapes. The palace exudes luxury and grandeur, making it an ideal venue for an extravagant wedding, social gathering, or royal conference.",
   history:
@@ -31,10 +31,10 @@ export const udaipurHotel: Hotel = {
     {
       name: 'Premier Room',
       bedType: 'King bed',
-      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge'],
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 334,
       description:
-        'Step into comfort and elegance in our Premier Room, designed to blend traditional Rajasthani charm with modern amenities. Enjoy spacious interiors, plush bedding, and thoughtful touches that create a relaxing retreat after a day exploring Haldighati. It has an attached bath with hot and cold shower, king-size bed, in-room dining, and mini fridge.',
+        'Rajasthani-inspired details bring character to a comfortable room with a king-size bed. Return from exploring Haldighati to your own space to unwind, with an en suite shower, mini fridge and the option of in-room dining.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-room/Premier room (1).webp',
         '/images/hotels/udaipur/accommodations/premier-room/Premier room (2).webp',
@@ -45,10 +45,10 @@ export const udaipurHotel: Hotel = {
     {
       name: 'Premier Plus Room',
       bedType: 'King bed',
-      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge'],
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 363,
       description:
-        'The Premier Plus Room offers an enhanced experience with added space and premium furnishings. Bask in tasteful decor inspired by local heritage, complemented by upgraded amenities for a truly memorable stay. It has an attached bath with hot and cold shower, king-size bed, in-room dining, and mini fridge.',
+        'Enjoy more space to settle in, with a king-size bed and interiors inspired by Rajasthan. An en suite shower, mini fridge and in-room dining make the Premier Plus Room a comfortable choice for a leisurely stay.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-plus-room/Premier Plus (1).webp',
         '/images/hotels/udaipur/accommodations/premier-plus-room/Premier Plus (2).webp',
@@ -59,10 +59,10 @@ export const udaipurHotel: Hotel = {
     {
       name: 'Premier Suite',
       bedType: 'King bed',
-      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge'],
+      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'In-room dining'],
       sizeSqFt: 457,
       description:
-        "Our Premier Suite elevates luxury with separate living and sleeping areas, perfect for families or guests seeking extra comfort. Revel in exquisite interiors, rich textures, and panoramic views that capture the spirit of Udaipur's royal legacy. It has an attached bath with hot and cold shower, king-size bed, in-room dining, and mini fridge.",
+        'Separate living and sleeping areas give this suite an easy sense of space. Relax between outings or celebrations, then retreat to the king-size bedroom. An attached bathroom, mini fridge and in-room dining add everyday convenience.',
       images: [
         '/images/hotels/udaipur/accommodations/premier-suite/Premier suite (1).webp',
         '/images/hotels/udaipur/accommodations/premier-suite/Premier suite seating.webp',
@@ -73,10 +73,16 @@ export const udaipurHotel: Hotel = {
     {
       name: 'Villa',
       bedType: 'Queen bed',
-      amenities: ['Ensuite bathroom', 'Hot and cold shower', 'Mini fridge', 'Wardrobe'],
+      amenities: [
+        'Ensuite bathroom',
+        'Hot and cold shower',
+        'Mini fridge',
+        'Wardrobe',
+        'In-room dining',
+      ],
       sizeSqFt: 400,
       description:
-        'Experience the pinnacle of opulence in our Villa, a private haven featuring expansive living spaces, elegant decor, and exclusive amenities. Ideal for discerning guests, the villa offers unparalleled privacy along with the warmth of traditional Rajasthani hospitality. It has an attached bath with hot and cold shower, a large wardrobe and luggage rack, queen-size bed, in-room dining, and mini fridge.',
+        'The Villa offers a welcoming setting for a relaxed stay, with a queen-size bed and Rajasthani-inspired décor. A large wardrobe and luggage rack make it easy to unpack, while an en suite shower and mini fridge complete the space.',
       images: [
         '/images/hotels/udaipur/accommodations/villa/Villa (1).webp',
         '/images/hotels/udaipur/accommodations/villa/Villa (2).webp',
@@ -127,26 +133,71 @@ export const udaipurHotel: Hotel = {
       alt: 'Traditional Rajasthani wall painting inside the palace',
     },
   ],
+  coords: { lat: 24.93, lng: 73.76 },
+  drive: { roadFactor: 1.2, averageSpeedKph: 40 },
   sightseeing: [
     {
       name: 'Haldighati Museum',
+      blurb: 'The battle of 1576 told with dioramas, on the pass itself.',
+      coords: { lat: 24.931, lng: 73.715 },
       image: '/images/hotels/udaipur/explore/haldighati pass.webp',
     },
-    { name: 'Chetak Samadhi', image: '/images/hotels/udaipur/explore/chetak samadhi.webp' },
+    {
+      name: 'Chetak Samadhi',
+      blurb: 'The memorial to Maharana Pratap’s horse, a kilometre beyond the pass.',
+      coords: { lat: 24.939, lng: 73.708 },
+      image: '/images/hotels/udaipur/explore/chetak samadhi.webp',
+    },
     {
       name: 'Rakt Talai',
+      blurb: 'The field where the battle was fought, marked by chhatris.',
+      coords: { lat: 24.925, lng: 73.718 },
       image: '/images/hotels/udaipur/explore/Rakht-Talai-Haldighati.webp',
     },
     {
       name: 'Nathdwara Shrinathji Temple',
+      blurb: 'The 17th-century Krishna shrine, and Rajasthan’s busiest pilgrimage.',
+      coords: { lat: 24.937, lng: 73.823 },
+      roadKm: 18,
       image: '/images/hotels/udaipur/explore/Shrinathji_Temple-Nathdwara_Rajsamand12.webp',
     },
-    { name: 'Eklingji Temple' },
-    { name: 'Kumbhalgarh Fort', image: '/images/hotels/udaipur/explore/kumbhalgarh.webp' },
-    { name: 'City Palace Udaipur' },
-    { name: 'Lake Pichola' },
-    { name: 'Fateh Sagar Lake' },
-    { name: 'Saheliyon Ki Bari' },
+    {
+      name: 'Eklingji Temple',
+      blurb: 'The Mewar rulers’ own Shiva temple, in a walled complex of 108 shrines.',
+      coords: { lat: 24.737, lng: 73.745 },
+      roadKm: 24,
+    },
+    {
+      name: 'Kumbhalgarh Fort',
+      blurb: 'The 15th-century hill fort behind the second-longest wall in the world.',
+      coords: { lat: 25.148, lng: 73.587 },
+      roadKm: 55,
+      image: '/images/hotels/udaipur/explore/kumbhalgarh.webp',
+    },
+    {
+      name: 'City Palace Udaipur',
+      blurb: 'The Mewar palace over Lake Pichola, and its crystal gallery.',
+      coords: { lat: 24.576, lng: 73.683 },
+      roadKm: 40,
+    },
+    {
+      name: 'Lake Pichola',
+      blurb: 'The lake the city is built around; take the boat at sunset.',
+      coords: { lat: 24.572, lng: 73.679 },
+      roadKm: 41,
+    },
+    {
+      name: 'Fateh Sagar Lake',
+      blurb: 'The northern lake, with Nehru Garden on its island.',
+      coords: { lat: 24.6, lng: 73.68 },
+      roadKm: 44,
+    },
+    {
+      name: 'Saheliyon Ki Bari',
+      blurb: 'The garden of the maidens, with its fountains and lotus pool.',
+      coords: { lat: 24.601, lng: 73.689 },
+      roadKm: 44,
+    },
   ],
   eventSpaces: {
     totalSqFt: 9600,
