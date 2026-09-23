@@ -39,6 +39,7 @@ export default async function BookingPage({
 
   const hotel = getHotelBySlug(booking.hotelSlug);
   const nights = nightsBetween(booking.checkIn, booking.checkOut);
+  const checkInTime = stayTimes[booking.hotelSlug]?.checkIn;
   const checkOutTime = stayTimes[booking.hotelSlug]?.checkOut;
   const terms = bookingTerms(booking.hotelSlug, booking.rateType, booking.cancellationDeadline);
   const refundableNow = withinFreeCancellation(booking.rateType, booking.cancellationDeadline);
@@ -111,7 +112,7 @@ export default async function BookingPage({
               here. */}
           {booking.status === 'CONFIRMED' && (
             <p className="mt-6 rounded border border-gold/50 bg-gold/10 px-4 py-3 text-sm font-medium text-forest">
-              {directBookingPerk.short} — show this booking on arrival.
+              {directBookingPerk.short}
             </p>
           )}
 
@@ -130,7 +131,10 @@ export default async function BookingPage({
               }`}
             />
             <Row label="Rooms" value={String(booking.rooms)} />
-            <Row label="Check in" value={`${formatStayDate(booking.checkIn)} from 12 noon`} />
+            <Row
+              label="Check in"
+              value={`${formatStayDate(booking.checkIn)}${checkInTime ? ` from ${checkInTime}` : ''}`}
+            />
             <Row
               label="Check out"
               value={`${formatStayDate(booking.checkOut)}${

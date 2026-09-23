@@ -1,5 +1,5 @@
 import { stayTimes } from '@/content/site';
-import { cancellationSentence } from '@/lib/cancellation';
+import { CANCELLATION_TERM, cancellationSentence } from '@/lib/cancellation';
 import type { BookingRateType } from '@prisma/client';
 
 // The terms a guest agreed to, in one place because four surfaces state them:
@@ -24,12 +24,14 @@ export function bookingTerms(
   // state a time nobody published.
   const times = stayTimes[hotelSlug];
   const timing = times
-    ? `Check-in from 12 noon on the arrival date — early check-in is included because you booked direct. Check-out by ${times.checkOut}. Late check-out is subject to availability and may be charged.`
-    : 'Check-in from 12 noon on the arrival date — early check-in is included because you booked direct. Check-out time is confirmed by the property. Late check-out is subject to availability and may be charged.';
+    ? `Check-in from ${times.checkIn} on the arrival date; check-out by ${times.checkOut}. As a direct booking this stay includes late check-out until 1 pm, subject to availability on the day.`
+    : 'Check-in and check-out times are confirmed by the property. As a direct booking this stay includes late check-out until 1 pm, subject to availability on the day.';
 
   return [
-    // The booking's own terms, not a blanket policy: since refundable rates
-    // exist, a fixed sentence here would be wrong for half the bookings.
+    // The published policy first, stating both rates, then this booking's own
+    // terms with its actual date. One without the other leaves a guest either
+    // reading a rule that is not theirs or a date with no rule behind it.
+    CANCELLATION_TERM,
     cancellationSentence(rateType, cancellationDeadline),
     timing,
     'A government-issued photo ID is required for every adult guest at check-in. Foreign nationals must present a passport and valid visa.',

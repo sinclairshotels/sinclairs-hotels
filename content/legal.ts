@@ -1,5 +1,13 @@
-// Ported verbatim (wording only, re-styled) from the legacy site's
-// Voucher/rulestnc.php — real business/legal copy, not placeholder text.
+// Ported from the legacy site's Voucher/rulestnc.php — real business/legal
+// copy, not placeholder text. One section is no longer verbatim: the
+// cancellation policy was rewritten on 23 Sep 2026 to match the refundable /
+// non-refundable model the booking engine actually sells (see PLAN.md's
+// decisions log). The graduated 10/50/100% tiers it replaced described a
+// policy nothing in this app could enforce, and contradicted what the
+// confirmation told the same guest.
+//
+// This block is printed on every voucher and served at /terms, so it and
+// lib/cancellation.ts have to agree. Change both together.
 export const VOUCHER_TERMS_HTML = `
 <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; color:#404040; line-height:18px;">
   <p style="background-color:#f2f2f2; border-top:1px solid #069FDB; border-bottom:1px solid #069FDB; padding:6px 8px; color:#c0392b; font-weight:bold; margin:0 0 16px;">
@@ -20,17 +28,14 @@ export const VOUCHER_TERMS_HTML = `
 
   <p style="font-size:13px; font-weight:bold; margin:0 0 8px;">Cancellation Policy</p>
   <ul style="margin:0 0 16px; padding-left:18px;">
-    <li>If cancelled from 0 days to 7 days before the check-in date, 100% of the booking amount will be charged.</li>
-    <li>If cancelled from 8 days to 20 days before the check-in date, 50% of the booking amount will be charged.</li>
-    <li>If cancelled from 21 days to 30 days before the check-in date, 10% of the booking amount will be charged.</li>
-    <li>No refunds for unused nights or early check-out.</li>
-    <li>No refunds for cancellation during peak season period.</li>
-    <li>No refund in case the booking is cancelled due to cancellation of flights/trains/ferries or road blocks due to climatic changes/natural calamities/political disturbances, etc.</li>
+    <li><strong>Non-refundable rate</strong> &mdash; the booking cannot be cancelled or refunded.</li>
+    <li><strong>Refundable rate</strong> &mdash; cancel free of charge up to the deadline shown on your confirmation and the full amount is refunded. After that deadline, no refund is made.</li>
+    <li>No-shows and early departures are not refunded on either rate.</li>
+    <li>Where a refund is due, it is returned to the original payment method and reaches you within 5&ndash;7 working days.</li>
   </ul>
 
   <p style="font-size:12px; font-weight:bold; margin:0 0 8px;">For Port Blair</p>
   <ul style="margin:0; padding-left:18px;">
-    <li>No refund for cancellation received on bookings from 15th December to 15th January.</li>
     <li>No refunds would be made on the already purchased boat tickets/entry fees.</li>
   </ul>
 </div>

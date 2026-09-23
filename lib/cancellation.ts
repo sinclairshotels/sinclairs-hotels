@@ -64,6 +64,12 @@ export function cancellationSentence(rateType: BookingRateType, deadline: Date |
   return 'This booking is non-refundable and non-transferable. No refund is made for cancellation, no-show or early departure.';
 }
 
+// The Terms block's opening line, which states both rates rather than the one
+// this booking happens to be on: it is the published policy, and a guest
+// comparing it with content/legal.ts must find the same two sentences.
+export const CANCELLATION_TERM =
+  'Non-refundable bookings cannot be cancelled or refunded. Refundable bookings can be cancelled free of charge until the deadline shown on your confirmation; after that, no refund is made.';
+
 export function rateTypeLabel(rateType: BookingRateType): string {
   return rateType === 'REFUNDABLE' ? 'Refundable' : 'Non-refundable';
 }

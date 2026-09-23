@@ -297,6 +297,46 @@ room type and night and STAAH sold the rest, with staff mirroring website
 bookings into STAAH by hand. Kept here because the allotment-held-back wording
 explains why the schema is shaped the way it is.*
 
+**Four decisions taken 23 Sep 2026**, recorded together because they were
+answered in one go.
+
+**1. Transfer GST is 18%, pending finance.** The confirmation mockup's ₹1,125
+turned out not to be illustrative: it is 5% on ₹13,500 of accommodation (under
+the ₹7,500-a-night threshold) plus 18% on a ₹2,500 transfer, which is this
+codebase's own slab exactly. Transfer therefore gets its own rate on the Tax
+page, defaulting to 18% rather than to the room slab — a cab is a different
+supply from a room, and defaulting it to 5% would have under-collected quietly.
+**Finance has not confirmed this**; the field exists so the answer can be
+entered rather than deployed.
+
+**2. The published tiers are gone.** `content/legal.ts`'s graduated policy
+(10% at 21–30 days, 50% at 8–20, 100% inside 7) has been replaced by the
+refundable / non-refundable model, so the voucher, `/terms`, the confirmation
+page and both emails now say the same thing. Also removed, because they
+contradicted the refundable rate rather than qualifying it: the peak-season
+exception, the force-majeure clause covering cancelled flights, trains and
+ferries, and Port Blair's 15 Dec–15 Jan blackout. Port Blair's clause about
+already-purchased boat tickets stays — that is a third party's money, not ours.
+
+Terms line 1 is now fixed wording, `CANCELLATION_TERM` in `lib/cancellation.ts`:
+*"Non-refundable bookings cannot be cancelled or refunded. Refundable bookings
+can be cancelled free of charge until the deadline shown on your confirmation;
+after that, no refund is made."* It states both rates because it is the
+published policy; the booking's own terms and its actual date follow on the
+next line.
+
+**3. Check-in and check-out stay per property.** Four different pairs across
+nine hotels, from 10 am to 12 noon for check-out. A single stated time would be
+wrong on a document guests print and show at the desk.
+
+**4. The direct-booking promise changes.** "Free early check-in from 12 noon"
+is replaced by **late check-out until 1 pm, subject to availability** and
+**best rate guaranteed**. The old perk was not one: seven of the nine properties
+already check in at 12 noon as standard, so it only moved anything at Udaipur
+and Gangtok. `directBookingPerk` now carries both promises, and gained an
+`items` array because they are different in kind — one is a favour the property
+may not be able to grant on a full day, the other is unconditional.
+
 **Cancellation policy — superseded 23 Sep 2026: refundable rates are back.**
 Every rate was non-refundable, stated in five places and enforced nowhere,
 because there was nothing to enforce. Each room is now offered on both terms:
@@ -336,12 +376,8 @@ guest at all. Kept here because the confirmation email, the voucher and
 carries a graduated cancellation policy that contradicts it — see the open
 question below.*
 
-**Open: the voucher's cancellation policy still disagrees.**
-`content/legal.ts`, printed on every voucher and now served at `/terms`, offers
-50% back at 8–20 days and 90% at 21–30 days before check-in. That is a third
-policy, older than both of the above, and it reaches the same guest. It needs
-reconciling with the two rates before cutover — this change did not touch it,
-because rewriting published legal copy is not a developer's call.
+*The voucher's own policy disagreed with this for one commit; decision 2 above
+closed that, and `content/legal.ts` now carries the same two rates.*
 
 **Production data.** There are no live bookings and no rate rows in
 production (confirmed 17 Sep 2026), so **no backfill is needed** and the A0
