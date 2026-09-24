@@ -155,6 +155,11 @@ export const staySchema = z.object({
   rooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(5).catch(1)),
   adults: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(20).catch(2)),
   children: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(20).catch(0)),
+  // "3,8" — one age per child, in the order the picker asked. Kept as the raw
+  // string here and read by parseChildAges, which is where the rule about a
+  // missing age lives; a malformed value must never fail a search, only quote
+  // the child at the top of the band.
+  childAges: z.string().trim().max(80).optional().catch(undefined),
 });
 
 export type StayInput = z.infer<typeof staySchema>;
@@ -239,6 +244,18 @@ export const hotelSetupSchema = z
       emptyToUndefined,
       z.coerce.number().int().min(0).max(365).optional(),
     ),
+    // Who counts as a child here. Both have defaults rather than being
+    // optional: every property has an answer, and a blank one would quietly
+    // become "everybody pays".
+    childFreeUnder: z.preprocess(
+      emptyToUndefined,
+      z.coerce.number().int().min(0).max(18).default(5),
+    ),
+    childMaxAge: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(18).default(12)),
+  })
+  .refine((data) => data.childMaxAge >= data.childFreeUnder, {
+    message: 'The child age band has to end at or after the age children start being charged.',
+    path: ['childMaxAge'],
   })
   // Half a policy is the dangerous state: an uplift with no deadline charges
   // for flexibility that never arrives, and a deadline with no uplift gives it

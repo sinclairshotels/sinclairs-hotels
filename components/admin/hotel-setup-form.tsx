@@ -17,11 +17,15 @@ export function HotelSetupForm({
   amount,
   refundableUpliftPct,
   freeCancellationDays,
+  childFreeUnder,
+  childMaxAge,
 }: {
   hotelSlug: string;
   amount: number;
   refundableUpliftPct: number | null;
   freeCancellationDays: number | null;
+  childFreeUnder: number;
+  childMaxAge: number;
 }) {
   const [state, formAction, pending] = useActionState(saveHotelSetup, initial);
   // A success says "Saved" and then goes, rather than describing what was
@@ -35,6 +39,8 @@ export function HotelSetupForm({
   const [days, setDays] = useState(
     freeCancellationDays === null ? '' : String(freeCancellationDays),
   );
+  const [freeUnder, setFreeUnder] = useState(String(childFreeUnder));
+  const [childTo, setChildTo] = useState(String(childMaxAge));
 
   useEffect(() => {
     if (state.status !== 'success') return;
@@ -43,10 +49,24 @@ export function HotelSetupForm({
     return () => clearTimeout(id);
   }, [state]);
 
+  // Follow the server when it moves. These boxes are controlled, so without
+  // this they keep whatever was typed even after the page re-renders with a
+  // figure somebody else saved — the field then shows one number while the
+  // property sells another, and Save is disabled because the box "matches".
+  useEffect(() => {
+    setBreakfast(String(amount));
+    setUplift(refundableUpliftPct === null ? '' : String(refundableUpliftPct));
+    setDays(freeCancellationDays === null ? '' : String(freeCancellationDays));
+    setFreeUnder(String(childFreeUnder));
+    setChildTo(String(childMaxAge));
+  }, [amount, refundableUpliftPct, freeCancellationDays, childFreeUnder, childMaxAge]);
+
   const unchanged =
     breakfast === String(amount) &&
     uplift === (refundableUpliftPct === null ? '' : String(refundableUpliftPct)) &&
-    days === (freeCancellationDays === null ? '' : String(freeCancellationDays));
+    days === (freeCancellationDays === null ? '' : String(freeCancellationDays)) &&
+    freeUnder === String(childFreeUnder) &&
+    childTo === String(childMaxAge);
 
   return (
     <form action={formAction} className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -99,6 +119,42 @@ export function HotelSetupForm({
         className="input w-20 shrink-0 py-1.5 text-sm"
       />
       <span className="shrink-0 text-sm text-ink/70">days before check-in</span>
+
+      {/* Two ages, not a table of bands: everything below the first is free,
+          everything above the second is an adult, so the bands are implied by
+          where the two lines fall. */}
+      <label htmlFor="childFreeUnder" className="shrink-0 text-sm text-ink/70">
+        Children free under
+      </label>
+      <input
+        id="childFreeUnder"
+        type="number"
+        min={0}
+        max={18}
+        name="childFreeUnder"
+        value={freeUnder}
+        onChange={(event) => setFreeUnder(event.target.value)}
+        aria-label="Age below which a child stays free"
+        className="input w-16 shrink-0 py-1.5 text-sm"
+      />
+
+      <label htmlFor="childMaxAge" className="shrink-0 text-sm text-ink/70">
+        Child up to
+      </label>
+      <input
+        id="childMaxAge"
+        type="number"
+        min={0}
+        max={18}
+        name="childMaxAge"
+        value={childTo}
+        onChange={(event) => setChildTo(event.target.value)}
+        aria-label="Oldest age still charged as a child"
+        className="input w-16 shrink-0 py-1.5 text-sm"
+      />
+      <span className="shrink-0 text-sm text-ink/70">
+        years; {Number(childTo) + 1} and over pays as an adult
+      </span>
 
       <button
         type="submit"

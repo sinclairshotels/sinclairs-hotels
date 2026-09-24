@@ -16,6 +16,7 @@ import {
   upliftRate,
 } from '@/lib/cancellation';
 import type { NonRefundableRange } from '@/lib/cancellation';
+import { DEFAULT_CHILD_POLICY, MAX_CHILD_AGE_OFFERED, splitGuests } from '@/lib/child-ages';
 import { prisma } from '@/lib/db';
 import { type RoomFacility, roomFacilities } from '@/lib/room-facilities';
 import { currentTaxSlab } from '@/lib/tax';
@@ -89,6 +90,12 @@ export interface AvailabilityQuery {
   // quote cannot be made without them; both default to the common case.
   adults?: number;
   children?: number;
+  // One age per child, in the order the picker asked for them. The property's
+  // own brackets decide what each one costs — a four-year-old is free on the
+  // group default and a thirteen-year-old is charged as an adult — so without
+  // them every child is charged as a child. Absent means exactly that: the
+  // oldest a child can be, which never under-quotes.
+  childAges?: number[];
   now?: Date;
   // A booking to leave out of the held count — used when re-checking
   // availability *for* a specific booking, so it cannot block itself.
@@ -132,6 +139,7 @@ export async function availability(
     rooms,
     adults = rooms * 2,
     children = 0,
+    childAges,
     now = new Date(),
     excludeBookingId,
   }: AvailabilityQuery,
@@ -177,6 +185,15 @@ export async function availability(
   ]);
 
   const breakfast = settings?.breakfastSupplement.toNumber() ?? 0;
+  // Who is charged as what, before anything is priced. A guest carried free
+  // takes no seat and pays nothing, so they never reach quoteStay at all.
+  const guests = splitGuests(
+    adults,
+    childAges ?? Array.from({ length: children }, () => MAX_CHILD_AGE_OFFERED),
+    settings
+      ? { freeUnder: settings.childFreeUnder, childMaxAge: settings.childMaxAge }
+      : DEFAULT_CHILD_POLICY,
+  );
   const policy = settings ? refundPolicy(settings) : null;
   // Dates the property sells on non-refundable terms only. Checked once for the
   // stay rather than per room: it is a property-wide rule about when, not what.
@@ -332,8 +349,8 @@ export async function availability(
         const quote = quoteStay({
           nightlyRates,
           rooms,
-          adults,
-          children,
+          adults: guests.adults,
+          children: guests.children,
           baseOccupancy: roomType.baseOccupancy,
           extraAdultCharge: roomType.extraAdultCharge.toNumber(),
           extraChildCharge: roomType.extraChildCharge.toNumber(),
@@ -365,7 +382,7 @@ export async function availability(
           nightlyRates,
           // Zero on Room Only, so a quote can say "with breakfast for N guests"
           // without asking which plan it is looking at.
-          breakfastGuests: breakfastPerExtraGuest > 0 ? adults + children : 0,
+          breakfastGuests: breakfastPerExtraGuest > 0 ? guests.adults + guests.children : 0,
           breakfastTotal,
           rateType: term.rateType,
           cancellationDeadline: term.deadline,

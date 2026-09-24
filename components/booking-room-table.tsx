@@ -19,6 +19,9 @@ export interface StayQuery {
   rooms: number;
   adults: number;
   children: number;
+  // Carried through to the confirm step so it re-prices the same children the
+  // room list quoted, rather than assuming the top of the band.
+  childAges: string;
 }
 
 interface Selection {
@@ -74,6 +77,7 @@ export function BookingRoomTable({
           rooms: String(selection.quantity),
           adults: String(stay.adults),
           children: String(stay.children),
+          ...(stay.childAges ? { childAges: stay.childAges } : {}),
         })}`
       : null;
 

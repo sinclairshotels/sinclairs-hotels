@@ -7,6 +7,7 @@ import { getHotelBySlug, hotels } from '@/content/hotels';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
 import { dateKey, formatStayDate, todayInIndia } from '@/lib/booking';
 import { upliftIsCapped } from '@/lib/cancellation';
+import { DEFAULT_CHILD_POLICY } from '@/lib/child-ages';
 import { prisma } from '@/lib/db';
 import { MONTHS_AHEAD, monthKey, monthsAhead } from '@/lib/rate-plan';
 import { roomFacilities, roomFacilityOptions } from '@/lib/room-facilities';
@@ -201,6 +202,8 @@ export default async function MonthlyRatesPage({
             amount={settings?.breakfastSupplement.toNumber() ?? 0}
             refundableUpliftPct={settings?.refundableUpliftPct?.toNumber() ?? null}
             freeCancellationDays={settings?.freeCancellationDays ?? null}
+            childFreeUnder={settings?.childFreeUnder ?? DEFAULT_CHILD_POLICY.freeUnder}
+            childMaxAge={settings?.childMaxAge ?? DEFAULT_CHILD_POLICY.childMaxAge}
           />
         </div>
 

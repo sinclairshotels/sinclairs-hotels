@@ -13,6 +13,7 @@ import {
   parseDateOnly,
   todayInIndia,
 } from '@/lib/booking';
+import { parseChildAges } from '@/lib/child-ages';
 import { SERIALIZABLE, isWriteConflict, prisma } from '@/lib/db';
 import { generateOrderId, ipayConfigured, requestBaseUrl, startSale } from '@/lib/ipay';
 import { log } from '@/lib/log';
@@ -118,6 +119,10 @@ export async function createBooking(
   ) {
     return fail('Please send an enquiry for a stay of that length.');
   }
+  // Read once, here, and handed to both the pricing and the stored booking —
+  // the same list, so the row can never disagree with what it was charged.
+  const childAges = parseChildAges(d.childAges, d.children);
+
   if (d.adults + d.children > d.rooms * MAX_GUESTS_PER_ROOM) {
     return fail(
       `That many guests needs more rooms — we can take up to ${MAX_GUESTS_PER_ROOM} per room.`,
@@ -153,6 +158,7 @@ export async function createBooking(
           rooms: d.rooms,
           adults: d.adults,
           children: d.children,
+          childAges,
         });
 
         if (!offer || offer.roomsLeft < d.rooms) throw new RoomsGoneError();
@@ -192,6 +198,7 @@ export async function createBooking(
             rooms: d.rooms,
             adults: d.adults,
             children: d.children,
+            childAges,
             guestName: d.guestName,
             guestEmail: d.guestEmail,
             guestPhone: d.guestPhone,

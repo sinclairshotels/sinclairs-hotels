@@ -14,6 +14,7 @@ const stay = {
   rooms: 2,
   adults: 3,
   children: 1,
+  childAges: '8',
   rateType: 'NON_REFUNDABLE' as const,
   cancellationDeadline: null,
 };
@@ -82,6 +83,7 @@ describe('BookingGuestForm', () => {
       rooms: '2',
       adults: '3',
       children: '1',
+      childAges: '8',
     });
   });
 

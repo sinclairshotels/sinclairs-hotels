@@ -21,6 +21,9 @@ export interface StayFields {
   rooms: number;
   adults: number;
   children: number;
+  // "3,8". Re-read and re-applied server-side like everything else here: it
+  // decides which children are charged, so it is never trusted from the form.
+  childAges: string;
 }
 
 // The stay itself rides along in hidden fields and is re-validated and
@@ -56,6 +59,7 @@ export function BookingGuestForm({ stay }: { stay: StayFields }) {
       <input type="hidden" name="rooms" value={stay.rooms} />
       <input type="hidden" name="adults" value={stay.adults} />
       <input type="hidden" name="children" value={stay.children} />
+      <input type="hidden" name="childAges" value={stay.childAges} />
 
       {state.status === 'error' && state.message && (
         <p className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">

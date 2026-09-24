@@ -350,6 +350,10 @@ model Booking {
   rooms      Int
   adults     Int
   children   Int       @default(0)
+  // One age per child, as the guest entered them. Kept because the property's
+  // brackets decide what each child cost, and a desk asking "why was this one
+  // free" needs the answer the booking was priced with — not today's setting.
+  childAges  Int[]
   // Snapshots, like roomName: what was sold, readable long after a rate plan
   // is renamed or a room retired.
   planName        String?
@@ -561,6 +565,15 @@ model HotelSettings {
   refundableUpliftPct  Decimal? @db.Decimal(5, 2)
   // Free cancellation until this many days before check-in.
   freeCancellationDays Int?
+
+  // Who counts as a child, per property, because the properties disagree. A
+  // guest below childFreeUnder is carried free: no extra-guest charge and no
+  // seat taken. From there to childMaxAge inclusive is a child and pays the
+  // room's extra-child charge; anyone older pays the extra-adult charge,
+  // whatever box the guest ticked. The defaults are the group's published
+  // ones — free under 5, child 5 to 12, adult 13 and over.
+  childFreeUnder Int @default(5)
+  childMaxAge    Int @default(12)
 
   updatedAt           DateTime @updatedAt
 }

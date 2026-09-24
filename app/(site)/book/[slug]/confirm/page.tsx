@@ -10,6 +10,7 @@ import {
   parseDateOnly,
   todayInIndia,
 } from '@/lib/booking';
+import { formatChildAges, parseChildAges } from '@/lib/child-ages';
 import { prisma } from '@/lib/db';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
@@ -43,6 +44,7 @@ export default async function ConfirmBookingPage({
     rooms?: string;
     adults?: string;
     children?: string;
+    childAges?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -63,6 +65,7 @@ export default async function ConfirmBookingPage({
     ...(query.rooms ? { rooms: query.rooms } : {}),
     ...(query.adults ? { adults: query.adults } : {}),
     ...(query.children ? { children: query.children } : {}),
+    ...(query.childAges ? { childAges: query.childAges } : {}),
   })}`;
 
   if (!parsed.success || !query.roomType || !checkIn || !checkOut || checkIn < todayInIndia()) {
@@ -70,6 +73,7 @@ export default async function ConfirmBookingPage({
   }
 
   const { rooms, adults, children } = parsed.data;
+  const childAges = parseChildAges(parsed.data.childAges, children);
 
   // Priced again here rather than carried over in the URL: between the
   // availability page and this one the room can sell out or its rate can
@@ -87,6 +91,7 @@ export default async function ConfirmBookingPage({
     rooms,
     adults,
     children,
+    childAges,
   });
 
   if (!offer || offer.roomsLeft < rooms) {
@@ -125,6 +130,7 @@ export default async function ConfirmBookingPage({
                   rooms,
                   adults,
                   children,
+                  childAges: formatChildAges(childAges),
                 }}
               />
             </div>

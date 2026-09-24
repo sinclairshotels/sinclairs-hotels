@@ -38,6 +38,7 @@ const stay = {
   rooms: 1,
   adults: 2,
   children: 0,
+  childAges: '',
 };
 
 const rooms = [room('deluxe', 'Deluxe Room'), room('valentine', 'Valentine Room')];
