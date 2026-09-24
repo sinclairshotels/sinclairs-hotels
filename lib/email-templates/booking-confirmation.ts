@@ -7,6 +7,7 @@ import {
   formatStayDate,
   nightsBetween,
 } from '@/lib/booking';
+import { cancelLinkFor } from '@/lib/cancel-link';
 import { cancellationSentence, rateTypeLabel } from '@/lib/cancellation';
 import type { Booking } from '@prisma/client';
 import { buttonHtml, emailLayout, escapeHtml, fieldRowsHtml } from './layout';
@@ -65,6 +66,10 @@ export function bookingConfirmationHtml({
   viewUrl: string;
   forStaff?: boolean;
 }): string {
+  // The guest's own copy carries the cancellation link. The staff copy does
+  // not: a link that cancels a guest's booking has no business sitting in a
+  // shared property inbox.
+  const cancelUrl = forStaff ? null : cancelLinkFor(booking);
   const contactHtml = hotel?.contact
     ? `<p style="font-size:12px; color:#404040; margin:16px 0;">
         <strong>${escapeHtml(hotel.name)}</strong><br>
@@ -91,6 +96,13 @@ export function bookingConfirmationHtml({
     <div style="margin:20px 0;">
       ${buttonHtml(viewUrl, 'View This Booking Online')}
     </div>
+    ${
+      cancelUrl
+        ? `<p style="font-size:12px; color:#404040; margin:0 0 8px;">Plans changed? <a href="${escapeHtml(
+            cancelUrl,
+          )}" style="color:#16352a;">Cancel this booking</a> — you will see what is refunded before anything happens. The link works until your check-in date.</p>`
+        : ''
+    }
   `;
 
   return emailLayout({

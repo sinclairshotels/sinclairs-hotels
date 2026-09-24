@@ -183,6 +183,10 @@ export async function createBooking(
           data: {
             reference: bookingReference(),
             viewToken: randomBytes(32).toString('base64url'),
+            // The credential on the "Cancel this booking" link. Separate from
+            // viewToken so the link that can cancel is not the one a guest
+            // forwards to whoever is travelling with them.
+            cancelToken: randomBytes(32).toString('base64url'),
             hotelSlug: d.hotelSlug,
             roomTypeId: offer.roomTypeId,
             ratePlanId: offer.ratePlanId,

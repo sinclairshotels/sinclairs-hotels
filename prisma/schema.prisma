@@ -398,6 +398,15 @@ model Booking {
   cancellationDeadline DateTime?       @db.Date
   cancelledAt          DateTime?
 
+  // The credential on the "Cancel this booking" link in the confirmation
+  // email and on the voucher. Separate from viewToken so the link that can
+  // cancel is not the link the guest forwards to whoever is travelling with
+  // them, and stored rather than signed: a stored token can be withdrawn the
+  // moment it is used, needs no secret to keep or rotate, and cannot be
+  // forged for every booking at once if that secret ever leaks. It stops
+  // working at check-in — after that a cancellation is a desk conversation.
+  cancelToken String? @unique
+
   status BookingStatus @default(PENDING_PAYMENT)
 
   paymentId String?  @unique

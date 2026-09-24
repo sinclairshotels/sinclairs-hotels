@@ -170,7 +170,29 @@ export default async function BookingPage({
             </p>
           )}
 
-          {booking.status === 'CONFIRMED' && (
+          {/* One cancellation flow, reached two ways. A booking taken since
+              the cancel link shipped sends the guest to the same page their
+              email points at — which also means this page prints with a URL
+              somebody can type, rather than a button that does nothing on
+              paper. Older bookings have no such token and keep the inline
+              form, so they stay cancellable. */}
+          {booking.status === 'CONFIRMED' && booking.cancelToken && (
+            <div className="mt-8 border-t border-ink/10 pt-6">
+              <Link
+                href={`/booking/cancel/${booking.cancelToken}`}
+                className="inline-block rounded border border-red-700/40 px-5 py-2.5 text-xs uppercase tracking-wider text-red-700 transition hover:bg-red-700 hover:text-white"
+              >
+                Cancel this booking
+              </Link>
+              <p className="mt-2 text-xs text-ink/50">
+                {refundableNow
+                  ? `You will see what is refunded — ${formatInr(booking.total.toNumber())} — before anything happens.`
+                  : 'You will see what is refunded before anything happens.'}
+              </p>
+            </div>
+          )}
+
+          {booking.status === 'CONFIRMED' && !booking.cancelToken && (
             <CancelBookingForm
               token={token}
               refundable={refundableNow}
