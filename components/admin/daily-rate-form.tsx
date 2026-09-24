@@ -206,7 +206,7 @@ export function DailyRateForm({ hotels }: { hotels: DailyHotel[] }) {
                   className="rounded-full border border-forest/30 px-2.5 py-0.5 text-xs text-forest transition hover:border-red-400 hover:text-red-700"
                   aria-label={`Remove ${night}`}
                 >
-                  {night} &times;
+                  {describeNights([night])} &times;
                 </button>
               </li>
             ))}
