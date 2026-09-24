@@ -40,6 +40,12 @@ async function makeBooking(
       status: 'CONFIRMED',
       rateType: 'REFUNDABLE',
       cancellationDeadline: addDays(todayInIndia(), 25),
+      // Booked long ago on paper, so these fixtures fall outside the funnel's
+      // reporting window. lib/funnel.ts counts every booking in the period,
+      // not just one suite's, and vitest runs files in parallel — a booking
+      // created "now" here lands in the middle of funnelCounts' arithmetic
+      // two files away. Nothing in this suite depends on the creation date.
+      createdAt: addDays(todayInIndia(), -400),
       ...overrides,
     },
   });
