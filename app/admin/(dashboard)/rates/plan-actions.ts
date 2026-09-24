@@ -7,6 +7,7 @@ import { addDays, dateKey, eachNight, parseDateOnly, todayInIndia } from '@/lib/
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
+import { MAX_NIGHTS_PER_OVERRIDE, describeNights, parseNightKeys } from '@/lib/rate-nights';
 import {
   type CellChange,
   type CellState,
@@ -462,10 +463,25 @@ export async function saveDailyRate(
     return { status: 'error', message: 'Set a price, an allotment, or both.' };
   }
 
-  const date = parseDateOnly(input.date);
-  if (!date) return { status: 'error', message: 'Pick a date.' };
-  if (date < todayInIndia()) {
-    return { status: 'error', message: 'That night is in the past — nobody can book it.' };
+  // A range, a handful of picked dates, or the single night this form used to
+  // take. All three arrive as one list, already sorted and de-duplicated.
+  const keys = parseNightKeys(input.dates ?? input.date);
+  if (keys.length === 0) return { status: 'error', message: 'Pick at least one date.' };
+  if (keys.length > MAX_NIGHTS_PER_OVERRIDE) {
+    return {
+      status: 'error',
+      message: `That is ${keys.length} nights. Up to ${MAX_NIGHTS_PER_OVERRIDE} at a time here — use the monthly screen for a whole season.`,
+    };
+  }
+
+  const today = todayInIndia();
+  const dates = keys.map((key) => parseDateOnly(key) as Date);
+  const past = keys.filter((_, i) => (dates[i] as Date) < today);
+  if (past.length > 0) {
+    return {
+      status: 'error',
+      message: `${describeNights(past)} ${past.length === 1 ? 'is' : 'are'} in the past — nobody can book ${past.length === 1 ? 'that night' : 'those nights'}. Nothing was changed.`,
+    };
   }
 
   const rooms = await roomsFor(input.hotelSlug, [input.roomTypeId]);
@@ -478,92 +494,125 @@ export async function saveDailyRate(
     input.hotelSlug,
     [room.roomTypeId],
     [room.ratePlanId],
-    [date],
+    dates,
   );
 
-  const key = dateKey(date);
-  const inventory = inventoryByKey.get(`${room.roomTypeId}:${key}`);
-  const price = priceByKey.get(`${room.ratePlanId}:${key}`);
+  const writes = keys.map((key) => {
+    const inventory = inventoryByKey.get(`${room.roomTypeId}:${key}`);
+    const price = priceByKey.get(`${room.ratePlanId}:${key}`);
+    const before: CellState = {
+      rate: price ? price.amount.toNumber() : null,
+      roomsOnSale: inventory?.roomsOnSale ?? EMPTY_CELL.roomsOnSale,
+      stopSell: inventory?.stopSell ?? EMPTY_CELL.stopSell,
+      minStay: inventory?.minStay ?? EMPTY_CELL.minStay,
+      closedToArrival: inventory?.closedToArrival ?? EMPTY_CELL.closedToArrival,
+      closedToDeparture: inventory?.closedToDeparture ?? EMPTY_CELL.closedToDeparture,
+    };
+    return {
+      key,
+      date: parseDateOnly(key) as Date,
+      before,
+      after: applyMonthly(before, { roomsOnSale: input.roomsOnSale, rate: input.rate }),
+    };
+  });
 
-  const before: CellState = {
-    rate: price ? price.amount.toNumber() : null,
-    roomsOnSale: inventory?.roomsOnSale ?? EMPTY_CELL.roomsOnSale,
-    stopSell: inventory?.stopSell ?? EMPTY_CELL.stopSell,
-    minStay: inventory?.minStay ?? EMPTY_CELL.minStay,
-    closedToArrival: inventory?.closedToArrival ?? EMPTY_CELL.closedToArrival,
-    closedToDeparture: inventory?.closedToDeparture ?? EMPTY_CELL.closedToDeparture,
-  };
-  const after = applyMonthly(before, { roomsOnSale: input.roomsOnSale, rate: input.rate });
-
+  // Checked across every night before anything is written: a save that took
+  // nine nights and refused the tenth would leave staff guessing which.
   const conflicts = findOversellConflicts(
-    [{ roomTypeId: room.roomTypeId, ratePlanId: room.ratePlanId, date: key, before, after }],
-    () => soldByKey.get(`${room.roomTypeId}:${key}`) ?? 0,
+    writes.map((write) => ({
+      roomTypeId: room.roomTypeId,
+      ratePlanId: room.ratePlanId,
+      date: write.key,
+      before: write.before,
+      after: write.after,
+    })),
+    (_roomTypeId, date) => soldByKey.get(`${room.roomTypeId}:${date}`) ?? 0,
     () => room.roomName,
   );
   const conflict = conflicts[0];
   if (conflict) {
     return {
       status: 'error',
-      message: `${conflict.sold} ${conflict.sold === 1 ? 'room is' : 'rooms are'} already sold that night. Nothing was changed.`,
+      message: `${describeNights(conflicts.map((c) => c.date))}: ${conflict.sold} ${
+        conflict.sold === 1 ? 'room is' : 'rooms are'
+      } already sold. Nothing was changed.`,
       conflict,
     };
   }
 
-  if (!cellChanged(before, after)) {
-    return { status: 'success', message: 'That night already held those values.' };
+  const changed = writes.filter((write) => cellChanged(write.before, write.after));
+  if (changed.length === 0) {
+    return {
+      status: 'success',
+      message: `${keys.length === 1 ? 'That night' : 'Those nights'} already held those values.`,
+    };
   }
 
   await prisma.$transaction(async (tx) => {
-    if (input.roomsOnSale !== undefined) {
-      await tx.roomInventory.upsert({
-        where: { roomTypeId_date: { roomTypeId: room.roomTypeId, date } },
-        update: { roomsOnSale: after.roomsOnSale, source: 'DAILY' },
-        create: {
-          roomTypeId: room.roomTypeId,
-          hotelSlug: input.hotelSlug,
-          date,
-          roomsOnSale: after.roomsOnSale,
-          source: 'DAILY',
-        },
-      });
-    }
-    if (input.rate !== undefined) {
-      await tx.ratePrice.upsert({
-        where: { ratePlanId_date: { ratePlanId: room.ratePlanId, date } },
-        update: { amount: input.rate, source: 'DAILY' },
-        create: {
-          ratePlanId: room.ratePlanId,
-          hotelSlug: input.hotelSlug,
-          date,
-          amount: input.rate,
-          source: 'DAILY',
-        },
-      });
+    for (const write of changed) {
+      if (input.roomsOnSale !== undefined) {
+        await tx.roomInventory.upsert({
+          where: { roomTypeId_date: { roomTypeId: room.roomTypeId, date: write.date } },
+          update: { roomsOnSale: write.after.roomsOnSale, source: 'DAILY' },
+          create: {
+            roomTypeId: room.roomTypeId,
+            hotelSlug: input.hotelSlug,
+            date: write.date,
+            roomsOnSale: write.after.roomsOnSale,
+            source: 'DAILY',
+          },
+        });
+      }
+      if (input.rate !== undefined) {
+        await tx.ratePrice.upsert({
+          where: { ratePlanId_date: { ratePlanId: room.ratePlanId, date: write.date } },
+          update: { amount: input.rate, source: 'DAILY' },
+          create: {
+            ratePlanId: room.ratePlanId,
+            hotelSlug: input.hotelSlug,
+            date: write.date,
+            amount: input.rate,
+            source: 'DAILY',
+          },
+        });
+      }
     }
   });
 
+  const span = describeNights(changed.map((write) => write.key));
   await recordAudit({
     user: auth.user,
     action: 'rates.day_overridden',
     entity: 'RoomInventory',
     hotelSlug: input.hotelSlug,
-    summary: `${room.roomName}, ${key} — ${describeMonthly({ roomsOnSale: input.roomsOnSale, rate: input.rate }).join(' · ')}`,
-    before,
-    after,
+    summary: `${room.roomName}, ${span} (${changed.length} ${
+      changed.length === 1 ? 'night' : 'nights'
+    }) — ${describeMonthly({ roomsOnSale: input.roomsOnSale, rate: input.rate }).join(' · ')}`,
+    // One entry per save rather than per night: the log is read as a list of
+    // what somebody did, and thirty identical lines is not that. The nights
+    // are named in the summary and listed here.
+    before: { nights: changed.map((write) => ({ date: write.key, ...write.before })) },
+    after: { nights: changed.map((write) => ({ date: write.key, ...write.after })) },
     ip,
   });
 
   log.info('rates.day_overridden', {
     hotel: input.hotelSlug,
     room_type_id: room.roomTypeId,
-    night: key,
+    nights: changed.length,
+    first_night: changed[0]?.key,
   });
 
   revalidatePath('/admin/rates');
   revalidatePath('/admin/rates/daily');
 
+  const skipped = writes.length - changed.length;
   return {
     status: 'success',
-    message: `${room.roomName} on ${key} overridden. It will survive the next monthly save.`,
+    message: `${room.roomName}: ${changed.length} ${
+      changed.length === 1 ? 'night' : 'nights'
+    } overridden (${span})${
+      skipped > 0 ? `, ${skipped} already held those values` : ''
+    }. They will survive the next monthly save.`,
   };
 }

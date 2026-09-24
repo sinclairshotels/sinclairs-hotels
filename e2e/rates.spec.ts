@@ -20,6 +20,22 @@ function isoDay(offset: number): string {
 const asDate = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const WINDOW = { gte: asDate(isoDay(0)), lt: asDate(isoDay(14)) };
 
+// The date pickers are Radix popovers: open the named trigger, then click the
+// day inside the dialog it opens.
+async function pickDay(page: Page, trigger: string, iso: string) {
+  await page.getByRole('button', { name: trigger }).click();
+  const target = new Date(`${iso}T00:00:00.000Z`);
+  await page
+    .getByRole('dialog')
+    .getByRole('button', {
+      name: new RegExp(
+        `${target.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })} ${target.getUTCDate()}`,
+      ),
+    })
+    .first()
+    .click();
+}
+
 test.describe('rates screens (staff)', () => {
   // Serial: these share one property's visible window and rewrite it, and the
   // admin sign-in is rate limited per address.
@@ -83,21 +99,14 @@ test.describe('rates screens (staff)', () => {
     await page.getByRole('combobox').nth(1).click();
     await page.getByRole('option', { name: ROOM, exact: true }).click();
 
-    await page.getByRole('button', { name: 'Night to override' }).click();
-    const target = new Date(`${isoDay(3)}T00:00:00.000Z`);
-    await page
-      .getByRole('dialog')
-      .getByRole('button', {
-        name: new RegExp(
-          `${target.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })} ${target.getUTCDate()}`,
-        ),
-      })
-      .first()
-      .click();
+    await pickDay(page, 'First night to override', isoDay(3));
+    await pickDay(page, 'Last night', isoDay(3));
 
     await page.getByLabel('Price per night').fill('9500');
-    await page.getByRole('button', { name: /save this night/i }).click();
-    await expect(page.getByText(/overridden. It will survive/i)).toBeVisible();
+    // The preview names the night before anything is written.
+    await expect(page.getByText('1 night will change')).toBeVisible();
+    await page.getByRole('button', { name: /save 1 night/i }).click();
+    await expect(page.getByText(/overridden/i)).toBeVisible();
 
     const written = await prisma.ratePrice.findFirst({
       where: { ratePlanId: room.ratePlanId, date: asDate(isoDay(3)) },
@@ -140,26 +149,54 @@ test.describe('rates screens (staff)', () => {
     await page.getByRole('combobox').nth(1).click();
     await page.getByRole('option', { name: ROOM, exact: true }).click();
 
-    await page.getByRole('button', { name: 'Night to override' }).click();
-    const target = new Date(`${isoDay(2)}T00:00:00.000Z`);
-    await page
-      .getByRole('dialog')
-      .getByRole('button', {
-        name: new RegExp(
-          `${target.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' })} ${target.getUTCDate()}`,
-        ),
-      })
-      .first()
-      .click();
+    await pickDay(page, 'First night to override', isoDay(2));
+    await pickDay(page, 'Last night', isoDay(2));
 
     await page.getByLabel('Rooms on sale').fill('1');
-    await page.getByRole('button', { name: /save this night/i }).click();
+    await page.getByRole('button', { name: /save 1 night/i }).click();
 
-    await expect(page.getByText(/already sold that night/i)).toBeVisible();
+    await expect(page.getByText(/already sold/i)).toBeVisible();
     const untouched = await prisma.roomInventory.findFirst({
       where: { roomTypeId: room.roomTypeId, date: asDate(isoDay(2)) },
     });
     expect(untouched?.roomsOnSale).toBe(4);
+  });
+
+  test('a daily override takes a range and an extra night in one save', async ({ page }) => {
+    await page.goto(`${STAFF_BASE_URL}/admin/rates/daily`);
+
+    await page.getByRole('combobox').first().click();
+    await page.getByRole('option', { name: HOTEL_LABEL }).click();
+    await page.getByRole('combobox').nth(1).click();
+    await page.getByRole('option', { name: ROOM, exact: true }).click();
+
+    await pickDay(page, 'First night to override', isoDay(4));
+    await pickDay(page, 'Last night', isoDay(6));
+    await pickDay(page, 'Another night to include', isoDay(9));
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+
+    // Four nights, named before anything is written: the three in the range
+    // and the one added beside it.
+    await expect(page.getByText('4 nights will change')).toBeVisible();
+
+    await page.getByLabel('Price per night').fill('9700');
+    await page.getByRole('button', { name: /save 4 nights/i }).click();
+    await expect(page.getByText(/4 nights overridden/i)).toBeVisible();
+
+    const written = await prisma.ratePrice.findMany({
+      where: {
+        ratePlanId: room.ratePlanId,
+        date: { in: [isoDay(4), isoDay(5), isoDay(6), isoDay(9)].map(asDate) },
+        amount: 9700,
+      },
+    });
+    expect(written).toHaveLength(4);
+
+    // And nothing either side of the range.
+    const untouched = await prisma.ratePrice.findFirst({
+      where: { ratePlanId: room.ratePlanId, date: asDate(isoDay(7)) },
+    });
+    expect(untouched?.amount.toNumber()).not.toBe(9700);
   });
 
   test('the monthly screen previews before it writes, then writes what it previewed', async ({

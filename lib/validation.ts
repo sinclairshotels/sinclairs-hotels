@@ -220,7 +220,13 @@ export type MonthlyCellInput = z.infer<typeof monthlyCellSchema>;
 export const dailyRateSchema = z.object({
   hotelSlug: z.string().trim().min(1).max(60),
   roomTypeId: z.string().trim().min(1).max(40),
-  date: dateOnlyField('Pick a date'),
+  // One night, the shape this form had before it could take several. Still
+  // accepted so a saved link or an older client keeps working.
+  date: z.string().trim().max(10).optional(),
+  // Every night this save touches, comma-separated: a range expanded by the
+  // form, plus any individual dates picked alongside it. lib/rate-nights.ts
+  // sorts and de-duplicates them, so the two ways of choosing cannot disagree.
+  dates: z.string().trim().max(2000).optional(),
   roomsOnSale: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(500).optional()),
   rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(10_000_000).optional()),
 });
