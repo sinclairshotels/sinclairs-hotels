@@ -37,14 +37,16 @@ const fixtureVoucher: Voucher = {
   commissionPct: null,
   tdsPct: null,
   rooms: 2,
+  roomCategory: 'Premier Room',
+  mealPlan: 'With Breakfast (CP)',
   checkIn: new Date('2026-01-10'),
   checkOut: new Date('2026-01-12'),
   rate: new Prisma.Decimal('4500'),
   taxes: new Prisma.Decimal('540'),
-  depositAmount: null,
+  depositAmount: 5000 as unknown as null,
   depositReceiptNo: null,
-  depositReceiptDate: null,
-  billingInstructions: 'Bill to travel agent, internal note',
+  depositReceiptDate: new Date('2026-10-01T00:00:00.000Z'),
+  billingInstructions: 'Room and taxes to the travel agent; extras to the guest.',
   arrivalDetails: null,
   otherServices: null,
   specialInstructions: 'Handle with care, internal note',
@@ -69,12 +71,26 @@ describe('VoucherView', () => {
     expect(screen.getByText('Sinclairs Hotels — Head Office')).toBeInTheDocument();
   });
 
-  it('never shows internal-only billing/commission fields to the guest', () => {
+  it('never shows internal-only commission and unit notes to the guest', () => {
     render(<VoucherView voucher={fixtureVoucher} hotel={fixtureHotel} />);
 
-    expect(screen.queryByText('Bill to travel agent, internal note')).not.toBeInTheDocument();
     expect(screen.queryByText('Handle with care, internal note')).not.toBeInTheDocument();
     expect(screen.queryByText('Commission')).not.toBeInTheDocument();
+    expect(screen.queryByText('TDS')).not.toBeInTheDocument();
+  });
+
+  // Reservations asked for this one on the printed voucher: it says who
+  // settles what, which is the thing argued about at check-out.
+  it('prints the billing instructions, the room category and the advance paid', () => {
+    render(<VoucherView voucher={fixtureVoucher} hotel={fixtureHotel} />);
+
+    expect(
+      screen.getByText('Room and taxes to the travel agent; extras to the guest.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Room Category')).toBeInTheDocument();
+    expect(screen.getByText('Premier Room')).toBeInTheDocument();
+    expect(screen.getByText('Meal Plan')).toBeInTheDocument();
+    expect(screen.getByText('Advance Paid')).toBeInTheDocument();
   });
 
   // A cancelled voucher must not read as a valid one. The notice comes before

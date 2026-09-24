@@ -169,6 +169,13 @@ model Voucher {
   tdsPct           Decimal? @db.Decimal(5, 2)
 
   rooms    Int
+  // What was sold, in the property's own words — free text rather than a join
+  // to RoomType, because a voucher is often written for a property or a room
+  // this system does not sell online.
+  roomCategory String?
+  // EP / CP / MAP / AP, as the rate plans read. Stored as the label so the
+  // voucher still says what it said if the plans are renamed.
+  mealPlan String?
   checkIn  DateTime
   checkOut DateTime
   rate     Decimal  @db.Decimal(10, 2)
@@ -350,6 +357,10 @@ model Booking {
   rooms      Int
   adults     Int
   children   Int       @default(0)
+  // One age per child, as the guest entered them. Kept because the property's
+  // brackets decide what each child cost, and a desk asking "why was this one
+  // free" needs the answer the booking was priced with — not today's setting.
+  childAges  Int[]
   // Snapshots, like roomName: what was sold, readable long after a rate plan
   // is renamed or a room retired.
   planName        String?
@@ -386,6 +397,15 @@ model Booking {
   rateType             BookingRateType @default(NON_REFUNDABLE)
   cancellationDeadline DateTime?       @db.Date
   cancelledAt          DateTime?
+
+  // The credential on the "Cancel this booking" link in the confirmation
+  // email and on the voucher. Separate from viewToken so the link that can
+  // cancel is not the link the guest forwards to whoever is travelling with
+  // them, and stored rather than signed: a stored token can be withdrawn the
+  // moment it is used, needs no secret to keep or rotate, and cannot be
+  // forged for every booking at once if that secret ever leaks. It stops
+  // working at check-in — after that a cancellation is a desk conversation.
+  cancelToken String? @unique
 
   status BookingStatus @default(PENDING_PAYMENT)
 
@@ -561,6 +581,15 @@ model HotelSettings {
   refundableUpliftPct  Decimal? @db.Decimal(5, 2)
   // Free cancellation until this many days before check-in.
   freeCancellationDays Int?
+
+  // Who counts as a child, per property, because the properties disagree. A
+  // guest below childFreeUnder is carried free: no extra-guest charge and no
+  // seat taken. From there to childMaxAge inclusive is a child and pays the
+  // room's extra-child charge; anyone older pays the extra-adult charge,
+  // whatever box the guest ticked. The defaults are the group's published
+  // ones — free under 5, child 5 to 12, adult 13 and over.
+  childFreeUnder Int @default(5)
+  childMaxAge    Int @default(12)
 
   updatedAt           DateTime @updatedAt
 }

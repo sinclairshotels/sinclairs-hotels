@@ -1,5 +1,6 @@
-import { dateKey, todayInIndia } from '@/lib/booking';
+import { addDays, dateKey, todayInIndia } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { describeNights } from '@/lib/rate-nights';
 import { monthKey, monthsAhead } from '@/lib/rate-plan';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
@@ -343,7 +344,10 @@ describe('the monthly and daily rate screens', () => {
         where: { action: 'rates.day_overridden', hotelSlug: HOTEL },
         orderBy: { at: 'desc' },
       });
-      expect(event?.summary).toContain(dateKey(MID_MONTH));
+      // The span is written the way a person reads a date, not as a key:
+      // this line is the one staff scan down.
+      expect(event?.summary).toContain(describeNights([dateKey(MID_MONTH)]));
+      expect(event?.summary).toContain('1 night');
     });
   });
 
@@ -455,6 +459,108 @@ describe('the monthly and daily rate screens', () => {
       // The rate half was left alone, including on the night that was re-made.
       const prices = await priceRows();
       expect(prices.every((row) => row.amount.toNumber() === 6000)).toBe(true);
+    });
+  });
+
+  // A wedding weekend used to take six visits to this form.
+  describe('saveDailyRate across several nights', () => {
+    const nights = [0, 1, 2].map((offset) => dateKey(addDays(MID_MONTH, offset)));
+
+    it('writes every night in a range', async () => {
+      const result = await saveDay(dailyForm({ dates: nights.join(','), rate: '9100' }));
+      expect(result.status).toBe('success');
+      expect(result.message).toContain('3 nights');
+
+      for (const night of nights) {
+        const price = await prisma.ratePrice.findFirst({
+          where: { ratePlanId: room.ratePlanId, date: new Date(`${night}T00:00:00.000Z`) },
+        });
+        expect(price?.amount.toNumber(), night).toBe(9100);
+        expect(price?.source, night).toBe('DAILY');
+      }
+    });
+
+    it('takes a range and a separate night in one save', async () => {
+      const apart = dateKey(addDays(MID_MONTH, 9));
+      const result = await saveDay(
+        dailyForm({ dates: [...nights, apart].join(','), roomsOnSale: '4' }),
+      );
+
+      expect(result.status).toBe('success');
+      const written = await prisma.roomInventory.count({
+        where: {
+          roomTypeId: room.roomTypeId,
+          date: { in: [...nights, apart].map((key) => new Date(`${key}T00:00:00.000Z`)) },
+          roomsOnSale: 4,
+          source: 'DAILY',
+        },
+      });
+      expect(written).toBe(4);
+    });
+
+    it('de-duplicates a night that is both in the range and picked', async () => {
+      const result = await saveDay(
+        dailyForm({ dates: [...nights, nights[1] as string].join(','), rate: '9200' }),
+      );
+      expect(result.message).toContain('3 nights');
+    });
+
+    // All or nothing: a save that took nine nights and refused the tenth leaves
+    // staff guessing which.
+    it('changes nothing when one night in the set is already sold', async () => {
+      await saveDay(dailyForm({ dates: nights.join(','), roomsOnSale: '5', rate: '9000' }));
+
+      // One night of the three is sold beyond what the save would leave.
+      const suffix = Math.random().toString(36).slice(2, 10);
+      await prisma.booking.create({
+        data: {
+          reference: `PLAN-${suffix}`,
+          viewToken: `plan-${suffix}`,
+          hotelSlug: HOTEL,
+          roomTypeId: room.roomTypeId,
+          ratePlanId: room.ratePlanId,
+          roomName: room.roomName,
+          checkIn: new Date(`${nights[1]}T00:00:00.000Z`),
+          checkOut: new Date(`${nights[2]}T00:00:00.000Z`),
+          rooms: 2,
+          adults: 2,
+          guestName: 'Plan Guest',
+          guestEmail: `guest@${TEST_EMAIL_DOMAIN}`,
+          guestPhone: '+91 98300 00000',
+          billingAddress: 'Somewhere',
+          roomTotal: 1,
+          taxTotal: 0,
+          total: 1,
+          status: 'CONFIRMED',
+        },
+      });
+
+      const result = await saveDay(dailyForm({ dates: nights.join(','), roomsOnSale: '0' }));
+      expect(result.status).toBe('error');
+      expect(result.message).toMatch(/already sold/);
+
+      const untouched = await prisma.roomInventory.findMany({
+        where: {
+          roomTypeId: room.roomTypeId,
+          date: { in: nights.map((key) => new Date(`${key}T00:00:00.000Z`)) },
+        },
+      });
+      expect(untouched.every((row) => row.roomsOnSale === 5)).toBe(true);
+    });
+
+    it('still takes the single date the form used to post', async () => {
+      const result = await saveDay(dailyForm({ date: dateKey(MID_MONTH), rate: '9300' }));
+      expect(result.status).toBe('success');
+      expect(result.message).toContain('1 night');
+    });
+
+    it('refuses a past night without touching the others', async () => {
+      const yesterday = dateKey(addDays(todayInIndia(), -1));
+      const result = await saveDay(
+        dailyForm({ dates: [yesterday, ...nights].join(','), rate: '9400' }),
+      );
+      expect(result.status).toBe('error');
+      expect(result.message).toMatch(/in the past/);
     });
   });
 });

@@ -4,6 +4,7 @@ import { getHotelBySlug } from '@/content/hotels';
 import { recordAudit } from '@/lib/audit';
 import { authorizeHotel } from '@/lib/auth';
 import { dateKey, formatStayDate, parseDateOnly } from '@/lib/booking';
+import { DEFAULT_CHILD_POLICY } from '@/lib/child-ages';
 import { prisma } from '@/lib/db';
 import { log } from '@/lib/log';
 import { ADMIN_REQUESTS_PER_WINDOW, clientIp, isRateLimited } from '@/lib/rate-limit';
@@ -56,10 +57,25 @@ function refresh() {
 export async function saveHotelSetup(_prev: SetupState, formData: FormData): Promise<SetupState> {
   const parsed = hotelSetupSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) {
-    return { status: 'error', message: 'Please check the breakfast supplement.' };
+    // The schema's own message, not a guess. This form saves three fields and
+    // used to answer every refusal with "Please check the breakfast
+    // supplement" — so a property with an uplift and no cancellation deadline
+    // could never save its supplement and was told the supplement was the
+    // problem. The half-a-policy rule is the one that actually fires.
+    return {
+      status: 'error',
+      message: parsed.error.issues[0]?.message ?? 'Please check the figures on this form.',
+    };
   }
 
-  const { hotelSlug, breakfastSupplement, refundableUpliftPct, freeCancellationDays } = parsed.data;
+  const {
+    hotelSlug,
+    breakfastSupplement,
+    refundableUpliftPct,
+    freeCancellationDays,
+    childFreeUnder,
+    childMaxAge,
+  } = parsed.data;
   const auth = await guard(hotelSlug);
   if (!auth.ok) return { status: 'error', message: auth.message };
 
@@ -68,17 +84,23 @@ export async function saveHotelSetup(_prev: SetupState, formData: FormData): Pro
     breakfastSupplement: before?.breakfastSupplement.toNumber() ?? 0,
     refundableUpliftPct: before?.refundableUpliftPct?.toNumber() ?? null,
     freeCancellationDays: before?.freeCancellationDays ?? null,
+    childFreeUnder: before?.childFreeUnder ?? DEFAULT_CHILD_POLICY.freeUnder,
+    childMaxAge: before?.childMaxAge ?? DEFAULT_CHILD_POLICY.childMaxAge,
   };
   const next = {
     breakfastSupplement,
     refundableUpliftPct: refundableUpliftPct ?? null,
     freeCancellationDays: freeCancellationDays ?? null,
+    childFreeUnder,
+    childMaxAge,
   };
 
   if (
     previous.breakfastSupplement === next.breakfastSupplement &&
     previous.refundableUpliftPct === next.refundableUpliftPct &&
-    previous.freeCancellationDays === next.freeCancellationDays
+    previous.freeCancellationDays === next.freeCancellationDays &&
+    previous.childFreeUnder === next.childFreeUnder &&
+    previous.childMaxAge === next.childMaxAge
   ) {
     return { status: 'success', message: 'Nothing changed.' };
   }
@@ -102,7 +124,7 @@ export async function saveHotelSetup(_prev: SetupState, formData: FormData): Pro
     entity: 'HotelSettings',
     entityId: hotelSlug,
     hotelSlug,
-    summary: `Breakfast ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night; ${policyLine}`,
+    summary: `Breakfast ₹${breakfastSupplement.toLocaleString('en-IN')} per person per night; ${policyLine}; free under ${childFreeUnder}, child to ${childMaxAge}`,
     before: previous,
     after: next,
     ip: auth.ip,
@@ -112,8 +134,12 @@ export async function saveHotelSetup(_prev: SetupState, formData: FormData): Pro
     amount: breakfastSupplement,
     refundable_uplift_pct: next.refundableUpliftPct,
     free_cancellation_days: next.freeCancellationDays,
+    child_free_under: childFreeUnder,
+    child_max_age: childMaxAge,
   });
 
+  // The booking engine reads these on every search, so a change reaches the
+  // guest immediately; these paths are the staff-side views of the same rows.
   refresh();
   return {
     status: 'success',

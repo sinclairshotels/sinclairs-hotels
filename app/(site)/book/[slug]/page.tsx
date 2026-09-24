@@ -18,7 +18,9 @@ import {
   todayInIndia,
 } from '@/lib/booking';
 import { rateTypeLabel } from '@/lib/cancellation';
+import { formatChildAges, parseChildAges } from '@/lib/child-ages';
 import { prisma } from '@/lib/db';
+import { childPolicies } from '@/lib/hotel-settings';
 import { hotelSlots } from '@/lib/photo-slots';
 import { currentOverrides, roomContentWithPhotos, withPhotos } from '@/lib/photos';
 import { formatRoomSize } from '@/lib/room-size';
@@ -55,6 +57,8 @@ type SearchParams = {
   rooms?: string;
   adults?: string;
   children?: string;
+  // "3,8" — an age per child, from the picker.
+  childAges?: string;
   // A room name, from the Book Now button on that room's tile.
   room?: string;
 };
@@ -72,7 +76,7 @@ export default async function BookHotelPage({
 
   // Photos staff replaced have to reach this page too, or a property's hero
   // changes on /hotels/<slug> and not on the page where the room is sold.
-  const overrides = await currentOverrides();
+  const [overrides, policies] = await Promise.all([currentOverrides(), childPolicies()]);
   const hotel = withPhotos(contentHotel, hotelSlots(contentHotel), overrides);
 
   const query = await searchParams;
@@ -84,11 +88,22 @@ export default async function BookHotelPage({
   const rooms = parsed.success ? parsed.data.rooms : 1;
   const adults = parsed.success ? parsed.data.adults : 2;
   const children = parsed.success ? parsed.data.children : 0;
+  // The ages decide which of these children is free, which is charged as a
+  // child and which as an adult — the property's own brackets, not a guess.
+  const childAges = parseChildAges(parsed.success ? parsed.data.childAges : undefined, children);
 
   const stayError = validateStay(checkIn, checkOut, today);
   const result =
     checkIn && checkOut && !stayError
-      ? await availability(prisma, { hotelSlug: slug, checkIn, checkOut, rooms, adults, children })
+      ? await availability(prisma, {
+          hotelSlug: slug,
+          checkIn,
+          checkOut,
+          rooms,
+          adults,
+          children,
+          childAges,
+        })
       : null;
   const offers = result?.offers ?? [];
   const bookable = offers.filter((offer) => offer.roomsLeft >= rooms);
@@ -136,6 +151,8 @@ export default async function BookHotelPage({
             defaultRooms={rooms}
             defaultAdults={adults}
             defaultChildren={children}
+            defaultChildAges={formatChildAges(childAges)}
+            childPolicies={policies}
             room={query.room}
             compact
           />
@@ -193,6 +210,7 @@ export default async function BookHotelPage({
                 rooms,
                 adults,
                 children,
+                childAges: formatChildAges(childAges),
               }}
               stayWindow={stayWindowLine(slug)}
               preselectRoom={query.room}

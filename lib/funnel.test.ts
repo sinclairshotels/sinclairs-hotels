@@ -10,6 +10,12 @@ const OTHER = 'darjeeling';
 
 const ago = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
+// These counts are over *every* booking in the window, not this suite's, and
+// vitest runs files in parallel — so any other suite that creates a booking
+// dated today is inside this arithmetic. Fixtures elsewhere are backdated out
+// of the window for that reason; if these counts start coming back high, that
+// is the thing to check first.
+
 async function event(step: string, hotelSlug: string | null, days = 1) {
   await prisma.funnelEvent.create({ data: { step, hotelSlug, at: ago(days) } });
 }

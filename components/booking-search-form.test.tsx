@@ -58,8 +58,11 @@ describe('BookingSearchForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /check availability/i }));
 
+    // The child's age rides along: the property's brackets decide whether that
+    // child is free, and the results page cannot work it out without one. An
+    // age nobody chose is the top of the band, which never under-quotes.
     expect(push).toHaveBeenCalledWith(
-      '/book/ooty?checkIn=2099-06-01&checkOut=2099-06-04&rooms=2&adults=3&children=1',
+      '/book/ooty?checkIn=2099-06-01&checkOut=2099-06-04&rooms=2&adults=3&children=1&childAges=12',
     );
   });
 

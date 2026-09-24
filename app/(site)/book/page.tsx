@@ -2,6 +2,7 @@ import { BookHotelCard } from '@/components/book-hotel-card';
 import { BookingSearchForm } from '@/components/booking-search-form';
 import { hotels } from '@/content/hotels';
 import { FROM_PRICE_DAYS, fromPricePerHotel } from '@/lib/from-price';
+import { childPolicies } from '@/lib/hotel-settings';
 import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -18,7 +19,7 @@ export const metadata: Metadata = pageMetadata({
 export const revalidate = 600;
 
 export default async function BookPage() {
-  const fromPrices = await fromPricePerHotel();
+  const [fromPrices, policies] = await Promise.all([fromPricePerHotel(), childPolicies()]);
 
   return (
     <>
@@ -51,7 +52,7 @@ export default async function BookPage() {
           positioned element that paints over anything pulled underneath it. */}
       <section className="px-6 pt-10">
         <div className="mx-auto max-w-4xl rounded-xl bg-white p-6 shadow-2xl sm:p-8">
-          <BookingSearchForm hotels={hotels} />
+          <BookingSearchForm hotels={hotels} childPolicies={policies} />
         </div>
       </section>
 

@@ -346,6 +346,55 @@ money without a person deciding to. `REFUND_DUE` is the one status on
 `/admin/bookings` styled as a task rather than a state, because it is money
 owed to someone.
 
+**A guest cancels from a link, and the link is the credential.** The
+confirmation email and the booking page carry "Cancel this booking", pointing
+at `/booking/cancel/<cancelToken>`. `Booking.cancelToken` is a second
+unguessable token, separate from `viewToken` so the link that can cancel is not
+the one a guest forwards to whoever is travelling with them, and it is
+**stored rather than signed**: a stored token is withdrawable — it is set to
+null the moment it is spent, so the same URL cannot cancel twice or be replayed
+out of an inbox — needs no secret to rotate or keep out of a log, and cannot be
+used to forge a cancellation for every booking at once if that secret leaks.
+What it costs is a column. `lib/cancel-link.ts` decides whether a link is still
+usable: **valid until check-in**, and only for a booking that is confirmed and
+not already cancelled. Past check-in it says so rather than failing at the
+button, because that guest needs the desk.
+
+The page states the rate type, the deadline and **what comes back in money**
+before anything happens, then takes one click. Everything the click does lives
+in `lib/cancel-booking.ts` — status, emails, audit — because there are two doors
+into it (the link, and the booking page's own form for bookings taken before the
+token existed) and two copies would be two cancellation policies inside a month.
+The audit entry names which door: `Guest (via email link)` or
+`Guest (via booking page)`, with no `actorUserId`, because it was not staff.
+
+**Refunds due appear on Payments, read from the booking.** A cancellation that
+owes money leaves the booking `REFUND_DUE`, and `/admin/payments` lists those at
+the top of the screen where refunds are actually made. Deliberately not a second
+record: a refund task that is its own row is a row that can disagree with the
+booking it is about. The refund itself stays a person pressing a button.
+
+**Who counts as a child is per property** (`HotelSettings.childFreeUnder` /
+`childMaxAge`, default free under 5, child 5–12, adult 13+, both on Set-up).
+`lib/child-ages.ts` is the rule: below the free age a guest takes no seat and
+pays nothing, inside the band they pay the room's extra-child charge, and above
+it they pay the extra-adult charge whichever box the parent ticked. The search
+form therefore asks an **age per child** — without one the free age cannot reach
+the fee — and a missing or malformed age is read as the top of the band, which
+never under-quotes. The ages travel with the search, are re-read inside the
+booking transaction, and are stored on `Booking.childAges`: a desk asking why
+one child was free needs the ages the booking was priced with, not today's
+setting.
+
+**A daily override takes a range and a handful of dates.** `lib/rate-nights.ts`
+expands and de-duplicates them, the form names every night before the Save
+button does anything, and the browser and the server run the same two functions
+over the same posted string — so the preview cannot promise one set of nights
+and the save apply another. Oversell is checked across every night and refuses
+the whole save: one that took nine and refused the tenth would leave staff
+guessing which. Up to `MAX_NIGHTS_PER_OVERRIDE` (62) at a time; past that the
+monthly screen is the right tool.
+
 **GST is charged per room per night against that night's rate**, at a flat 18%
 (`GST_RATE` in `lib/booking.ts`). A booking stores the tax it was priced with,
 so changing this rate never alters what an existing guest already agreed to pay
@@ -536,6 +585,30 @@ page hard-codes but no slot claims is listed there, one click from being retired
 `lib/photo-slots.test.ts` scans `app/`, `components/` and `content/` for
 `/images/…` literals and fails if any is unclaimed, which is what makes that list
 safe to act on. Add a photo to a page, add its slot.
+
+## Vouchers
+
+A voucher is the travel-agent document staff issue by hand, not a booking.
+
+**A new one can only name a property the group still sells.** The dropdown is
+built from `content/hotels`, but a dropdown is presentation, never a permission,
+so `createVoucher` checks `getHotelBySlug` too. The slug this exists for is
+`Sinclairs Yangang`, carried verbatim on the vouchers imported from the legacy
+site (`scripts/migrate-legacy-data.ts` deliberately does not fold it into
+gangtok). Those stay readable, listed and filterable — the list's hotel filter
+is a `groupBy` over what is actually stored — and none is ever written again.
+
+**What prints is decided in `lib/voucher-view.ts`**, once, for the page and the
+guest's email alike. Room category, meal plan, advance paid, the date it was
+paid, and the billing instructions are all on the guest's copy: the last says
+who settles what, which is the thing argued about at check-out. Commission, TDS
+and the note to the unit stay on the office copy only.
+
+**The admin shell scrolls, not a box inside it.** `app/admin/(dashboard)/layout.tsx`
+gives `main` the scrollbar; screens with a sticky table header still make their
+own inner scroller, and long forms — the voucher form — simply flow. A box that
+scrolls inside a page that does not is how a field goes missing below a fold
+nobody can see.
 
 ## Enquiries
 

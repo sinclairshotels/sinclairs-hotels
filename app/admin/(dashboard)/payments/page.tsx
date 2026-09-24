@@ -4,10 +4,13 @@ import { StatTiles } from '@/components/admin/stat-tiles';
 import { getHotelBySlug, hotels } from '@/content/hotels';
 import { formatDate, formatTime, maskedInstrument, parsePageSize } from '@/lib/admin-format';
 import { can, canAccessHotel, getSession } from '@/lib/auth';
+import { formatInr, formatReference } from '@/lib/booking';
 import { prisma } from '@/lib/db';
+import { hotelScopeFilter } from '@/lib/roles';
 import { PaymentStatus, type Prisma } from '@prisma/client';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -75,6 +78,29 @@ export default async function PaymentsPage({
     prisma.payment.groupBy({ by: ['hotelSlug'], _count: true }),
   ]);
 
+  // Money owed to somebody, at the top of the screen where refunds are made.
+  // Read from the booking rather than written as a second record: a refund
+  // task that is its own row is a row that can disagree with the booking it
+  // is about. Scoped like everything else here.
+  const refundsDue = await prisma.booking.findMany({
+    where: {
+      status: 'REFUND_DUE',
+      ...(hotel ? { hotelSlug: hotel } : {}),
+      ...hotelScopeFilter(viewer),
+    },
+    orderBy: { cancelledAt: 'desc' },
+    take: 25,
+    select: {
+      id: true,
+      reference: true,
+      hotelSlug: true,
+      guestName: true,
+      total: true,
+      cancelledAt: true,
+      payment: { select: { orderId: true } },
+    },
+  });
+
   const countFor = (s: string) => statusCounts.find((c) => c.status === s)?._count ?? 0;
   const availableHotels = hotelCounts
     .map((h) => h.hotelSlug)
@@ -122,6 +148,37 @@ export default async function PaymentsPage({
             ]}
           />
         </div>
+
+        {refundsDue.length > 0 && (
+          <div className="mt-3 rounded border border-red-300 bg-red-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-red-700">
+              {refundsDue.length} refund{refundsDue.length === 1 ? '' : 's'} due
+            </p>
+            <ul className="mt-1.5 space-y-1 text-sm text-ink/80">
+              {refundsDue.map((booking) => (
+                <li key={booking.id} className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-medium">{formatReference(booking.reference)}</span>
+                  <span className="text-ink/55">
+                    {getHotelBySlug(booking.hotelSlug)?.name ?? booking.hotelSlug} ·{' '}
+                    {booking.guestName}
+                  </span>
+                  <span className="font-medium">{formatInr(booking.total.toNumber())}</span>
+                  {booking.payment?.orderId && (
+                    <Link
+                      href={`/admin/payments?q=${encodeURIComponent(booking.payment.orderId)}`}
+                      className="text-xs uppercase tracking-wider text-forest underline"
+                    >
+                      Find the payment
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-xs text-ink/55">
+              Refunds are made by hand, from the row below. Nothing here moves money on its own.
+            </p>
+          </div>
+        )}
 
         <form method="get" className="mt-3 flex flex-wrap items-center gap-2">
           <input

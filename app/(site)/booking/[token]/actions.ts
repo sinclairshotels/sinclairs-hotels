@@ -1,15 +1,10 @@
 'use server';
 
-import { getHotelBySlug } from '@/content/hotels';
-import { formatInr, formatReference } from '@/lib/booking';
+import { formatInr } from '@/lib/booking';
+import { cancelBookingForGuest } from '@/lib/cancel-booking';
 import { cancellationSentence, withinFreeCancellation } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
-import { bookingCancelledHtml } from '@/lib/email-templates/booking-cancelled';
-import { log } from '@/lib/log';
-import { sendMail } from '@/lib/mail';
-import { guaranteedRecipients, recipientsFor } from '@/lib/notification-emails';
 import { clientIp, isRateLimited } from '@/lib/rate-limit';
-import { publicSiteUrl } from '@/lib/site-url';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
@@ -46,68 +41,11 @@ export async function cancelOwnBooking(
   // agreed to, in either direction.
   const refundable = withinFreeCancellation(booking.rateType, booking.cancellationDeadline);
 
-  // REFUND_DUE rather than CANCELLED when money is owed. Both release the
-  // rooms; only REFUND_DUE shows on Payments as a task, and the refund itself
-  // is still a person pressing a button against ICICI.
-  const status = refundable ? 'REFUND_DUE' : 'CANCELLED';
-
-  const updated = await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status, cancelledAt: new Date() },
-  });
-
-  log.info('booking.cancelled_by_guest', {
-    reference: updated.reference,
-    hotel: updated.hotelSlug,
-    rate_type: updated.rateType,
+  const { booking: updated } = await cancelBookingForGuest({
+    booking,
     refundable,
-    amount: updated.total.toNumber(),
-  });
-
-  const hotel = getHotelBySlug(updated.hotelSlug);
-  const viewUrl = `${publicSiteUrl}/booking/${updated.viewToken}`;
-
-  await sendMail({
-    to: updated.guestEmail,
-    kind: 'booking-cancelled-guest',
-    subject: `Cancelled: ${hotel?.name ?? updated.hotelSlug} — ${formatReference(updated.reference)}`,
-    html: bookingCancelledHtml({ booking: updated, hotel, viewUrl, refundable }),
-  });
-
-  // Finance is copied only where money is owed — a cancellation that refunds
-  // nothing is not their work. Their own To, CC and BCC are merged into this
-  // message's rather than flattened into To, so a finance address configured
-  // as a copy stays a copy.
-  const property = await guaranteedRecipients('BOOKING', updated.hotelSlug);
-  const finance = refundable ? await recipientsFor('CANCELLATION') : { to: [], cc: [], bcc: [] };
-
-  await sendMail({
-    to: [...new Set([...property.to, ...finance.to])],
-    cc: [...new Set([...property.cc, ...finance.cc])],
-    bcc: [...new Set([...property.bcc, ...finance.bcc])],
-    kind: 'booking-cancelled-staff',
-    subject: refundable
-      ? `REFUND DUE: ${formatReference(updated.reference)} cancelled by guest — ${formatInr(updated.total.toNumber())}`
-      : `Cancelled by guest: ${formatReference(updated.reference)} — no refund due`,
-    html: bookingCancelledHtml({ booking: updated, hotel, viewUrl, refundable, forStaff: true }),
-  });
-
-  await prisma.auditEvent.create({
-    data: {
-      // No actorUserId: this was the guest, not a member of staff. The label
-      // says so rather than leaving the log looking like nobody did it.
-      actorLabel: 'Guest (via booking link)',
-      action: 'booking.cancelled_by_guest',
-      entity: 'Booking',
-      entityId: updated.id,
-      hotelSlug: updated.hotelSlug,
-      summary: `${updated.reference} cancelled by the guest — ${
-        refundable ? 'full refund due' : 'no refund due'
-      }`,
-      before: { status: booking.status },
-      after: { status, refundable },
-      ip,
-    },
+    actorLabel: 'Guest (via booking page)',
+    ip,
   });
 
   revalidatePath(`/booking/${token}`);
