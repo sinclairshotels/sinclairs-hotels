@@ -10,6 +10,7 @@ import {
   nightsBetween,
 } from '@/lib/booking';
 import { FULL_TERMS_PATH, bookingTerms } from '@/lib/booking-terms';
+import { cancelLinkFor } from '@/lib/cancel-link';
 import { withinFreeCancellation } from '@/lib/cancellation';
 import { prisma } from '@/lib/db';
 import type { Metadata } from 'next';
@@ -43,6 +44,8 @@ export default async function BookingPage({
   const checkOutTime = stayTimes[booking.hotelSlug]?.checkOut;
   const terms = bookingTerms(booking.hotelSlug, booking.rateType, booking.cancellationDeadline);
   const refundableNow = withinFreeCancellation(booking.rateType, booking.cancellationDeadline);
+  // Absolute, because this is printed and typed rather than clicked.
+  const cancelUrl = cancelLinkFor(booking);
 
   const heading = {
     CONFIRMED: 'Your stay is confirmed',
@@ -176,18 +179,28 @@ export default async function BookingPage({
               somebody can type, rather than a button that does nothing on
               paper. Older bookings have no such token and keep the inline
               form, so they stay cancellable. */}
-          {booking.status === 'CONFIRMED' && booking.cancelToken && (
+          {booking.status === 'CONFIRMED' && cancelUrl && (
             <div className="mt-8 border-t border-ink/10 pt-6">
               <Link
                 href={`/booking/cancel/${booking.cancelToken}`}
-                className="inline-block rounded border border-red-700/40 px-5 py-2.5 text-xs uppercase tracking-wider text-red-700 transition hover:bg-red-700 hover:text-white"
+                className="inline-block rounded border border-red-700/40 px-5 py-2.5 text-xs uppercase tracking-wider text-red-700 transition hover:bg-red-700 hover:text-white print:hidden"
               >
                 Cancel this booking
               </Link>
+              {/* On paper a button is a dead rectangle, so the printed copy
+                  carries the address itself. This page is the guest's voucher
+                  — it is what they save as a PDF and what an agent forwards —
+                  and the whole point of the link is that it works away from
+                  the inbox it arrived in. */}
+              <p className="hidden text-xs text-ink/70 print:block">
+                <span className="font-medium">To cancel this booking:</span>{' '}
+                <span className="break-all">{cancelUrl}</span>
+              </p>
               <p className="mt-2 text-xs text-ink/50">
                 {refundableNow
                   ? `You will see what is refunded — ${formatInr(booking.total.toNumber())} — before anything happens.`
-                  : 'You will see what is refunded before anything happens.'}
+                  : 'You will see what is refunded before anything happens.'}{' '}
+                The link works until your check-in date.
               </p>
             </div>
           )}

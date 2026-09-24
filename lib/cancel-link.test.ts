@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cancelLinkState } from './cancel-link';
+import { cancelLinkFor, cancelLinkState } from './cancel-link';
 
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -68,5 +68,19 @@ describe('cancelLinkState', () => {
       usable: false,
       reason: 'not-confirmed',
     });
+  });
+});
+
+describe('cancelLinkFor', () => {
+  // Absolute, not a path: it goes into an email and onto the printed voucher,
+  // where there is no page for a relative link to be relative to.
+  it('is a full address a guest can type', () => {
+    const url = cancelLinkFor({ cancelToken: 'abc123' });
+    expect(url).toMatch(/^https?:\/\//);
+    expect(url).toContain('/booking/cancel/abc123');
+  });
+
+  it('is nothing at all for a booking taken before the token existed', () => {
+    expect(cancelLinkFor({ cancelToken: null })).toBeNull();
   });
 });
