@@ -169,6 +169,13 @@ model Voucher {
   tdsPct           Decimal? @db.Decimal(5, 2)
 
   rooms    Int
+  // What was sold, in the property's own words — free text rather than a join
+  // to RoomType, because a voucher is often written for a property or a room
+  // this system does not sell online.
+  roomCategory String?
+  // EP / CP / MAP / AP, as the rate plans read. Stored as the label so the
+  // voucher still says what it said if the plans are renamed.
+  mealPlan String?
   checkIn  DateTime
   checkOut DateTime
   rate     Decimal  @db.Decimal(10, 2)

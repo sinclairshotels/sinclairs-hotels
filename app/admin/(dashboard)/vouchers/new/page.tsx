@@ -17,13 +17,14 @@ export default async function NewVoucherPage() {
   if (!viewer || !can(viewer, 'vouchers:write')) notFound();
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0">
-        <BackLink href="/admin/vouchers" label="All vouchers" />
-        <p className="mt-2 font-display text-xl text-forest">New voucher</p>
-      </div>
+    // No inner scroller: this is a long form, and a box that scrolls inside a
+    // page that does not is how a field goes missing below a fold nobody can
+    // see. The admin shell scrolls instead.
+    <div className="pb-10">
+      <BackLink href="/admin/vouchers" label="All vouchers" />
+      <p className="mt-2 font-display text-xl text-forest">New voucher</p>
 
-      <div className="mt-5 min-h-0 flex-1 overflow-y-auto pb-6 pr-1">
+      <div className="mt-5">
         <VoucherForm hotels={hotels} bookingOffices={bookingOffices} />
       </div>
     </div>

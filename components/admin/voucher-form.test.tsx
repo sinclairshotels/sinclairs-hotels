@@ -66,6 +66,7 @@ describe('VoucherForm', () => {
     expect(screen.getByLabelText('Agent name')).not.toBeRequired();
     expect(screen.getByLabelText('Commission %')).not.toBeRequired();
     expect(screen.getByLabelText('TDS %')).not.toBeRequired();
-    expect(screen.getByLabelText('Deposit ₹')).not.toBeRequired();
+    expect(screen.getByLabelText('Advance paid ₹')).not.toBeRequired();
+    expect(screen.getByLabelText('Room category')).not.toBeRequired();
   });
 });

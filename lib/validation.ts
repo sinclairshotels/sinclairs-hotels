@@ -72,6 +72,8 @@ export const voucherSchema = z.object({
   commissionPct: optionalPercent(),
   tdsPct: optionalPercent(),
   rooms: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(50)),
+  roomCategory: optionalTrimmed(120),
+  mealPlan: optionalTrimmed(60),
   checkIn: z.string().trim().min(1, 'Please select a check-in date').max(10),
   checkOut: z.string().trim().min(1, 'Please select a check-out date').max(10),
   rate: z.preprocess(emptyToUndefined, z.coerce.number().min(0)),

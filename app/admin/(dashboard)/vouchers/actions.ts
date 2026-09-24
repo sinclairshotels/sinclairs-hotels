@@ -52,6 +52,20 @@ export async function createVoucher(
   }
 
   const d = parsed.data;
+
+  // A new voucher can only name a property the group still sells. The
+  // dropdown offers exactly these, but a dropdown is presentation, never a
+  // permission — and the one slug this is really about, "Sinclairs Yangang",
+  // exists on 1,300 imported vouchers and must stay readable and filterable
+  // while never being written again.
+  if (!getHotelBySlug(d.hotelSlug)) {
+    return {
+      status: 'error',
+      message: 'That property is no longer open for new vouchers.',
+      fieldErrors: { hotelSlug: ['Choose a current property'] },
+    };
+  }
+
   const viewToken = randomBytes(32).toString('base64url');
 
   const voucher = await prisma.voucher.create({
@@ -73,6 +87,8 @@ export async function createVoucher(
       checkOut: new Date(d.checkOut),
       rate: d.rate,
       taxes: d.taxes,
+      roomCategory: d.roomCategory || null,
+      mealPlan: d.mealPlan || null,
       depositAmount: d.depositAmount ?? null,
       depositReceiptNo: d.depositReceiptNo || null,
       depositReceiptDate: d.depositReceiptDate ? new Date(d.depositReceiptDate) : null,

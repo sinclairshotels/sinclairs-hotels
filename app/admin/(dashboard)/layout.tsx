@@ -13,7 +13,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white lg:flex-row">
       <AdminSidebar user={user} />
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden p-4 sm:p-6 lg:p-8">{children}</main>
+      {/* The shell scrolls, so a page that is simply long — the voucher form —
+          needs no scrolling box of its own. Screens with a sticky table header
+          still make their own inner scroller; this only decides what happens
+          to a page that overflows without one. */}
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

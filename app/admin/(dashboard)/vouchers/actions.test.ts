@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { sendMail } from '@/lib/mail';
+import { voucherGuestFields } from '@/lib/voucher-view';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTestStaff, createTestStaff } from '../../../../test-utils/auth';
 import { createVoucher } from './actions';
@@ -144,5 +145,84 @@ describe('createVoucher', () => {
       (r) => r.status === 'error' && /too many/i.test(r.message ?? ''),
     );
     expect(rateLimited.length).toBeGreaterThan(0);
+  });
+
+  // "Sinclairs Yangang" is a property the group no longer sells, carried
+  // verbatim on the vouchers imported from the legacy site. It must stay
+  // readable and filterable, and must never be written again.
+  describe('a property that is no longer sold', () => {
+    it('refuses a new voucher for it', async () => {
+      mockState.cookieValue = (
+        await createTestStaff({ role: 'USER', sections: { vouchers: 'EDIT' } })
+      ).token;
+      const result = await createVoucher(
+        { status: 'idle' },
+        voucherFormData({ hotelSlug: 'Sinclairs Yangang' }),
+      );
+
+      expect(result.status).toBe('error');
+      expect(result.fieldErrors?.hotelSlug).toBeDefined();
+      const written = await prisma.voucher.count({ where: { hotelSlug: 'Sinclairs Yangang' } });
+      expect(written).toBe(0);
+    });
+
+    it('still lists and filters the ones already written', async () => {
+      const existing = await prisma.voucher.create({
+        data: {
+          viewToken: `yangang-${Math.random().toString(36).slice(2, 10)}`,
+          hotelSlug: 'Sinclairs Yangang',
+          guestName: 'Legacy Guest',
+          guestPhone: '+91 98300 00000',
+          guestEmail: `legacy@${TEST_EMAIL_DOMAIN}`,
+          billingAddress: 'Somewhere',
+          rooms: 1,
+          checkIn: new Date('2019-05-01T00:00:00.000Z'),
+          checkOut: new Date('2019-05-03T00:00:00.000Z'),
+          rate: 4000,
+          taxes: 400,
+          issuerName: 'Legacy Issuer',
+          issuerPhone: '+91 98300 00000',
+          bookingOffice: 'Kolkata',
+        },
+      });
+
+      const grouped = await prisma.voucher.groupBy({ by: ['hotelSlug'], _count: true });
+      expect(grouped.map((row) => row.hotelSlug)).toContain('Sinclairs Yangang');
+
+      await prisma.voucher.delete({ where: { id: existing.id } });
+    });
+  });
+
+  describe('the fields reservations asked for', () => {
+    it('stores the room category and meal plan, and prints both on the voucher', async () => {
+      mockState.cookieValue = (
+        await createTestStaff({ role: 'USER', sections: { vouchers: 'EDIT' } })
+      ).token;
+      const result = await createVoucher(
+        { status: 'idle' },
+        voucherFormData({
+          roomCategory: 'Premier Room',
+          mealPlan: 'With Breakfast (CP)',
+          depositAmount: '5000',
+          depositReceiptDate: '2026-10-01',
+          billingInstructions: 'Room and taxes to company; extras to guest.',
+        }),
+      );
+      expect(result.status).toBe('success');
+
+      const voucher = await prisma.voucher.findFirstOrThrow({
+        where: { voucherNo: result.voucherNo },
+      });
+      expect(voucher.roomCategory).toBe('Premier Room');
+      expect(voucher.mealPlan).toBe('With Breakfast (CP)');
+
+      // The guest's own copy, which is what prints.
+      const labels = voucherGuestFields(voucher).map(([label]) => label);
+      expect(labels).toContain('Room Category');
+      expect(labels).toContain('Meal Plan');
+      expect(labels).toContain('Advance Paid');
+      expect(labels).toContain('Advance Paid On');
+      expect(labels).toContain('Billing Instructions');
+    });
   });
 });

@@ -13,6 +13,15 @@ const initialState = { status: 'idle' as const };
 // to run one to a line down the page, which made a voucher — twenty-odd
 // fields — a scroll rather than a form somebody fills in while a guest is on
 // the phone.
+// The same four the rate plans carry, written out so a voucher says what it
+// sold rather than a code only the back office reads.
+const MEAL_PLANS = [
+  'Room Only (EP)',
+  'With Breakfast (CP)',
+  'Breakfast and one meal (MAP)',
+  'All meals (AP)',
+];
+
 export function VoucherForm({
   hotels,
   bookingOffices,
@@ -20,6 +29,7 @@ export function VoucherForm({
   const [state, formAction, pending] = useActionState(createVoucher, initialState);
   const [hotelSlug, setHotelSlug] = useState('');
   const [bookingOffice, setBookingOffice] = useState('');
+  const [mealPlan, setMealPlan] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [depositReceiptDate, setDepositReceiptDate] = useState('');
@@ -115,22 +125,39 @@ export function VoucherForm({
           />
         </Row>
         {number('rooms', 'Rooms', { min: 1, max: 50, required: true })}
+        {text('roomCategory', 'Room category')}
+        <Row label="Meal plan" name="mealPlan">
+          <input type="hidden" name="mealPlan" value={mealPlan} />
+          <Select value={mealPlan} onValueChange={setMealPlan}>
+            <SelectTrigger id="mealPlan" placeholder="Select a meal plan" />
+            <SelectContent>
+              {MEAL_PLANS.map((plan) => (
+                <SelectItem key={plan} value={plan}>
+                  {plan}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Row>
         {text('arrivalDetails', 'Arrival details')}
       </Section>
 
       <Section title="Amounts">
         {number('rate', 'Rate ₹', { step: '0.01', required: true })}
         {number('taxes', 'Taxes / GST ₹', { step: '0.01', required: true })}
-        {number('depositAmount', 'Deposit ₹', { step: '0.01' })}
-        {text('depositReceiptNo', 'Receipt no.')}
-        <Row label="Receipt date" name="depositReceiptDate">
+        {/* "Advance paid" is what reservations say and what the guest asks
+            about at the desk; the columns underneath are still the deposit
+            ones, so nothing already written changes meaning. */}
+        {number('depositAmount', 'Advance paid ₹', { step: '0.01' })}
+        <Row label="Advance paid on" name="depositReceiptDate">
           <input type="hidden" name="depositReceiptDate" value={depositReceiptDate} />
           <DatePicker
             value={depositReceiptDate}
             onChange={setDepositReceiptDate}
-            label="Deposit receipt date"
+            label="Date the advance was paid"
           />
         </Row>
+        {text('depositReceiptNo', 'Receipt no.')}
         {text('travelAgentName', 'Agent name')}
         {text('travelAgentState', 'Agent state')}
         {text('travelAgentPan', 'Agent PAN')}
@@ -140,6 +167,8 @@ export function VoucherForm({
       </Section>
 
       <Section title="Notes">
+        {/* Printed on the guest's copy as well as the office one: it says who
+            settles what, which is the thing argued about at check-out. */}
         <Row label="Billing instructions" name="billingInstructions">
           <textarea
             id="billingInstructions"
